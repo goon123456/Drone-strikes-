@@ -46,7 +46,7 @@ public class LaptopScreen extends Screen {
     private boolean settingBoxes;
 
     private EditBox xBox, zBox;
-    private Button launchButton;
+    private Button launchButton, cameraButton, recallButton, minusButton, plusButton;
     private int left, top;
 
     public LaptopScreen(Payloads.LaptopData data) {
@@ -105,10 +105,14 @@ public class LaptopScreen extends Screen {
             }
         }).bounds(mx + 82, my + MAP + 24, 46, 16).build());
         int rx = left + 236;
-        addRenderableWidget(Button.builder(Component.literal("-"), b -> count = Math.max(1, count - 1)).bounds(rx, top + 118, 16, 16).build());
-        addRenderableWidget(Button.builder(Component.literal("+"), b -> count = Math.min(32, count + 1)).bounds(rx + 62, top + 118, 16, 16).build());
+        minusButton = addRenderableWidget(Button.builder(Component.literal("-"), b -> count = Math.max(1, count - 1)).bounds(rx, top + 118, 16, 16).build());
+        plusButton = addRenderableWidget(Button.builder(Component.literal("+"), b -> count = Math.min(32, count + 1)).bounds(rx + 62, top + 118, 16, 16).build());
         launchButton = addRenderableWidget(Button.builder(Component.translatable("gui.steelrain.launch"), b -> launch())
-                .bounds(rx, top + 140, 78, 20).build());
+                .bounds(rx, top + 138, 78, 20).build());
+        cameraButton = addRenderableWidget(Button.builder(Component.translatable("gui.steelrain.camera"), b -> order(Payloads.AircraftOrder.CAMERA))
+                .bounds(rx, top + 161, 38, 16).build());
+        recallButton = addRenderableWidget(Button.builder(Component.translatable("gui.steelrain.recall"), b -> order(Payloads.AircraftOrder.RECALL))
+                .bounds(rx + 40, top + 161, 38, 16).build());
     }
 
     private void zoom(int by) {
@@ -140,6 +144,11 @@ public class LaptopScreen extends Screen {
         PacketDistributor.sendToServer(new Payloads.Launch(e.pos(), targetX, targetZ, count));
     }
 
+    private void order(int action) {
+        Payloads.Entry e = current();
+        if (e != null) PacketDistributor.sendToServer(new Payloads.AircraftOrder(e.pos(), action));
+    }
+
     @Override
     public void tick() {
         age++;
@@ -147,7 +156,13 @@ public class LaptopScreen extends Screen {
         if (age % 20 == 0) PacketDistributor.sendToServer(new Payloads.LaptopRefresh());
         if (age % 40 == 0) mapDirty = true;
         Payloads.Entry e = current();
-        launchButton.active = e != null && hasTarget && e.reachable() && typeOf(e) != null;
+        WeaponType t = e == null ? null : typeOf(e);
+        launchButton.active = e != null && hasTarget && e.reachable() && t != null;
+        boolean airborne = e != null && e.aircraft() >= 0 && e.reachable();
+        launchButton.setMessage(Component.translatable(airborne ? "gui.steelrain.retask" : "gui.steelrain.launch"));
+        cameraButton.visible = recallButton.visible = t != null && t.launchesAircraft();
+        minusButton.visible = plusButton.visible = t != null && !t.launchesAircraft();
+        cameraButton.active = recallButton.active = airborne;
     }
 
     // ---- map ----
@@ -163,7 +178,8 @@ public class LaptopScreen extends Screen {
         for (int pz = 0; pz < MAP; pz++) {
             for (int px = 0; px < MAP; px++) {
                 int x = x0 + px * s, z = z0 + pz * s;
-                int colour = UNKNOWN;
+                int colour = ReconClient.colour(x, z); // what recon drones have seen
+                if (colour == 0) colour = UNKNOWN;
                 if (level.hasChunk(x >> 4, z >> 4)) {
                     int y = level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) - 1;
                     BlockState state = level.getBlockState(pos.set(x, y, z));
@@ -313,6 +329,26 @@ public class LaptopScreen extends Screen {
             Payloads.Entry e = entries.get(i);
             marker(g, e.pos().getX() + 0.5, e.pos().getZ() + 0.5, i == selected ? 0xFFFFE040 : 0xFF40C040, 2);
         }
+        // Recon: the drone, the edge of what it sees, and its contacts.
+        for (ReconClient.Report report : ReconClient.fresh()) {
+            Payloads.Markers mk = report.markers();
+            ring(g, mk.x() + 0.5, mk.z() + 0.5, mk.radius(), 0xA040E0FF);
+            int[] d = mk.data();
+            for (int i = 0; i + 2 < d.length; i += 3) {
+                int colour = switch (d[i + 2]) {
+                    case 0 -> 0xFFFF4040;   // hostile mob
+                    case 1 -> 0xFFB0B0B0;   // animal / neutral
+                    case 2 -> 0xFFFF40FF;   // enemy player
+                    case 3 -> 0xFF4080FF;   // friendly player
+                    default -> 0xFFFF9020;  // enemy weapon system
+                };
+                marker(g, d[i] + 0.5, d[i + 1] + 0.5, colour, d[i + 2] == 4 ? 2 : 1);
+            }
+            marker(g, mk.x() + 0.5, mk.z() + 0.5, 0xFF40E0FF, 1);
+        }
+        for (Payloads.Entry e : entries) {
+            if (e.aircraft() >= 0) marker(g, e.ax() + 0.5, e.az() + 0.5, 0xFF40E0FF, 2);
+        }
         if (minecraft.player != null) marker(g, minecraft.player.getX(), minecraft.player.getZ(), 0xFFFFFFFF, 1);
         if (hasTarget) marker(g, targetX + 0.5, targetZ + 0.5, 0xFFFF3030, 2);
         g.drawString(font, "X", mx, my + MAP + 8, dim, false);
@@ -340,12 +376,16 @@ public class LaptopScreen extends Screen {
                 g.drawString(font, Component.translatable("gui.steelrain.pick_target"), rx, ry + 55, amber, false);
             }
             Component status = !cur.reachable() ? Component.translatable("gui.steelrain.no_signal")
+                    : cur.aircraft() >= 0 ? Component.translatable("gui.steelrain.airborne")
                     : cur.busy() > 0 ? Component.translatable("gui.steelrain.busy", (cur.busy() + 19) / 20)
                     : Component.translatable("gui.steelrain.ready");
-            g.drawString(font, status, rx, ry + 66, !cur.reachable() || cur.busy() > 0 ? red : green, false);
-            g.drawString(font, Component.translatable("gui.steelrain.rounds"), rx, top + 107, dim, false);
-            String n = Integer.toString(count);
-            g.drawString(font, n, rx + 39 - font.width(n) / 2, top + 122, white, false);
+            g.drawString(font, status, rx, ry + 66, !cur.reachable() || (cur.busy() > 0 && cur.aircraft() < 0) ? red
+                    : cur.aircraft() >= 0 ? 0xFF40E0FF : green, false);
+            if (!curType.launchesAircraft()) {
+                g.drawString(font, Component.translatable("gui.steelrain.rounds"), rx, top + 107, dim, false);
+                String n = Integer.toString(count);
+                g.drawString(font, n, rx + 39 - font.width(n) / 2, top + 122, white, false);
+            }
         }
 
         if (messageTicks > 0) {

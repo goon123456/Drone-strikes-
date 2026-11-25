@@ -44,6 +44,7 @@ def block_textures():
     t["steel"] = noisy(STEEL, seed=3)
     t["steel_dark"] = noisy(STEEL_D, seed=4)
     t["white"] = noisy((215, 216, 210), seed=5, amount=6)
+    t["tan"] = noisy((184, 172, 140), seed=13, amount=8)
     t["red"] = noisy((190, 40, 36), seed=6)
     t["glass"] = noisy((40, 62, 86), seed=7, amount=5)
     ImageDraw.Draw(t["glass"]).line([(2, 12), (12, 2)], fill=(90, 120, 150, 255))
@@ -139,13 +140,29 @@ BLOCKS = {
         el("steel_dark", [5, 5, 10, 11, 6, 15], ([8, 3, 16], 22.5)),
         el("red", [7, 5, -3, 9, 6, -2], ([8, 3, 16], 22.5)),
     ],
-    "reaper_pad": [
-        el("steel_dark", [0, 0, 0, 16, 2, 16], up="pad_top"),
-        el("panel", [1, 2, 11, 5, 8, 15]),
-        el("glass", [1.5, 5, 10.8, 4.5, 7.5, 11]),
-        el("steel", [13, 2, 13, 14, 15, 14]),
-        el("white", [11, 14, 11.5, 16, 15, 15.5]),
-        el("red", [13, 15, 13, 14, 16, 14]),
+    "ground_station": [
+        el("steel_dark", [1, 0, 0, 15, 1, 16]),
+        el("tan", [2, 1, 1, 14, 10, 15]),
+        el("steel_dark", [6, 1, 0.8, 10, 8, 1]),
+        el("steel", [7.5, 10, 10, 8.5, 14, 11]),
+        el("white", [4, 12, 9, 12, 16, 10]),
+        el("red", [13, 10, 2, 14, 15, 3]),
+    ],
+    "orlan_catapult": [
+        el("steel_dark", [5, 0, 2, 11, 2, 14]),
+        el("steel_dark", [7, 2, 3, 9, 8, 5]),
+        el("steel", [7, 2, -2, 9, 3.5, 16], ([8, 2, 16], 22.5)),
+        el("white", [7, 3.5, 2, 9, 5.5, 11], ([8, 2, 16], 22.5)),
+        el("white", [1, 5, 5, 15, 5.6, 8], ([8, 2, 16], 22.5)),
+    ],
+    "patriot": [
+        el("tracks", [1, 0, 6, 15, 3, 9.5]), el("tracks", [1, 0, 10.5, 15, 3, 14]),
+        el("steel_dark", [2, 3, 0, 14, 5, 16]),
+        el("tan", [3, 5, 0, 13, 9, 3]),
+        el("tan", [2.5, 5, 3, 7.5, 10, 15], ([8, 5, 15], 22.5)),
+        el("tan", [8.5, 5, 3, 13.5, 10, 15], ([8, 5, 15], 22.5)),
+        el("steel_dark", [3, 5.5, 2.8, 7, 9.5, 3], ([8, 5, 15], 22.5)),
+        el("steel_dark", [9, 5.5, 2.8, 13, 9.5, 3], ([8, 5, 15], 22.5)),
     ],
     "pantsir": wheels([1, 6.5, 12]) + [
         el("olive", [2, 2, 0, 14, 6, 16]),
@@ -171,7 +188,6 @@ BLOCKS = {
 }
 
 def block_models():
-    texs = ["olive", "olive_dark", "steel", "steel_dark", "white", "red", "glass", "panel", "tracks", "tubes", "pad_top", "radar"]
     for name, elements in BLOCKS.items():
         used = sorted({f["texture"][1:] for e in elements for f in e["faces"].values()})
         textures = {t: f"{MOD}:block/{t}" for t in used}
@@ -187,8 +203,11 @@ def block_models():
         write(f"{D}/loot_table/blocks/{name}.json", {"type": "minecraft:block", "pools": [{
             "rolls": 1, "entries": [{"type": "minecraft:item", "name": f"{MOD}:{name}"}],
             "conditions": [{"condition": "minecraft:survives_explosion"}]}]})
+    # Invisible filler block of the full-size vehicles.
+    write(f"{A}/models/block/weapon_part.json", {"textures": {"particle": f"{MOD}:block/olive"}})
+    write(f"{A}/blockstates/weapon_part.json", {"variants": {"": {"model": f"{MOD}:block/weapon_part"}}})
     write(f"{RES}/data/minecraft/tags/block/mineable/pickaxe.json",
-          {"replace": False, "values": [f"{MOD}:{n}" for n in BLOCKS]})
+          {"replace": False, "values": [f"{MOD}:{n}" for n in BLOCKS] + [f"{MOD}:weapon_part"]})
     write(f"{RES}/data/minecraft/tags/block/needs_stone_tool.json",
           {"replace": False, "values": [f"{MOD}:{n}" for n in BLOCKS]})
 
@@ -328,31 +347,58 @@ def item_icons():
     d.line([(5, 6), (10, 11)], fill=c((120, 30, 28))); d.line([(10, 6), (5, 11)], fill=c((120, 30, 28)))
     icons["fuel_canister"] = outlined(img)
 
+    icons["patriot_missile"] = missile_icon((216, 216, 210), (184, 172, 140), (70, 74, 78), 2, a=(3, 13), b=(13, 3))
+
+    img, d = canvas()   # Mavic quad
+    d.line([(3, 3), (12, 12)], fill=c((70, 74, 80))); d.line([(12, 3), (3, 12)], fill=c((70, 74, 80)))
+    for x, y in ((2, 2), (11, 2), (2, 11), (11, 11)):
+        d.rectangle([x, y, x + 2, y + 2], fill=c((30, 30, 34)))
+    d.rectangle([6, 5, 9, 10], fill=c((128, 132, 138)))
+    d.rectangle([7, 3, 8, 4], fill=c((40, 90, 150)))
+    icons["mavic"] = outlined(img)
+
+    img, d = canvas()   # drone grenade
+    d.ellipse([5, 3, 10, 10], fill=c((88, 100, 60)))
+    d.rectangle([7, 2, 8, 2], fill=c((196, 166, 76)))
+    d.rectangle([7, 11, 8, 12], fill=c((70, 74, 78)))
+    d.line([(5, 13), (10, 13)], fill=c((70, 74, 78)))
+    icons["drone_grenade"] = outlined(img)
+
+    img, d = canvas()   # Orlan-10 from above
+    g = (156, 160, 166)
+    d.rectangle([7, 3, 8, 11], fill=c(g))
+    d.rectangle([2, 5, 13, 6], fill=c(g))
+    d.point([(2, 5), (2, 6), (13, 5), (13, 6)], fill=c((190, 40, 36)))
+    d.rectangle([5, 12, 10, 12], fill=c(g))
+    d.rectangle([7, 2, 8, 2], fill=c((40, 40, 44)))
+    icons["orlan_10"] = outlined(img)
+
+    img, d = canvas()   # Bayraktar TB2 from above: twin booms
+    d.rectangle([7, 2, 8, 9], fill=c(g))
+    d.rectangle([1, 6, 14, 7], fill=c(g))
+    d.line([(5, 8), (5, 13)], fill=c((110, 114, 120))); d.line([(10, 8), (10, 13)], fill=c((110, 114, 120)))
+    d.line([(5, 13), (10, 13)], fill=c(g))
+    d.rectangle([7, 10, 8, 10], fill=c((40, 40, 44)))
+    icons["bayraktar_tb2"] = outlined(img)
+
+    img, d = canvas()   # Global Hawk from above: very long wings, fat nose
+    w = (220, 220, 214)
+    d.rectangle([7, 4, 8, 13], fill=c(w))
+    d.rectangle([6, 1, 9, 4], fill=c(w))
+    d.rectangle([0, 8, 15, 8], fill=c(w)); d.rectangle([4, 7, 11, 7], fill=c(w))
+    d.line([(5, 14), (7, 12)], fill=c((150, 154, 160))); d.line([(10, 14), (8, 12)], fill=c((150, 154, 160)))
+    d.rectangle([7, 9, 8, 11], fill=c((110, 114, 120)))
+    icons["global_hawk"] = outlined(img)
+
     for name, img in icons.items():
         save(img, f"{A}/textures/item/{name}.png")
         write(f"{A}/models/item/{name}.json", {"parent": "minecraft:item/generated", "textures": {"layer0": f"{MOD}:item/{name}"}})
 
 
-# ---------------------------------------------------------------- entity textures (4 flat quadrants)
-ENTITY = {
-    "fpv_drone": [(44, 44, 48), (214, 88, 44), (80, 104, 66), (22, 22, 24)],
-    "shahed_136": [(198, 194, 180), (60, 60, 58), (160, 156, 144), (70, 70, 66)],
-    "mq9_reaper": [(152, 156, 162), (120, 124, 130), (58, 62, 58), (48, 50, 54)],
-    "tomahawk": [(190, 194, 200), (200, 60, 50), (120, 124, 130), (92, 96, 102)],
-    "iskander": [(88, 104, 62), (40, 40, 40), (218, 218, 212), (52, 60, 40)],
-    "gmlrs": [(104, 114, 76), (40, 40, 40), (40, 40, 40), (60, 66, 46)],
-    "shell_155mm": [(84, 96, 58), (184, 112, 64), (196, 166, 76), (40, 40, 40)],
-    "hellfire": [(58, 62, 58), (60, 90, 130), (58, 62, 58), (34, 36, 34)],
-    "pantsir_missile": [(214, 214, 208), (96, 110, 72), (40, 40, 40), (70, 80, 54)],
-}
-
+# ---------------------------------------------------------------- entity paint
 def entity_textures():
-    for i, (name, cols) in enumerate(ENTITY.items()):
-        img = Image.new("RGBA", (256, 256))
-        for q, col in enumerate(cols):
-            tile = noisy(col, size=128, amount=5, seed=100 + i * 4 + q)
-            img.paste(tile, ((q & 1) * 128, (q >> 1) * 128))
-        save(img, f"{A}/textures/entity/{name}.png")
+    # One tiling near-white grain. Every code-built model is tinted per box, so this is the only texture they need.
+    save(noisy((236, 236, 236), size=16, amount=14, seed=77), f"{A}/textures/entity/paint.png")
 
 
 # ---------------------------------------------------------------- recipes
@@ -393,7 +439,20 @@ def recipes():
     shaped("himars", ["III", "MCM", "BBB"], {"I": I, "M": "electric_motor", "C": "circuit_board", "B": B})
     shaped("m109", ["I  ", "BIC", "BMB"], {"I": I, "B": B, "C": "circuit_board", "M": "electric_motor"})
     shaped("shahed_launcher", ["  I", " I ", "BPB"], {"I": I, "B": B, "P": MC + "piston"})
-    shaped("reaper_pad", ["SSS", "CUC", "BBB"], {"S": MC + "smooth_stone", "C": "circuit_board", "U": "guidance_unit", "B": B})
+    shaped("ground_station", ["SSS", "CUC", "BBB"], {"S": MC + "smooth_stone", "C": "circuit_board", "U": "guidance_unit", "B": B})
+    shaped("orlan_catapult", ["  I", " I ", "IPI"], {"I": I, "P": MC + "piston"})
+    shaped("patriot", ["UDU", "MCM", "BBB"], {"U": "guidance_unit", "D": MC + "diamond", "M": "electric_motor", "C": "circuit_board", "B": B})
+    shaped("patriot_missile", [" U ", "IWI", "IEI"], {"U": "guidance_unit", "I": I, "W": "warhead", "E": "rocket_engine"}, 2)
+    shaped("mavic", ["PGP", "MCM", "PBP"], {"P": "propeller", "G": MC + "glass_pane", "M": "electric_motor", "C": "circuit_board", "B": "drone_battery"})
+    shaped("drone_grenade", [" N ", "NGN", " N "], {"N": N, "G": P}, 4)
+    shaped("orlan_10", ["IPI", "IUI", " M "], {"I": I, "P": "propeller", "U": "guidance_unit", "M": "electric_motor"})
+    shaped("bayraktar_tb2", [" U ", "BMB", "DPD"], {"U": "guidance_unit", "B": B, "M": "electric_motor", "D": "drone_battery", "P": "propeller"})
+    shaped("global_hawk", ["DUD", "BEB", "DUD"], {"D": MC + "diamond", "U": "guidance_unit", "B": B, "E": "rocket_engine"})
+    # A fresh battery puts a used Mavic back to full charge.
+    write(f"{D}/recipe/mavic_recharge.json", {
+        "type": "minecraft:crafting_shapeless", "category": "misc",
+        "ingredients": [{"item": f"{MOD}:mavic"}, {"item": f"{MOD}:drone_battery"}],
+        "result": {"id": f"{MOD}:mavic", "count": 1}})
     shaped("pantsir", ["UOU", "MCM", "BBB"], {"U": "guidance_unit", "O": MC + "observer", "M": "electric_motor", "C": "circuit_board", "B": B})
     shaped("jammer", [" A ", "CUC", "BDB"], {"A": MC + "lightning_rod", "C": "circuit_board", "U": "guidance_unit", "B": B, "D": "drone_battery"})
 
@@ -440,7 +499,52 @@ def lang():
         "block.steelrain.himars": "M142 HIMARS",
         "block.steelrain.m109": "M109 Howitzer",
         "block.steelrain.shahed_launcher": "Shahed Launch Rail",
-        "block.steelrain.reaper_pad": "Reaper Ground Station",
+        "block.steelrain.ground_station": "UAV Ground Station",
+        "block.steelrain.orlan_catapult": "Orlan Catapult",
+        "block.steelrain.patriot": "MIM-104 Patriot",
+        "block.steelrain.weapon_part": "Weapon System",
+        "item.steelrain.mavic": "DJI Mavic Recon Drone",
+        "item.steelrain.drone_grenade": "Drone Grenade",
+        "item.steelrain.orlan_10": "Orlan-10",
+        "item.steelrain.bayraktar_tb2": "Bayraktar TB2",
+        "item.steelrain.global_hawk": "RQ-4 Global Hawk",
+        "item.steelrain.patriot_missile": "PAC-2 Interceptor Missile",
+        "entity.steelrain.mavic": "Mavic",
+        "entity.steelrain.drone_grenade": "Drone Grenade",
+        "entity.steelrain.orlan_10": "Orlan-10",
+        "entity.steelrain.bayraktar_tb2": "Bayraktar TB2",
+        "entity.steelrain.global_hawk": "RQ-4 Global Hawk",
+        "entity.steelrain.patriot_missile": "Patriot Interceptor",
+        "entity.steelrain.operator_body": "Drone Operator",
+        "tooltip.steelrain.footprint": "Full size: %s wide, %s high, %s long. Needs clear space",
+        "tooltip.steelrain.mavic": "Reusable recon quadcopter. Pair the goggles, fly, scroll to zoom",
+        "tooltip.steelrain.charge": "Charge: %s s",
+        "message.steelrain.no_space": "Not enough room: needs %s x %s x %s blocks clear (blocked at %s, %s, %s)",
+        "message.steelrain.no_aircraft": "No aircraft loaded",
+        "message.steelrain.runway_ground": "Runway needs %s blocks of flat solid ground: gap at %s, %s, %s",
+        "message.steelrain.runway_blocked": "Runway needs %s clear blocks: obstacle at %s, %s, %s",
+        "message.steelrain.aircraft_jammed": "%s: link jammed, returning to base",
+        "message.steelrain.aircraft_returning": "%s: low on fuel, returning to base",
+        "message.steelrain.aircraft_lost": "%s lost",
+        "message.steelrain.aircraft_landed": "%s has landed",
+        "message.steelrain.not_airborne": "No aircraft in the air",
+        "message.steelrain.recalled": "Aircraft recalled",
+        "message.steelrain.feed_busy": "Already watching a feed",
+        "message.steelrain.feed_unavailable": "Camera feed unavailable",
+        "message.steelrain.feed_attacked": "You are under attack! Feed closed",
+        "message.steelrain.grenade_loaded": "Grenade loaded",
+        "hud.steelrain.zoom": "ZOOM %sx",
+        "hud.steelrain.position": "POS %s, %s",
+        "hud.steelrain.feed_hint": "[%s] or [Sneak] leave   [Scroll] zoom",
+        "hud.steelrain.hint_mavic": "[%s] leave   [Attack] drop grenade   [Jump/Sneak] up/down   [Scroll] zoom",
+        "hud.steelrain.grenade_ready": "GRENADE READY",
+        "hud.steelrain.grenade_none": "NO GRENADE",
+        "gui.steelrain.camera": "CAM",
+        "gui.steelrain.recall": "RTB",
+        "gui.steelrain.retask": "RETASK",
+        "gui.steelrain.airborne": "AIRBORNE",
+        "gui.steelrain.aircraft": "Aircraft",
+        "gui.steelrain.hint_station": "Needs a clear runway in front",
         "block.steelrain.pantsir": "Pantsir-S1",
         "block.steelrain.jammer": "EW Jammer",
         "entity.steelrain.fpv_drone": "FPV Drone",
@@ -470,9 +574,6 @@ def lang():
         "message.steelrain.launched": "Launch! Target %s, %s",
         "message.steelrain.impact": "%s impact at %s, %s, %s",
         "message.steelrain.unknown_weapon": "Unknown weapon",
-        "message.steelrain.reaper_jammed": "Reaper: link jammed, returning to base",
-        "message.steelrain.reaper_lost": "Reaper lost",
-        "message.steelrain.reaper_landed": "Reaper has landed",
         "message.steelrain.fpv_linked": "Drone paired. Right-click the air to fly",
         "message.steelrain.fpv_not_linked": "No drone paired. Right-click a drone first",
         "message.steelrain.fpv_not_found": "Paired drone not found",
@@ -487,7 +588,7 @@ def lang():
         "hud.steelrain.altitude": "ALT %s",
         "hud.steelrain.speed": "SPD %s m/s",
         "hud.steelrain.distance": "DST %s m",
-        "hud.steelrain.hint": "[%s] leave   [Attack] detonate   [Jump/Sneak] up/down",
+        "hud.steelrain.hint": "[%s] leave   [Attack] detonate   [Jump/Sneak] up/down   [Scroll] zoom",
         "gui.steelrain.ammo": "Ammo",
         "gui.steelrain.fuel": "Fuel",
         "gui.steelrain.fuel_amount": "%s / %s mB",

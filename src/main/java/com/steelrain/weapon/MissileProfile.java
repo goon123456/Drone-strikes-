@@ -17,7 +17,7 @@ public record MissileProfile(
         double spread,         // random aiming error in blocks
         boolean smokeTrail) {
 
-    public enum FlightMode { CRUISE, BALLISTIC, DIRECT }
+    public enum FlightMode { CRUISE, BALLISTIC, DIRECT, DROP }
 
     public static final MissileProfile SHAHED = new MissileProfile("shahed_136", FlightMode.CRUISE,
             1.1, 5f, 3, 45f, 9, false, 6f, true, true, 45, 1.5, false);
@@ -31,4 +31,10 @@ public record MissileProfile(
             3.0, 4f, 2, 35f, 7, false, 100f, false, false, 0, 6.0, false);
     public static final MissileProfile HELLFIRE = new MissileProfile("hellfire", FlightMode.DIRECT,
             2.6, 4f, 2, 45f, 6, false, 4f, false, false, 0, 0.5, true);
+    /** Small bomblet released by the Mavic: falls under gravity, no crater. */
+    public static final MissileProfile GRENADE = new MissileProfile("drone_grenade", FlightMode.DROP,
+            0, 2.2f, 0, 26f, 5, false, 100f, false, false, 0, 0, false);
+
+    /** Cruise and ballistic missiles are worth an expensive long-range interceptor. */
+    public boolean highValue() { return this == TOMAHAWK || this == ISKANDER; }
 }

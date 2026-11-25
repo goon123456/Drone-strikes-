@@ -1,8 +1,10 @@
 package com.steelrain.client;
 
 import com.steelrain.ModRegistry;
+import com.steelrain.entity.AircraftEntity;
 import com.steelrain.entity.FpvDroneEntity;
 import com.steelrain.net.Payloads;
+import com.steelrain.weapon.AircraftType;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -14,6 +16,7 @@ import net.minecraft.world.entity.Entity;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.client.event.MovementInputUpdateEvent;
@@ -21,9 +24,13 @@ import net.neoforged.neoforge.client.event.RenderHandEvent;
 import net.neoforged.neoforge.client.event.ViewportEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 
-/** Client half of FPV piloting: camera switch, input capture and the goggles HUD. */
+/**
+ * Client half of every drone camera: hand-flown FPV / Mavic (camera switch and stick input) and the remote
+ * feed of autopilot aircraft (free-look gimbal). Both share the zoom and the goggles HUD.
+ */
 @EventBusSubscriber(modid = ModRegistry.MODID, value = Dist.CLIENT)
 public final class FpvClient {
+    // hand-flown drone
     private static int droneId = -1;
     private static int range = 200;
     private static int maxBattery = 3000;
@@ -33,6 +40,11 @@ public final class FpvClient {
     private static boolean detonate;
     private static float roll;
     private static double speed;
+    // remote feed
+    private static int feedId = -1;
+    private static int feedType;
+    // shared
+    private static float zoom = 1f;
 
     public static boolean piloting() { return droneId >= 0; }
 
@@ -43,6 +55,7 @@ public final class FpvClient {
         waitTicks = 60;
         attached = false;
         detonate = false;
+        zoom = 1f;
     }
 
     static void stopIf(int id) {
@@ -52,8 +65,22 @@ public final class FpvClient {
     private static void stop() {
         droneId = -1;
         attached = false;
+        zoom = 1f;
         Minecraft mc = Minecraft.getInstance();
         if (mc.player != null && mc.getCameraEntity() != mc.player) mc.setCameraEntity(mc.player);
+    }
+
+    static void startFeed(int id, int aircraftType) {
+        feedId = id;
+        feedType = aircraftType;
+        zoom = 1f;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player != null) mc.player.setXRot(50f); // start looking down at the ground
+    }
+
+    static void stopFeed() {
+        feedId = -1;
+        zoom = 1f;
     }
 
     private static FpvDroneEntity drone() {
@@ -63,14 +90,23 @@ public final class FpvClient {
         return e instanceof FpvDroneEntity d && !d.isRemoved() ? d : null;
     }
 
+    private static AircraftEntity feed() {
+        Minecraft mc = Minecraft.getInstance();
+        return feedId >= 0 && mc.getCameraEntity() instanceof AircraftEntity a && a.getId() == feedId ? a : null;
+    }
+
     @SubscribeEvent
     public static void tick(ClientTickEvent.Post event) {
-        if (droneId < 0) return;
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.level == null) {
             droneId = -1;
+            feedId = -1;
             return;
         }
+        boolean exit = false;
+        while (ClientSetup.EXIT_DRONE.consumeClick()) exit = true;
+        if (feedId >= 0 && exit) PacketDistributor.sendToServer(new Payloads.StopFeed());
+        if (droneId < 0) return;
         FpvDroneEntity d = drone();
         if (d == null) {
             // Either it has not been sent to us yet, or it blew up.
@@ -83,8 +119,6 @@ public final class FpvClient {
         PacketDistributor.sendToServer(new Payloads.Control(droneId, forward, strafe, vertical,
                 mc.player.getYRot(), mc.player.getXRot(), detonate));
         detonate = false;
-        boolean exit = false;
-        while (ClientSetup.EXIT_DRONE.consumeClick()) exit = true;
         if (exit) {
             PacketDistributor.sendToServer(new Payloads.StopPilot(droneId));
             stop();
@@ -114,61 +148,126 @@ public final class FpvClient {
         event.setCanceled(true);
     }
 
+    /** Scroll wheel zooms any drone camera. */
+    @SubscribeEvent
+    public static void scroll(InputEvent.MouseScrollingEvent event) {
+        if ((droneId < 0 || !attached) && feed() == null) return;
+        zoom = Mth.clamp(zoom * (event.getScrollDeltaY() > 0 ? 1.3f : 1 / 1.3f), 1f, 12f);
+        event.setCanceled(true);
+    }
+
+    @SubscribeEvent
+    public static void fov(ViewportEvent.ComputeFov event) {
+        if (zoom > 1.01f && ((droneId >= 0 && attached) || feed() != null)) {
+            event.setFOV(event.getFOV() / zoom);
+        }
+    }
+
+    /** From a drone the ground can be further away than the normal fog distance: push the fog back. */
+    @SubscribeEvent
+    public static void fog(ViewportEvent.RenderFog event) {
+        Minecraft mc = Minecraft.getInstance();
+        if (((droneId < 0 || !attached) && feed() == null) || mc.getCameraEntity() == null || mc.level == null) return;
+        float height = (float) (mc.getCameraEntity().getY() - mc.level.getMinBuildHeight());
+        float far = Math.max(event.getFarPlaneDistance(), height * 1.6f + 96f);
+        event.setFarPlaneDistance(far);
+        event.setNearPlaneDistance(far * 0.85f);
+        event.setCanceled(true);
+    }
+
     @SubscribeEvent
     public static void hand(RenderHandEvent event) {
-        if (droneId >= 0 && attached) event.setCanceled(true);
+        if ((droneId >= 0 && attached) || feed() != null) event.setCanceled(true);
     }
 
     @SubscribeEvent
     public static void camera(ViewportEvent.ComputeCameraAngles event) {
         Minecraft mc = Minecraft.getInstance();
-        if (droneId < 0 || !attached || mc.player == null || event.getCamera().isDetached()) return;
+        if (mc.player == null || event.getCamera().isDetached()) return;
+        boolean flying = droneId >= 0 && attached;
+        if (!flying && feed() == null) return;
         float pt = (float) event.getPartialTick();
         // Use the local look direction directly so the view reacts without network delay.
         event.setYaw(mc.player.getViewYRot(pt));
         event.setPitch(mc.player.getViewXRot(pt));
-        roll += (-strafe * 9f - roll) * 0.08f;
-        event.setRoll(roll);
+        if (flying) {
+            FpvDroneEntity d = drone();
+            float lean = d != null && d.mavic() ? 3f : 9f;
+            roll += (-strafe * lean - roll) * 0.08f;
+            event.setRoll(roll);
+        }
+    }
+
+    @SubscribeEvent
+    public static void logout(ClientPlayerNetworkEvent.LoggingOut event) {
+        droneId = -1;
+        feedId = -1;
+        zoom = 1f;
+        ReconClient.clear();
+    }
+
+    private static void frame(GuiGraphics g, int w, int h, int colour) {
+        int m = 12, len = 18;
+        g.fill(m, m, m + len, m + 1, colour); g.fill(m, m, m + 1, m + len, colour);
+        g.fill(w - m - len, m, w - m, m + 1, colour); g.fill(w - m - 1, m, w - m, m + len, colour);
+        g.fill(m, h - m - 1, m + len, h - m, colour); g.fill(m, h - m - len, m + 1, h - m, colour);
+        g.fill(w - m - len, h - m - 1, w - m, h - m, colour); g.fill(w - m - 1, h - m - len, w - m, h - m, colour);
+        int cx = w / 2, cy = h / 2;
+        g.fill(cx - 12, cy, cx - 4, cy + 1, colour); g.fill(cx + 5, cy, cx + 13, cy + 1, colour);
+        g.fill(cx, cy - 12, cx + 1, cy - 4, colour); g.fill(cx, cy + 5, cx + 1, cy + 13, colour);
+    }
+
+    private static void right(GuiGraphics g, Font font, Component text, int w, int y, int colour) {
+        g.drawString(font, text, w - 18 - font.width(text), y, colour, true);
     }
 
     static void renderHud(GuiGraphics g, DeltaTracker delta) {
-        FpvDroneEntity d = drone();
         Minecraft mc = Minecraft.getInstance();
-        if (d == null || !attached || mc.player == null || mc.options.hideGui) return;
+        if (mc.player == null || mc.options.hideGui) return;
         Font font = mc.font;
         int w = g.guiWidth(), h = g.guiHeight();
         int green = 0xFF6CFF6C, red = 0xFFFF5555;
+        boolean blink = (mc.player.tickCount / 5) % 2 == 0;
+        Component zoomText = Component.translatable("hud.steelrain.zoom", String.format("%.1f", zoom));
 
-        // Frame corners and reticle.
-        int m = 12, len = 18;
-        g.fill(m, m, m + len, m + 1, green); g.fill(m, m, m + 1, m + len, green);
-        g.fill(w - m - len, m, w - m, m + 1, green); g.fill(w - m - 1, m, w - m, m + len, green);
-        g.fill(m, h - m - 1, m + len, h - m, green); g.fill(m, h - m - len, m + 1, h - m, green);
-        g.fill(w - m - len, h - m - 1, w - m, h - m, green); g.fill(w - m - 1, h - m - len, w - m, h - m, green);
-        int cx = w / 2, cy = h / 2;
-        g.fill(cx - 12, cy, cx - 4, cy + 1, green); g.fill(cx + 5, cy, cx + 13, cy + 1, green);
-        g.fill(cx, cy - 12, cx + 1, cy - 4, green); g.fill(cx, cy + 5, cx + 1, cy + 13, green);
+        AircraftEntity aircraft = feed();
+        if (aircraft != null) {
+            AircraftType type = AircraftType.values()[Mth.clamp(feedType, 0, AircraftType.values().length - 1)];
+            frame(g, w, h, green);
+            g.drawString(font, Component.translatable(type.translationKey()).append("  ● LIVE"), 18, 18, blink ? red : green, true);
+            g.drawString(font, Component.translatable("hud.steelrain.position",
+                    Mth.floor(aircraft.getX()), Mth.floor(aircraft.getZ())), 18, 30, green, true);
+            right(g, font, Component.translatable("hud.steelrain.altitude", (int) Math.round(aircraft.getY())), w, 18, green);
+            right(g, font, zoomText, w, 30, green);
+            Component hint = Component.translatable("hud.steelrain.feed_hint", ClientSetup.EXIT_DRONE.getTranslatedKeyMessage());
+            g.drawString(font, hint, w / 2 - font.width(hint) / 2, h - 26, 0xFFCCFFCC, true);
+            return;
+        }
 
+        FpvDroneEntity d = drone();
+        if (d == null || !attached) return;
+        frame(g, w, h, green);
         int battery = Mth.clamp(d.battery() * 100 / maxBattery, 0, 100);
         double dist = Math.sqrt(d.distanceToSqr(mc.player));
         int signal = Mth.clamp((int) Math.round(100 * (1 - dist / range)), 0, 100);
-        boolean blink = (mc.player.tickCount / 5) % 2 == 0;
 
-        g.drawString(font, "FPV  ● REC", m + 6, m + 6, blink ? red : green, true);
-        g.drawString(font, Component.translatable("hud.steelrain.battery", battery), m + 6, m + 18,
+        g.drawString(font, (d.mavic() ? "MAVIC" : "FPV") + "  ● REC", 18, 18, blink ? red : green, true);
+        g.drawString(font, Component.translatable("hud.steelrain.battery", battery), 18, 30,
                 battery < 20 ? (blink ? red : 0xFFFFFFFF) : green, true);
-        g.drawString(font, Component.translatable("hud.steelrain.signal", signal), m + 6, m + 30,
+        g.drawString(font, Component.translatable("hud.steelrain.signal", signal), 18, 42,
                 signal < 20 ? (blink ? red : 0xFFFFFFFF) : green, true);
+        if (d.mavic()) {
+            g.drawString(font, Component.translatable(d.hasGrenade() ? "hud.steelrain.grenade_ready" : "hud.steelrain.grenade_none"),
+                    18, 54, d.hasGrenade() ? 0xFFFFD040 : 0xFF88AA88, true);
+        }
+        right(g, font, Component.translatable("hud.steelrain.altitude", (int) Math.round(d.getY())), w, 18, green);
+        right(g, font, Component.translatable("hud.steelrain.speed", String.format("%.1f", speed)), w, 30, green);
+        right(g, font, Component.translatable("hud.steelrain.distance", (int) Math.round(dist)), w, 42, green);
+        right(g, font, zoomText, w, 54, green);
 
-        Component alt = Component.translatable("hud.steelrain.altitude", (int) Math.round(d.getY()));
-        Component spd = Component.translatable("hud.steelrain.speed", String.format("%.1f", speed));
-        Component dst = Component.translatable("hud.steelrain.distance", (int) Math.round(dist));
-        g.drawString(font, alt, w - m - 6 - font.width(alt), m + 6, green, true);
-        g.drawString(font, spd, w - m - 6 - font.width(spd), m + 18, green, true);
-        g.drawString(font, dst, w - m - 6 - font.width(dst), m + 30, green, true);
-
-        Component hint = Component.translatable("hud.steelrain.hint", ClientSetup.EXIT_DRONE.getTranslatedKeyMessage());
-        g.drawString(font, hint, cx - font.width(hint) / 2, h - m - 14, 0xFFCCFFCC, true);
+        Component hint = Component.translatable(d.mavic() ? "hud.steelrain.hint_mavic" : "hud.steelrain.hint",
+                ClientSetup.EXIT_DRONE.getTranslatedKeyMessage());
+        g.drawString(font, hint, w / 2 - font.width(hint) / 2, h - 26, 0xFFCCFFCC, true);
     }
 
     private FpvClient() {}

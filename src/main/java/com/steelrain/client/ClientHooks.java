@@ -19,5 +19,19 @@ public final class ClientHooks {
         }
     }
 
+    public static void onMapTile(Payloads.MapTile p) { ReconClient.tile(p); }
+
+    public static void onMarkers(Payloads.Markers p) { ReconClient.markers(p); }
+
+    public static void onFeed(Payloads.Feed p) {
+        Minecraft mc = Minecraft.getInstance();
+        if (p.start()) {
+            if (mc.screen instanceof LaptopScreen) mc.setScreen(null);
+            FpvClient.startFeed(p.entityId(), p.aircraft());
+        } else {
+            FpvClient.stopFeed();
+        }
+    }
+
     private ClientHooks() {}
 }

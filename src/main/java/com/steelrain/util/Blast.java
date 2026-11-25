@@ -21,18 +21,28 @@ import javax.annotation.Nullable;
 
 /** Warhead effects: crater, vanilla explosion, area damage, smoke and debris. */
 public final class Blast {
+    private static int depth;
+
+    /** True while one of our warheads is tearing up blocks: wrecked weapon systems then drop nothing. */
+    public static boolean destroying() { return depth > 0; }
+
     public static void detonate(ServerLevel level, Vec3 pos, float power, int craterRadius, float damage,
                                 double damageRadius, boolean fire, @Nullable Entity source, @Nullable Entity owner) {
         double scale = Config.EXPLOSION_SCALE.get();
         boolean blocks = Config.BLOCK_DAMAGE.get();
         RandomSource rnd = level.random;
 
-        if (blocks && craterRadius > 0) {
-            carveCrater(level, pos, craterRadius * scale, rnd);
-        }
         float p = (float) Math.min(12.0, power * scale);
-        level.explode(source, pos.x, pos.y, pos.z, p, fire && blocks,
-                blocks ? Level.ExplosionInteraction.TNT : Level.ExplosionInteraction.NONE);
+        depth++;
+        try {
+            if (blocks && craterRadius > 0) {
+                carveCrater(level, pos, craterRadius * scale, rnd);
+            }
+            level.explode(source, pos.x, pos.y, pos.z, p, fire && blocks,
+                    blocks ? Level.ExplosionInteraction.TNT : Level.ExplosionInteraction.NONE);
+        } finally {
+            depth--;
+        }
 
         // Fragmentation: reaches further than the vanilla blast.
         double r = damageRadius;

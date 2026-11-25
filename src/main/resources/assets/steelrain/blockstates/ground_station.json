@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "steelrain:block/ground_station"
+    },
+    "facing=east": {
+      "model": "steelrain:block/ground_station",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "steelrain:block/ground_station",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "steelrain:block/ground_station",
+      "y": 270
+    }
+  }
+}

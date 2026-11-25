@@ -35,12 +35,30 @@ public final class Config {
     public static final ModConfigSpec.IntValue FPV_BATTERY_SECONDS = B
             .comment("Flight time of an FPV drone battery, in seconds.")
             .defineInRange("fpvBatterySeconds", 150, 10, 3600);
+    public static final ModConfigSpec.IntValue MAVIC_BATTERY_SECONDS = B
+            .comment("Flight time of a Mavic recon drone battery, in seconds.")
+            .defineInRange("mavicBatterySeconds", 360, 10, 3600);
     public static final ModConfigSpec.IntValue AIR_DEFENCE_RANGE = B
-            .comment("Detection radius (blocks) of the Pantsir.")
-            .defineInRange("airDefenceRange", 96, 16, 256);
+            .comment("Engagement radius (blocks) of the Pantsir.")
+            .defineInRange("airDefenceRange", 128, 16, 256);
+    public static final ModConfigSpec.IntValue AIR_DEFENCE_CEILING = B
+            .comment("How far above itself (blocks) the Pantsir can reach. The Global Hawk cruises above this; only the Patriot can hit it.")
+            .defineInRange("airDefenceCeiling", 100, 16, 512);
     public static final ModConfigSpec.DoubleValue AIR_DEFENCE_HIT_CHANCE = B
-            .comment("Chance for one interceptor missile to destroy its target.")
+            .comment("Chance for one Pantsir interceptor to destroy its target.")
             .defineInRange("airDefenceHitChance", 0.8, 0.0, 1.0);
+    public static final ModConfigSpec.IntValue PATRIOT_RANGE = B
+            .comment("Engagement radius (blocks) of the Patriot. It only fires at aircraft, cruise and ballistic missiles.")
+            .defineInRange("patriotRange", 400, 32, 1024);
+    public static final ModConfigSpec.DoubleValue PATRIOT_HIT_CHANCE = B
+            .comment("Chance for one Patriot interceptor to destroy its target.")
+            .defineInRange("patriotHitChance", 0.9, 0.0, 1.0);
+    public static final ModConfigSpec.BooleanValue MARK_PLAYERS = B
+            .comment("Recon drones show players on the laptop map. Turn off for PvP servers that want stealth.")
+            .define("reconMarksPlayers", true);
+    public static final ModConfigSpec.DoubleValue SPOTTED_SPREAD = B
+            .comment("Aiming error multiplier for rounds landing in an area one of your recon drones is watching.")
+            .defineInRange("spottedSpreadMultiplier", 0.2, 0.0, 1.0);
     public static final ModConfigSpec.IntValue JAMMER_RANGE = B
             .comment("Radius (blocks) of the EW jammer.")
             .defineInRange("jammerRange", 48, 8, 256);

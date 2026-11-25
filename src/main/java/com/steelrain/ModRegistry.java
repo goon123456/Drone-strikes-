@@ -2,11 +2,16 @@ package com.steelrain;
 
 import com.steelrain.block.WeaponBlock;
 import com.steelrain.block.WeaponBlockEntity;
+import com.steelrain.block.WeaponBlockItem;
+import com.steelrain.block.WeaponPartBlock;
+import com.steelrain.block.WeaponPartBlockEntity;
 import com.steelrain.block.WeaponMenu;
 import com.steelrain.entity.FpvDroneEntity;
 import com.steelrain.entity.InterceptorEntity;
 import com.steelrain.entity.MissileEntity;
-import com.steelrain.entity.ReaperEntity;
+import com.steelrain.entity.AircraftEntity;
+import com.steelrain.entity.OperatorBodyEntity;
+import com.steelrain.weapon.AircraftType;
 import com.steelrain.item.FpvControllerItem;
 import com.steelrain.item.FpvDroneItem;
 import com.steelrain.item.LaptopItem;
@@ -22,7 +27,6 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.inventory.MenuType;
-import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -73,6 +77,13 @@ public final class ModRegistry {
                     .networkSynchronized(UUIDUtil.STREAM_CODEC)
                     .build());
 
+    /** Remaining charge (ticks) of a drone that was picked up. */
+    public static final Supplier<DataComponentType<Integer>> BATTERY = COMPONENTS.register("battery",
+            () -> DataComponentType.<Integer>builder()
+                    .persistent(com.mojang.serialization.Codec.INT)
+                    .networkSynchronized(ByteBufCodecs.VAR_INT)
+                    .build());
+
     // ---- components ----
     public static final DeferredItem<Item> CIRCUIT_BOARD = simple("circuit_board", 64);
     public static final DeferredItem<Item> ELECTRIC_MOTOR = simple("electric_motor", 64);
@@ -92,6 +103,11 @@ public final class ModRegistry {
     public static final DeferredItem<Item> GMLRS_ROCKET = simple("gmlrs_rocket", 12);
     public static final DeferredItem<Item> SHELL_155MM = simple("shell_155mm", 32);
     public static final DeferredItem<Item> PANTSIR_MISSILE = simple("pantsir_missile", 12);
+    public static final DeferredItem<Item> PATRIOT_MISSILE = simple("patriot_missile", 4);
+    public static final DeferredItem<Item> ORLAN_10 = simple("orlan_10", 1);
+    public static final DeferredItem<Item> BAYRAKTAR_TB2 = simple("bayraktar_tb2", 1);
+    public static final DeferredItem<Item> GLOBAL_HAWK = simple("global_hawk", 1);
+    public static final DeferredItem<Item> DRONE_GRENADE = simple("drone_grenade", 16);
 
     // ---- tools ----
     public static final DeferredItem<Item> FIELD_LAPTOP = ITEMS.register("field_laptop",
@@ -99,7 +115,9 @@ public final class ModRegistry {
     public static final DeferredItem<Item> FPV_CONTROLLER = ITEMS.register("fpv_controller",
             () -> new FpvControllerItem(new Item.Properties().stacksTo(1)));
     public static final DeferredItem<Item> FPV_DRONE = ITEMS.register("fpv_drone",
-            () -> new FpvDroneItem(new Item.Properties().stacksTo(16)));
+            () -> new FpvDroneItem(new Item.Properties().stacksTo(16), false));
+    public static final DeferredItem<Item> MAVIC = ITEMS.register("mavic",
+            () -> new FpvDroneItem(new Item.Properties().stacksTo(1), true));
 
     // ---- weapon blocks ----
     public static final Map<WeaponType, DeferredBlock<WeaponBlock>> WEAPON_BLOCKS = new EnumMap<>(WeaponType.class);
@@ -107,11 +125,20 @@ public final class ModRegistry {
         for (WeaponType type : WeaponType.values()) {
             DeferredBlock<WeaponBlock> block = BLOCKS.register(type.id, () -> new WeaponBlock(type,
                     BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GREEN).strength(4f, 12f)
-                            .sound(SoundType.METAL).noOcclusion().requiresCorrectToolForDrops()));
+                            .sound(SoundType.METAL).noOcclusion().requiresCorrectToolForDrops()
+                            .pushReaction(net.minecraft.world.level.material.PushReaction.BLOCK)));
             WEAPON_BLOCKS.put(type, block);
-            ITEMS.register(type.id, () -> new BlockItem(block.get(), new Item.Properties()));
+            ITEMS.register(type.id, () -> new WeaponBlockItem(block.get(), new Item.Properties().stacksTo(1)));
         }
     }
+
+    /** Invisible filler that makes the rest of a full-size weapon solid and clickable. */
+    public static final DeferredBlock<WeaponPartBlock> WEAPON_PART = BLOCKS.register("weapon_part",
+            () -> new WeaponPartBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GREEN).strength(4f, 12f)
+                    .sound(SoundType.METAL).noOcclusion().noLootTable()
+                    .pushReaction(net.minecraft.world.level.material.PushReaction.BLOCK)));
+    public static final Supplier<BlockEntityType<WeaponPartBlockEntity>> WEAPON_PART_BE = BLOCK_ENTITIES.register("weapon_part",
+            () -> BlockEntityType.Builder.of(WeaponPartBlockEntity::new, WEAPON_PART.get()).build(null));
 
     public static final Supplier<BlockEntityType<WeaponBlockEntity>> WEAPON_BE = BLOCK_ENTITIES.register("weapon",
             () -> BlockEntityType.Builder.of(WeaponBlockEntity::new,
@@ -130,15 +157,34 @@ public final class ModRegistry {
     public static final DeferredHolder<EntityType<?>, EntityType<MissileEntity>> SHELL = missile(MissileProfile.SHELL, 0.4f, 0.4f);
     public static final DeferredHolder<EntityType<?>, EntityType<MissileEntity>> HELLFIRE = missile(MissileProfile.HELLFIRE, 0.4f, 0.4f);
 
-    public static final DeferredHolder<EntityType<?>, EntityType<ReaperEntity>> REAPER = ENTITIES.register("mq9_reaper",
-            () -> EntityType.Builder.<ReaperEntity>of(ReaperEntity::new, MobCategory.MISC)
-                    .sized(2.0f, 1.0f).clientTrackingRange(20).updateInterval(1).build("mq9_reaper"));
+    public static final DeferredHolder<EntityType<?>, EntityType<MissileEntity>> GRENADE = missile(MissileProfile.GRENADE, 0.25f, 0.25f);
+
+    public static final Map<AircraftType, DeferredHolder<EntityType<?>, EntityType<AircraftEntity>>> AIRCRAFT = new EnumMap<>(AircraftType.class);
+    static {
+        for (AircraftType type : AircraftType.values()) {
+            float w = (float) Math.max(1.0, Math.min(6.0, type.span * 0.3));
+            float h = (float) Math.max(0.6, type.gear + 0.6);
+            AIRCRAFT.put(type, ENTITIES.register(type.id, () -> EntityType.Builder.<AircraftEntity>of(AircraftEntity::new, MobCategory.MISC)
+                    .sized(w, h).clientTrackingRange(24).updateInterval(1).build(type.id)));
+        }
+    }
+
     public static final DeferredHolder<EntityType<?>, EntityType<InterceptorEntity>> INTERCEPTOR = ENTITIES.register("pantsir_missile",
             () -> EntityType.Builder.<InterceptorEntity>of(InterceptorEntity::new, MobCategory.MISC)
                     .sized(0.4f, 0.4f).clientTrackingRange(20).updateInterval(1).build("pantsir_missile"));
+    public static final DeferredHolder<EntityType<?>, EntityType<InterceptorEntity>> PATRIOT_INTERCEPTOR = ENTITIES.register("patriot_missile",
+            () -> EntityType.Builder.<InterceptorEntity>of(InterceptorEntity::new, MobCategory.MISC)
+                    .sized(0.6f, 0.6f).clientTrackingRange(24).updateInterval(1).build("patriot_missile"));
     public static final DeferredHolder<EntityType<?>, EntityType<FpvDroneEntity>> FPV = ENTITIES.register("fpv_drone",
             () -> EntityType.Builder.<FpvDroneEntity>of(FpvDroneEntity::new, MobCategory.MISC)
-                    .sized(0.7f, 0.35f).eyeHeight(0.2f).clientTrackingRange(20).updateInterval(1).build("fpv_drone"));
+                    .sized(0.5f, 0.25f).eyeHeight(0.12f).clientTrackingRange(24).updateInterval(1).build("fpv_drone"));
+    public static final DeferredHolder<EntityType<?>, EntityType<FpvDroneEntity>> MAVIC_ENTITY = ENTITIES.register("mavic",
+            () -> EntityType.Builder.<FpvDroneEntity>of(FpvDroneEntity::new, MobCategory.MISC)
+                    .sized(0.45f, 0.2f).eyeHeight(0.05f).clientTrackingRange(24).updateInterval(1).build("mavic"));
+    /** Stand-in left where a player was standing while they watch a remote drone feed. */
+    public static final DeferredHolder<EntityType<?>, EntityType<OperatorBodyEntity>> OPERATOR_BODY = ENTITIES.register("operator_body",
+            () -> EntityType.Builder.<OperatorBodyEntity>of(OperatorBodyEntity::new, MobCategory.MISC)
+                    .sized(0.6f, 1.8f).clientTrackingRange(10).noSave().build("operator_body"));
 
     public static final Supplier<CreativeModeTab> TAB = TABS.register("main", () -> CreativeModeTab.builder()
             .title(Component.translatable("itemGroup.steelrain"))
@@ -167,6 +213,7 @@ public final class ModRegistry {
         if (profile == MissileProfile.ISKANDER) return ISKANDER.get();
         if (profile == MissileProfile.GMLRS) return GMLRS.get();
         if (profile == MissileProfile.HELLFIRE) return HELLFIRE.get();
+        if (profile == MissileProfile.GRENADE) return GRENADE.get();
         return SHELL.get();
     }
 

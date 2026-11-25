@@ -52,9 +52,7 @@ public class WeaponMenu extends AbstractContainerMenu {
         addDataSlots(data);
     }
 
-    public static boolean usesFuel(WeaponType type) {
-        return type.fuelPerShot > 0 || type.kind == WeaponType.Kind.JAMMER;
-    }
+    public static boolean usesFuel(WeaponType type) { return type.usesFuel(); }
 
     public int fuel() { return data.get(0); }
     public int busy() { return data.get(1); }
@@ -77,6 +75,6 @@ public class WeaponMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        return !be.isRemoved() && player.distanceToSqr(be.getBlockPos().getCenter()) < 64;
+        return !be.isRemoved() && player.distanceToSqr(be.getBlockPos().getCenter()) < 28 * 28;
     }
 }

@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " U ",
+    "IWI",
+    "IEI"
+  ],
+  "key": {
+    "U": {
+      "item": "steelrain:guidance_unit"
+    },
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "W": {
+      "item": "steelrain:warhead"
+    },
+    "E": {
+      "item": "steelrain:rocket_engine"
+    }
+  },
+  "result": {
+    "id": "steelrain:patriot_missile",
+    "count": 2
+  }
+}

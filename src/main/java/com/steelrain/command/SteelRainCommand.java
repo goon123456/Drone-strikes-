@@ -4,7 +4,13 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.steelrain.ModRegistry;
+import com.steelrain.block.WeaponBlock;
+import com.steelrain.block.WeaponBlockEntity;
 import com.steelrain.entity.MissileEntity;
+import com.steelrain.weapon.WeaponType;
+import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerLevel;
 import com.steelrain.weapon.MissileProfile;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -18,7 +24,7 @@ import net.minecraft.world.phys.Vec3;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/** /steelrain launch <weapon> <from> <target> - operator tool for testing and map making. */
+/** Operator tools for testing and map making: /steelrain launch ... and /steelrain place ... */
 public final class SteelRainCommand {
     private static final Map<String, MissileProfile> WEAPONS = new LinkedHashMap<>();
     static {
@@ -35,7 +41,43 @@ public final class SteelRainCommand {
                                 .suggests((c, b) -> SharedSuggestionProvider.suggest(WEAPONS.keySet(), b))
                                 .then(Commands.argument("from", BlockPosArgument.blockPos())
                                         .then(Commands.argument("target", BlockPosArgument.blockPos())
-                                                .executes(SteelRainCommand::launch))))));
+                                                .executes(SteelRainCommand::launch)))))
+                .then(Commands.literal("place")
+                        .then(Commands.argument("system", StringArgumentType.word())
+                                .suggests((c, b) -> SharedSuggestionProvider.suggest(
+                                        java.util.Arrays.stream(WeaponType.values()).map(t -> t.id), b))
+                                .then(Commands.argument("pos", BlockPosArgument.blockPos())
+                                        .then(Commands.argument("facing", StringArgumentType.word())
+                                                .suggests((c, b) -> SharedSuggestionProvider.suggest(
+                                                        java.util.List.of("north", "south", "east", "west"), b))
+                                                .executes(SteelRainCommand::place))))));
+    }
+
+    /** /steelrain place <system> <pos> <facing> - puts down a complete full-size weapon system. */
+    private static int place(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        String id = StringArgumentType.getString(ctx, "system");
+        WeaponType type = java.util.Arrays.stream(WeaponType.values()).filter(t -> t.id.equals(id)).findFirst().orElse(null);
+        Direction facing = Direction.byName(StringArgumentType.getString(ctx, "facing"));
+        if (type == null || facing == null || facing.getAxis().isVertical()) {
+            ctx.getSource().sendFailure(Component.translatable("message.steelrain.unknown_weapon"));
+            return 0;
+        }
+        BlockPos pos = BlockPosArgument.getBlockPos(ctx, "pos");
+        ServerLevel level = ctx.getSource().getLevel();
+        BlockPos blocked = level.getBlockState(pos).canBeReplaced() ? WeaponBlock.obstruction(level, pos, facing, type) : pos;
+        if (blocked != null) {
+            ctx.getSource().sendFailure(Component.translatable("message.steelrain.no_space",
+                    type.width, type.height, type.length, blocked.getX(), blocked.getY(), blocked.getZ()));
+            return 0;
+        }
+        level.setBlock(pos, ModRegistry.WEAPON_BLOCKS.get(type).get().defaultBlockState().setValue(WeaponBlock.FACING, facing), 3);
+        WeaponBlock.placeParts(level, pos, facing, type);
+        ServerPlayer player = ctx.getSource().getPlayer();
+        if (player != null && level.getBlockEntity(pos) instanceof WeaponBlockEntity be) {
+            be.setOwner(player.getUUID(), player.getGameProfile().getName());
+        }
+        ctx.getSource().sendSuccess(() -> Component.translatable(type.translationKey()), true);
+        return 1;
     }
 
     private static int launch(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {

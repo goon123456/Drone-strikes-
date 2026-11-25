@@ -45,7 +45,7 @@ public class WeaponScreen extends AbstractContainerScreen<WeaponMenu> {
         g.drawString(font, title, 8, 6, 0x303828, false);
         g.drawString(font, playerInventoryTitle, 8, imageHeight - 94, 0x404040, false);
         if (type.primaryAmmo() != null) {
-            g.drawString(font, Component.translatable("gui.steelrain.ammo"), 44, 24, 0x404040, false);
+            g.drawString(font, Component.translatable(type.launchesAircraft() ? "gui.steelrain.aircraft" : "gui.steelrain.ammo"), 44, 24, 0x404040, false);
         }
         if (WeaponMenu.usesFuel(type)) {
             g.drawString(font, Component.translatable("gui.steelrain.fuel"), 112, 24, 0x404040, false);
@@ -55,7 +55,7 @@ public class WeaponScreen extends AbstractContainerScreen<WeaponMenu> {
                 : Component.translatable("gui.steelrain.ready");
         g.drawString(font, status, 8, 60, menu.busy() > 0 ? 0xA03020 : 0x207020, false);
         Component hint = Component.translatable(switch (type.kind) {
-            case LAUNCHER -> "gui.steelrain.hint_launcher";
+            case LAUNCHER -> type == WeaponType.GROUND_STATION ? "gui.steelrain.hint_station" : "gui.steelrain.hint_launcher";
             case AIR_DEFENCE -> "gui.steelrain.hint_air_defence";
             case JAMMER -> "gui.steelrain.hint_jammer";
         });

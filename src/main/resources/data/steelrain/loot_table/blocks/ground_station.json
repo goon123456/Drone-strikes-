@@ -6,7 +6,7 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "steelrain:reaper_pad"
+          "name": "steelrain:ground_station"
         }
       ],
       "conditions": [

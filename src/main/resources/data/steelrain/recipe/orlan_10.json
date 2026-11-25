@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "IPI",
+    "IUI",
+    " M "
+  ],
+  "key": {
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "P": {
+      "item": "steelrain:propeller"
+    },
+    "U": {
+      "item": "steelrain:guidance_unit"
+    },
+    "M": {
+      "item": "steelrain:electric_motor"
+    }
+  },
+  "result": {
+    "id": "steelrain:orlan_10",
+    "count": 1
+  }
+}

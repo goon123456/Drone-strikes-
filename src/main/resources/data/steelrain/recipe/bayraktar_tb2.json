@@ -2,26 +2,29 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "pattern": [
-    "SSS",
-    "CUC",
-    "BBB"
+    " U ",
+    "BMB",
+    "DPD"
   ],
   "key": {
-    "S": {
-      "item": "minecraft:smooth_stone"
-    },
-    "C": {
-      "item": "steelrain:circuit_board"
-    },
     "U": {
       "item": "steelrain:guidance_unit"
     },
     "B": {
       "item": "minecraft:iron_block"
+    },
+    "M": {
+      "item": "steelrain:electric_motor"
+    },
+    "D": {
+      "item": "steelrain:drone_battery"
+    },
+    "P": {
+      "item": "steelrain:propeller"
     }
   },
   "result": {
-    "id": "steelrain:reaper_pad",
+    "id": "steelrain:bayraktar_tb2",
     "count": 1
   }
 }

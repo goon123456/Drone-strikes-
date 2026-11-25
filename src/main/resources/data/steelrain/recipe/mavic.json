@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "PGP",
+    "MCM",
+    "PBP"
+  ],
+  "key": {
+    "P": {
+      "item": "steelrain:propeller"
+    },
+    "G": {
+      "item": "minecraft:glass_pane"
+    },
+    "M": {
+      "item": "steelrain:electric_motor"
+    },
+    "C": {
+      "item": "steelrain:circuit_board"
+    },
+    "B": {
+      "item": "steelrain:drone_battery"
+    }
+  },
+  "result": {
+    "id": "steelrain:mavic",
+    "count": 1
+  }
+}

@@ -6,7 +6,9 @@
     "steelrain:tomahawk_launcher",
     "steelrain:iskander_launcher",
     "steelrain:shahed_launcher",
-    "steelrain:reaper_pad",
+    "steelrain:ground_station",
+    "steelrain:orlan_catapult",
+    "steelrain:patriot",
     "steelrain:pantsir",
     "steelrain:jammer"
   ]

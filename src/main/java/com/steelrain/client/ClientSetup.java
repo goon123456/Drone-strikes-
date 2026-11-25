@@ -2,6 +2,7 @@ package com.steelrain.client;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import com.steelrain.ModRegistry;
+import com.steelrain.weapon.AircraftType;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
@@ -19,29 +20,24 @@ public final class ClientSetup {
             InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_X, "key.categories.steelrain");
 
     @SubscribeEvent
-    public static void layers(EntityRenderersEvent.RegisterLayerDefinitions e) {
-        e.registerLayerDefinition(Models.FPV, Models::fpv);
-        e.registerLayerDefinition(Models.SHAHED, Models::shahed);
-        e.registerLayerDefinition(Models.REAPER, Models::reaper);
-        e.registerLayerDefinition(Models.TOMAHAWK, Models::tomahawk);
-        e.registerLayerDefinition(Models.ISKANDER, Models::iskander);
-        e.registerLayerDefinition(Models.GMLRS, Models::gmlrs);
-        e.registerLayerDefinition(Models.SHELL, Models::shell);
-        e.registerLayerDefinition(Models.HELLFIRE, Models::hellfire);
-        e.registerLayerDefinition(Models.INTERCEPTOR, Models::interceptor);
-    }
-
-    @SubscribeEvent
     public static void renderers(EntityRenderersEvent.RegisterRenderers e) {
-        e.registerEntityRenderer(ModRegistry.FPV.get(), c -> new SimpleRenderer<>(c, Models.FPV, "fpv_drone", 1.2f, 0.25f));
-        e.registerEntityRenderer(ModRegistry.SHAHED.get(), c -> new SimpleRenderer<>(c, Models.SHAHED, "shahed_136", 1.6f, 1f));
-        e.registerEntityRenderer(ModRegistry.REAPER.get(), c -> new SimpleRenderer<>(c, Models.REAPER, "mq9_reaper", 2.5f, 1f));
-        e.registerEntityRenderer(ModRegistry.TOMAHAWK.get(), c -> new SimpleRenderer<>(c, Models.TOMAHAWK, "tomahawk", 1.8f, 1f));
-        e.registerEntityRenderer(ModRegistry.ISKANDER.get(), c -> new SimpleRenderer<>(c, Models.ISKANDER, "iskander", 2f, 1f));
-        e.registerEntityRenderer(ModRegistry.GMLRS.get(), c -> new SimpleRenderer<>(c, Models.GMLRS, "gmlrs", 1.8f, 1f));
-        e.registerEntityRenderer(ModRegistry.SHELL.get(), c -> new SimpleRenderer<>(c, Models.SHELL, "shell_155mm", 1.5f, 1f));
-        e.registerEntityRenderer(ModRegistry.HELLFIRE.get(), c -> new SimpleRenderer<>(c, Models.HELLFIRE, "hellfire", 1.5f, 1f));
-        e.registerEntityRenderer(ModRegistry.INTERCEPTOR.get(), c -> new SimpleRenderer<>(c, Models.INTERCEPTOR, "pantsir_missile", 1.8f, 1f));
+        e.registerEntityRenderer(ModRegistry.FPV.get(), c -> new EntityModelRenderer<>(c, Models.FPV, 0.14f, 0.25f));
+        e.registerEntityRenderer(ModRegistry.MAVIC_ENTITY.get(), c -> new EntityModelRenderer<>(c, Models.MAVIC, 0.12f, 0f));
+        e.registerEntityRenderer(ModRegistry.SHAHED.get(), c -> new EntityModelRenderer<>(c, Models.SHAHED, 0.3f, 1f));
+        e.registerEntityRenderer(ModRegistry.TOMAHAWK.get(), c -> new EntityModelRenderer<>(c, Models.TOMAHAWK, 0.4f, 1f));
+        e.registerEntityRenderer(ModRegistry.ISKANDER.get(), c -> new EntityModelRenderer<>(c, Models.ISKANDER, 0.5f, 1f));
+        e.registerEntityRenderer(ModRegistry.GMLRS.get(), c -> new EntityModelRenderer<>(c, Models.GMLRS, 0.25f, 1f));
+        e.registerEntityRenderer(ModRegistry.SHELL.get(), c -> new EntityModelRenderer<>(c, Models.SHELL, 0.2f, 1f));
+        e.registerEntityRenderer(ModRegistry.HELLFIRE.get(), c -> new EntityModelRenderer<>(c, Models.HELLFIRE, 0.2f, 1f));
+        e.registerEntityRenderer(ModRegistry.GRENADE.get(), c -> new EntityModelRenderer<>(c, Models.GRENADE, 0.12f, 1f));
+        e.registerEntityRenderer(ModRegistry.INTERCEPTOR.get(), c -> new EntityModelRenderer<>(c, Models.PANTSIR_MISSILE, 0.2f, 1f));
+        e.registerEntityRenderer(ModRegistry.PATRIOT_INTERCEPTOR.get(), c -> new EntityModelRenderer<>(c, Models.PATRIOT_MISSILE, 0.3f, 1f));
+        for (AircraftType type : AircraftType.values()) {
+            e.registerEntityRenderer(ModRegistry.AIRCRAFT.get(type).get(),
+                    c -> new EntityModelRenderer<>(c, Models.aircraft(type), (float) type.gear, 1f));
+        }
+        e.registerEntityRenderer(ModRegistry.OPERATOR_BODY.get(), OperatorBodyRenderer::new);
+        e.registerBlockEntityRenderer(ModRegistry.WEAPON_BE.get(), c -> new WeaponRenderer());
     }
 
     @SubscribeEvent

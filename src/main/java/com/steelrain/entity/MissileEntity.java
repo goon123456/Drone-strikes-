@@ -1,6 +1,8 @@
 package com.steelrain.entity;
 
+import com.steelrain.Config;
 import com.steelrain.ModRegistry;
+import com.steelrain.util.Recon;
 import com.steelrain.util.Blast;
 import com.steelrain.weapon.MissileProfile;
 import net.minecraft.core.particles.ParticleTypes;
@@ -43,13 +45,38 @@ public class MissileEntity extends FlyingWeaponEntity {
     /** Creates, aims and spawns a munition. */
     public static MissileEntity launch(ServerLevel level, MissileProfile profile, Vec3 from, double tx, double tz,
                                        @Nullable UUID owner, @Nullable String ownerName, boolean announce) {
+        return launch(level, profile, from, tx, tz, owner, ownerName, announce, null);
+    }
+
+    /** Releases an unguided bomblet that keeps the carrier's velocity and falls. */
+    public static MissileEntity drop(ServerLevel level, MissileProfile profile, Vec3 from, Vec3 velocity,
+                                     @Nullable UUID owner, @Nullable String ownerName) {
+        MissileEntity m = new MissileEntity(ModRegistry.typeOf(profile), level);
+        m.setOwner(owner, ownerName);
+        m.announce = false;
+        m.launched = true;
+        m.start = from;
+        m.dir = velocity;
+        m.setPos(from);
+        level.addFreshEntity(m);
+        return m;
+    }
+
+    /** @param initialDir direction the round leaves the launcher in, or null for the default. */
+    public static MissileEntity launch(ServerLevel level, MissileProfile profile, Vec3 from, double tx, double tz,
+                                       @Nullable UUID owner, @Nullable String ownerName, boolean announce,
+                                       @Nullable Vec3 initialDir) {
+        double spread = profile.spread();
+        if (spread > 0 && Recon.observed(level, tx, tz, owner, ownerName)) {
+            spread *= Config.SPOTTED_SPREAD.get(); // a friendly recon drone is correcting fire
+        }
         MissileEntity m = new MissileEntity(ModRegistry.typeOf(profile), level);
         m.setOwner(owner, ownerName);
         m.announce = announce;
         m.launched = true;
         m.start = from;
-        m.targetX = tx + level.random.nextGaussian() * profile.spread();
-        m.targetZ = tz + level.random.nextGaussian() * profile.spread();
+        m.targetX = tx + level.random.nextGaussian() * spread;
+        m.targetZ = tz + level.random.nextGaussian() * spread;
         double dx = m.targetX - from.x, dz = m.targetZ - from.z;
         double dist = Math.sqrt(dx * dx + dz * dz);
         Vec3 flat = dist < 1e-3 ? new Vec3(0, 0, 1) : new Vec3(dx / dist, 0, dz / dist);
@@ -62,8 +89,10 @@ public class MissileEntity extends FlyingWeaponEntity {
                 m.targetY = m.groundAt(m.targetX, m.targetZ);
                 m.dir = flat.add(0, 1, 0).normalize();
             }
-            case CRUISE -> m.dir = profile == MissileProfile.TOMAHAWK ? new Vec3(0, 1, 0) : flat.add(0, 0.6, 0).normalize();
+            case CRUISE -> m.dir = initialDir != null ? initialDir
+                    : profile == MissileProfile.TOMAHAWK ? new Vec3(0, 1, 0) : flat.add(0, 0.6, 0).normalize();
             case DIRECT -> m.dir = flat.add(0, -0.3, 0).normalize();
+            case DROP -> m.dir = Vec3.ZERO;
         }
         m.setPos(from);
         m.faceAlong(m.dir);
@@ -74,6 +103,7 @@ public class MissileEntity extends FlyingWeaponEntity {
     }
 
     @Override public boolean interceptable() { return profile.interceptable(); }
+    @Override public boolean highValue() { return profile.highValue(); }
     @Override public boolean jammable() { return profile.jammable() && !jammed; }
 
     @Override
@@ -100,6 +130,10 @@ public class MissileEntity extends FlyingWeaponEntity {
             case BALLISTIC -> ballisticStep(pos);
             case CRUISE -> cruiseStep(pos);
             case DIRECT -> directStep(pos);
+            case DROP -> {
+                dir = dir.scale(0.99).add(0, -0.06, 0);
+                yield pos.add(dir);
+            }
         };
         Vec3 move = next.subtract(pos);
         if (!keepChunksLoaded(level, next, move)) {

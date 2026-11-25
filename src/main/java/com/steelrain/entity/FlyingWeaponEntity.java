@@ -63,6 +63,18 @@ public abstract class FlyingWeaponEntity extends Entity {
     /** Whether air defence should shoot at this. */
     public boolean interceptable() { return true; }
 
+    /** Worth a long-range interceptor (aircraft, cruise and ballistic missiles). */
+    public boolean highValue() { return false; }
+
+    /** Rough radius of the model, so it is not culled while its small hit box is off screen. */
+    protected double modelRadius() { return 3; }
+
+    @Override
+    public net.minecraft.world.phys.AABB getBoundingBoxForCulling() { return getBoundingBox().inflate(modelRadius()); }
+
+    /** Progress of this entity's recon sweep over the chunks below it. */
+    public int scanIndex;
+
     /** Whether jammers affect this. */
     public boolean jammable() { return false; }
 
@@ -119,6 +131,13 @@ public abstract class FlyingWeaponEntity extends Entity {
         level.getChunkSource().addRegionTicket(FLIGHT_TICKET, pos, 2, pos);
     }
 
+    /** Loads (without ticking) everything within {@code chunks} of this entity, for wide-area sensors. */
+    protected void loadAround(ServerLevel level, int chunks) {
+        if (!Config.CHUNK_LOADING.get()) return;
+        ChunkPos pos = new ChunkPos(Mth.floor(getX()) >> 4, Mth.floor(getZ()) >> 4);
+        level.getChunkSource().addRegionTicket(FLIGHT_TICKET, pos, Math.max(2, chunks), pos);
+    }
+
     public static void preload(ServerLevel level, double x, double z) {
         if (!Config.CHUNK_LOADING.get()) return;
         ChunkPos pos = new ChunkPos(Mth.floor(x) >> 4, Mth.floor(z) >> 4);
@@ -144,7 +163,12 @@ public abstract class FlyingWeaponEntity extends Entity {
         double h = Math.sqrt(dx * dx + dz * dz);
         if (h < 1e-4) return dir;
         double look = Math.max(16, speed * 25);
-        double g = Math.max(groundAt(getX(), getZ()), groundAt(getX() + dx / h * look, getZ() + dz / h * look));
+        // Look well ahead too, so a mountain range is climbed over in good time rather than flown into.
+        double g = groundAt(getX(), getZ());
+        for (double ahead : new double[]{look, look * 2.5, look * 5}) {
+            double a = Math.min(ahead, h);
+            g = Math.max(g, groundAt(getX() + dx / h * a, getZ() + dz / h * a));
+        }
         double climb = Mth.clamp((g + altitude - getY()) / look, -0.5, 0.9);
         return new Vec3(dx / h, climb, dz / h).normalize();
     }
@@ -190,7 +214,7 @@ public abstract class FlyingWeaponEntity extends Entity {
     }
 
     @Override
-    public boolean shouldRenderAtSqrDistance(double distance) { return distance < 320.0 * 320.0; }
+    public boolean shouldRenderAtSqrDistance(double distance) { return distance < 400.0 * 400.0; }
 
     @Override
     protected void readAdditionalSaveData(CompoundTag tag) {

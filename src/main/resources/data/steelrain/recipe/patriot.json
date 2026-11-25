@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "UDU",
+    "MCM",
+    "BBB"
+  ],
+  "key": {
+    "U": {
+      "item": "steelrain:guidance_unit"
+    },
+    "D": {
+      "item": "minecraft:diamond"
+    },
+    "M": {
+      "item": "steelrain:electric_motor"
+    },
+    "C": {
+      "item": "steelrain:circuit_board"
+    },
+    "B": {
+      "item": "minecraft:iron_block"
+    }
+  },
+  "result": {
+    "id": "steelrain:patriot",
+    "count": 1
+  }
+}
