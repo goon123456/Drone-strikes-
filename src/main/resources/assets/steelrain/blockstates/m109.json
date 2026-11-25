@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "steelrain:block/m109"
+    },
+    "facing=east": {
+      "model": "steelrain:block/m109",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "steelrain:block/m109",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "steelrain:block/m109",
+      "y": 270
+    }
+  }
+}

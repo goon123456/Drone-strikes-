@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "WWW",
+    "BUB",
+    "EBE"
+  ],
+  "key": {
+    "W": {
+      "item": "steelrain:warhead"
+    },
+    "B": {
+      "item": "minecraft:iron_block"
+    },
+    "U": {
+      "item": "steelrain:guidance_unit"
+    },
+    "E": {
+      "item": "steelrain:rocket_engine"
+    }
+  },
+  "result": {
+    "id": "steelrain:iskander_missile",
+    "count": 1
+  }
+}

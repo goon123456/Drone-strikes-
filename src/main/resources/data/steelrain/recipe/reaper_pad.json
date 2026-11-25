@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "SSS",
+    "CUC",
+    "BBB"
+  ],
+  "key": {
+    "S": {
+      "item": "minecraft:smooth_stone"
+    },
+    "C": {
+      "item": "steelrain:circuit_board"
+    },
+    "U": {
+      "item": "steelrain:guidance_unit"
+    },
+    "B": {
+      "item": "minecraft:iron_block"
+    }
+  },
+  "result": {
+    "id": "steelrain:reaper_pad",
+    "count": 1
+  }
+}

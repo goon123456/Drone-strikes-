@@ -1,0 +1,69 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "#c:diesel",
+      "required": false
+    },
+    {
+      "id": "#c:gasoline",
+      "required": false
+    },
+    {
+      "id": "#c:biodiesel",
+      "required": false
+    },
+    {
+      "id": "#c:kerosene",
+      "required": false
+    },
+    {
+      "id": "#c:fuel",
+      "required": false
+    },
+    {
+      "id": "createdieselgenerators:diesel",
+      "required": false
+    },
+    {
+      "id": "createdieselgenerators:gasoline",
+      "required": false
+    },
+    {
+      "id": "createdieselgenerators:biodiesel",
+      "required": false
+    },
+    {
+      "id": "tfmg:diesel",
+      "required": false
+    },
+    {
+      "id": "tfmg:gasoline",
+      "required": false
+    },
+    {
+      "id": "tfmg:kerosene",
+      "required": false
+    },
+    {
+      "id": "mekanismgenerators:bioethanol",
+      "required": false
+    },
+    {
+      "id": "immersiveengineering:biodiesel",
+      "required": false
+    },
+    {
+      "id": "pneumaticcraft:diesel",
+      "required": false
+    },
+    {
+      "id": "pneumaticcraft:kerosene",
+      "required": false
+    },
+    {
+      "id": "pneumaticcraft:gasoline",
+      "required": false
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "W",
+    "U",
+    "E"
+  ],
+  "key": {
+    "W": {
+      "item": "steelrain:warhead"
+    },
+    "U": {
+      "item": "steelrain:circuit_board"
+    },
+    "E": {
+      "item": "steelrain:rocket_engine"
+    }
+  },
+  "result": {
+    "id": "steelrain:hellfire_missile",
+    "count": 2
+  }
+}

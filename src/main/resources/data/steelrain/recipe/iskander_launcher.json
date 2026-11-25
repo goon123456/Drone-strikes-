@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "IPI",
+    "BCB",
+    "BMB"
+  ],
+  "key": {
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "P": {
+      "item": "minecraft:piston"
+    },
+    "B": {
+      "item": "minecraft:iron_block"
+    },
+    "C": {
+      "item": "steelrain:circuit_board"
+    },
+    "M": {
+      "item": "steelrain:electric_motor"
+    }
+  },
+  "result": {
+    "id": "steelrain:iskander_launcher",
+    "count": 1
+  }
+}

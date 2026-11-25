@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " W ",
+    "IUI",
+    "IMP"
+  ],
+  "key": {
+    "W": {
+      "item": "steelrain:warhead"
+    },
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "U": {
+      "item": "steelrain:guidance_unit"
+    },
+    "M": {
+      "item": "steelrain:electric_motor"
+    },
+    "P": {
+      "item": "steelrain:propeller"
+    }
+  },
+  "result": {
+    "id": "steelrain:shahed_136",
+    "count": 1
+  }
+}

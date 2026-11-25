@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "steelrain:block/himars"
+    },
+    "facing=east": {
+      "model": "steelrain:block/himars",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "steelrain:block/himars",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "steelrain:block/himars",
+      "y": 270
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " W ",
+    "IUI",
+    "IEI"
+  ],
+  "key": {
+    "W": {
+      "item": "steelrain:warhead"
+    },
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "U": {
+      "item": "steelrain:guidance_unit"
+    },
+    "E": {
+      "item": "steelrain:rocket_engine"
+    }
+  },
+  "result": {
+    "id": "steelrain:tomahawk_missile",
+    "count": 1
+  }
+}

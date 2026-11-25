@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "PMP",
+    "BCW",
+    "PMP"
+  ],
+  "key": {
+    "P": {
+      "item": "steelrain:propeller"
+    },
+    "M": {
+      "item": "steelrain:electric_motor"
+    },
+    "B": {
+      "item": "steelrain:drone_battery"
+    },
+    "C": {
+      "item": "steelrain:circuit_board"
+    },
+    "W": {
+      "item": "minecraft:tnt"
+    }
+  },
+  "result": {
+    "id": "steelrain:fpv_drone",
+    "count": 1
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "IUI",
+    "BMB",
+    "IPI"
+  ],
+  "key": {
+    "I": {
+      "item": "minecraft:iron_block"
+    },
+    "U": {
+      "item": "steelrain:guidance_unit"
+    },
+    "B": {
+      "item": "steelrain:drone_battery"
+    },
+    "M": {
+      "item": "steelrain:electric_motor"
+    },
+    "P": {
+      "item": "steelrain:propeller"
+    }
+  },
+  "result": {
+    "id": "steelrain:mq9_reaper",
+    "count": 1
+  }
+}

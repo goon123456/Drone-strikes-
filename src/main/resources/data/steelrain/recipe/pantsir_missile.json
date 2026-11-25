@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " C ",
+    "IPI",
+    "IEI"
+  ],
+  "key": {
+    "C": {
+      "item": "steelrain:circuit_board"
+    },
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "P": {
+      "item": "minecraft:gunpowder"
+    },
+    "E": {
+      "item": "steelrain:rocket_engine"
+    }
+  },
+  "result": {
+    "id": "steelrain:pantsir_missile",
+    "count": 4
+  }
+}

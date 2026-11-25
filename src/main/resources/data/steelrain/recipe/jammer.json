@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " A ",
+    "CUC",
+    "BDB"
+  ],
+  "key": {
+    "A": {
+      "item": "minecraft:lightning_rod"
+    },
+    "C": {
+      "item": "steelrain:circuit_board"
+    },
+    "U": {
+      "item": "steelrain:guidance_unit"
+    },
+    "B": {
+      "item": "minecraft:iron_block"
+    },
+    "D": {
+      "item": "steelrain:drone_battery"
+    }
+  },
+  "result": {
+    "id": "steelrain:jammer",
+    "count": 1
+  }
+}

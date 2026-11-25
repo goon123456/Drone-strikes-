@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "W",
+    "C",
+    "E"
+  ],
+  "key": {
+    "W": {
+      "item": "steelrain:warhead"
+    },
+    "C": {
+      "item": "steelrain:circuit_board"
+    },
+    "E": {
+      "item": "steelrain:rocket_engine"
+    }
+  },
+  "result": {
+    "id": "steelrain:gmlrs_rocket",
+    "count": 3
+  }
+}

@@ -1,0 +1,26 @@
+modLoader="javafml"
+loaderVersion="[4,)"
+license="All Rights Reserved"
+
+[[mods]]
+modId="steelrain"
+version="${file.jarVersion}"
+displayName="Steel Rain"
+description='''
+Drones, cruise and ballistic missiles, rocket artillery, air defence and electronic warfare.
+Fly FPV drones from their camera, or plan strikes on the Field Laptop's map.
+'''
+
+[[dependencies.steelrain]]
+    modId="neoforge"
+    type="required"
+    versionRange="[21.1,)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.steelrain]]
+    modId="minecraft"
+    type="required"
+    versionRange="[1.21.1]"
+    ordering="NONE"
+    side="BOTH"

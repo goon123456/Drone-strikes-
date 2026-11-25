@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "GAG",
+    "ICI",
+    " B "
+  ],
+  "key": {
+    "G": {
+      "item": "minecraft:glass_pane"
+    },
+    "A": {
+      "item": "minecraft:lightning_rod"
+    },
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "C": {
+      "item": "steelrain:circuit_board"
+    },
+    "B": {
+      "item": "steelrain:drone_battery"
+    }
+  },
+  "result": {
+    "id": "steelrain:fpv_controller",
+    "count": 1
+  }
+}
