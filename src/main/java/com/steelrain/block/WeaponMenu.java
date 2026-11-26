@@ -36,10 +36,6 @@ public class WeaponMenu extends AbstractContainerMenu {
             addSlot(new SlotItemHandler(be.items, WeaponBlockEntity.SLOT_SECONDARY, 66, 35));
             n++;
         }
-        if (usesFuel(type)) {
-            addSlot(new SlotItemHandler(be.items, WeaponBlockEntity.SLOT_FUEL, 116, 35));
-            n++;
-        }
         ownSlots = n;
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
@@ -52,9 +48,10 @@ public class WeaponMenu extends AbstractContainerMenu {
         addDataSlots(data);
     }
 
-    public static boolean usesFuel(WeaponType type) { return type.usesFuel(); }
+    public static boolean usesEnergy(WeaponType type) { return type.usesEnergy(); }
 
-    public int fuel() { return data.get(0); }
+    /** Stored energy in thousands of FE. */
+    public int energyK() { return data.get(0); }
     public int busy() { return data.get(1); }
     public boolean switchedOn() { return data.get(2) != 0; }
 

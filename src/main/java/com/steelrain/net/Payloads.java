@@ -121,15 +121,6 @@ public final class Payloads {
         @Override public Type<Cable> type() { return TYPE; }
     }
 
-    /** Client -> server: the gunner pressed or let go of the trigger. */
-    public record GunFire(boolean firing) implements CustomPacketPayload {
-        public static final Type<GunFire> TYPE = id("gun_fire");
-        public static final StreamCodec<FriendlyByteBuf, GunFire> CODEC = StreamCodec.ofMember(GunFire::write, GunFire::new);
-        GunFire(FriendlyByteBuf b) { this(b.readBoolean()); }
-        void write(FriendlyByteBuf b) { b.writeBoolean(firing); }
-        @Override public Type<GunFire> type() { return TYPE; }
-    }
-
     /** Client -> server: leave the remote camera feed. */
     public record StopFeed() implements CustomPacketPayload {
         public static final Type<StopFeed> TYPE = id("stop_feed");
@@ -197,12 +188,6 @@ public final class Payloads {
         });
         r.playToClient(Cable.TYPE, Cable.CODEC, (p, ctx) -> {
             if (FMLEnvironment.dist.isClient()) com.steelrain.client.ClientHooks.onCable(p);
-        });
-        r.playToServer(GunFire.TYPE, GunFire.CODEC, (p, ctx) -> {
-            if (ctx.player().getVehicle() instanceof com.steelrain.entity.SeatEntity seat
-                    && ctx.player().level().getBlockEntity(seat.gun()) instanceof WeaponBlockEntity be) {
-                be.setManualFire(ctx.player(), p.firing());
-            }
         });
         r.playToServer(StopFeed.TYPE, StopFeed.CODEC, (p, ctx) -> {
             if (ctx.player() instanceof ServerPlayer sp) FeedManager.stop(sp);
@@ -310,7 +295,7 @@ public final class Payloads {
                         AircraftType parked = AircraftType.of(be.items.getStackInSlot(WeaponBlockEntity.SLOT_PRIMARY));
                         maxRange = air != null ? air.type().maxRange() : parked != null ? parked.maxRange() : 0;
                     }
-                    entries.add(new Entry(pos, be.type().ordinal(), be.primaryCount(), be.secondaryCount(), be.fuel(),
+                    entries.add(new Entry(pos, be.type().ordinal(), be.primaryCount(), be.secondaryCount(), be.energy() / 1000,
                             be.type().minRange(), maxRange, be.busyTicks(), reachable(player, pos),
                             air == null ? -1 : air.type().ordinal(),
                             air == null ? 0 : air.blockPosition().getX(), air == null ? 0 : air.blockPosition().getZ()));

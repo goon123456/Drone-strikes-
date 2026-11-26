@@ -22,22 +22,18 @@ public enum WeaponType {
     SHAHED_LAUNCHER("shahed_launcher", Kind.LAUNCHER, 100, 4000, 0, 60, 5, 0, 3, 2, 5, 0f, 0f, 0f, 0f),
     GROUND_STATION("ground_station", Kind.LAUNCHER, 50, 10000, 0, 100, 1, 4, 3, 3, 6, 0f, 0f, 0f, 0f),
     ORLAN_CATAPULT("orlan_catapult", Kind.LAUNCHER, 50, 1500, 0, 100, 1, 0, 1, 1, 4, 0f, 0f, 0f, 0f),
-    PANTSIR("pantsir", Kind.AIR_DEFENCE, 0, 0, 20, 30, 12, 16, 3, 4, 10, 12f, 8f, 0f, 0f),
-    GEPARD("gepard", Kind.AIR_DEFENCE, 0, 0, 0, 0, 16, 0, 3, 4, 8, 14f, 10f, 0f, 0f),
-    ZU23("zu_23_2", Kind.AIR_DEFENCE, 0, 0, 0, 0, 16, 0, 3, 2, 3, 16f, 12f, 0f, 0f),
-    PATRIOT("patriot", Kind.AIR_DEFENCE, 0, 0, 100, 60, 4, 0, 3, 4, 9, 5f, 3f, 0f, 38f),
     JAMMER("jammer", Kind.JAMMER, 0, 0, 0, 0, 0, 0, 3, 3, 3, 0f, 0f, 0f, 0f),
     TRENCH_JAMMER("trench_jammer", Kind.JAMMER, 0, 0, 0, 0, 0, 0, 1, 2, 1, 0f, 0f, 0f, 0f),
     KRASUKHA("krasukha", Kind.JAMMER, 0, 0, 0, 0, 0, 0, 3, 4, 11, 0f, 0f, 0f, 0f);
 
-    public enum Kind { LAUNCHER, AIR_DEFENCE, JAMMER }
+    public enum Kind { LAUNCHER, JAMMER }
 
     public final String id;
     public final Kind kind;
     private final int minRange;
     private final int maxRange;
-    /** mB of fuel burned per launch (aircraft bring their own figure). */
-    public final int fuelPerShot;
+    /** FE drawn per launch (aircraft bring their own figure). */
+    public final int energyPerShot;
     /** Ticks between two shots. */
     public final int cooldown;
     public final int primaryLimit;
@@ -54,7 +50,7 @@ public enum WeaponType {
         this.kind = kind;
         this.minRange = minRange;
         this.maxRange = maxRange;
-        this.fuelPerShot = fuelPerShot;
+        this.energyPerShot = fuelPerShot * 250;
         this.cooldown = cooldown;
         this.primaryLimit = primaryLimit;
         this.secondaryLimit = secondaryLimit;
@@ -75,13 +71,10 @@ public enum WeaponType {
 
     public boolean launchesAircraft() { return this == GROUND_STATION || this == ORLAN_CATAPULT; }
 
-    /** Everything with an engine, radar or powered turret has a tank. Bare launch rails are worked by hand. */
-    public boolean usesFuel() {
+    /** Everything with an engine or powered systems needs charging. Bare launch rails are worked by hand. */
+    public boolean usesEnergy() {
         return this != SHAHED_LAUNCHER && this != ORLAN_CATAPULT;
     }
-
-    /** mB burned every second by a radar that is searching (doubled while it tracks a target). */
-    public int idleFuel() { return kind == Kind.AIR_DEFENCE ? 1 : 0; }
 
     /** Furthest this launcher can throw the given munition. */
     public int maxRangeFor(ItemStack ammo) {
@@ -98,16 +91,12 @@ public enum WeaponType {
             case SHAHED_LAUNCHER -> ModRegistry.SHAHED_136;
             case GROUND_STATION -> ModRegistry.MQ9_REAPER;
             case ORLAN_CATAPULT -> ModRegistry.ORLAN_10;
-            case PANTSIR -> ModRegistry.PANTSIR_MISSILE;
-            case PATRIOT -> ModRegistry.PATRIOT_MISSILE;
-            case GEPARD -> ModRegistry.AMMO_35MM;
-            case ZU23 -> ModRegistry.AMMO_23MM;
             case JAMMER, TRENCH_JAMMER, KRASUKHA -> null;
         };
     }
 
     public Supplier<? extends Item> secondaryAmmo() {
-        return this == GROUND_STATION ? ModRegistry.HELLFIRE_MISSILE : this == PANTSIR ? ModRegistry.AMMO_30MM : null;
+        return this == GROUND_STATION ? ModRegistry.HELLFIRE_MISSILE : null;
     }
 
     public boolean acceptsPrimary(ItemStack stack) {
@@ -119,8 +108,6 @@ public enum WeaponType {
             case M109 -> stack.is(ModRegistry.SHELL_155MM.get()) || stack.is(ModRegistry.SHELL_CLUSTER.get())
                     || stack.is(ModRegistry.SHELL_SMOKE.get()) || stack.is(ModRegistry.SHELL_INCENDIARY.get());
             case HIMARS -> stack.is(ModRegistry.GMLRS_ROCKET.get()) || stack.is(ModRegistry.ATACMS_MISSILE.get());
-            case GEPARD -> stack.is(ModRegistry.AMMO_35MM.get()) || stack.is(ModRegistry.AMMO_35MM_AP.get());
-            case ZU23 -> stack.is(ModRegistry.AMMO_23MM.get()) || stack.is(ModRegistry.AMMO_23MM_AP.get());
             default -> {
                 Supplier<? extends Item> s = primaryAmmo();
                 yield s != null && stack.is(s.get());
@@ -129,7 +116,6 @@ public enum WeaponType {
     }
 
     public boolean acceptsSecondary(ItemStack stack) {
-        if (this == PANTSIR) return stack.is(ModRegistry.AMMO_30MM.get()) || stack.is(ModRegistry.AMMO_30MM_AP.get());
         Supplier<? extends Item> s = secondaryAmmo();
         return s != null && stack.is(s.get());
     }
@@ -141,10 +127,6 @@ public enum WeaponType {
         return switch (this) {
             case HIMARS -> new Vec3(0, 1.2, 2.0);
             case M109 -> new Vec3(0, 1.7, 2.2);
-            case PANTSIR -> new Vec3(0, 2.2, 3.5);
-            case PATRIOT -> new Vec3(0, 1.3, 3.5);
-            case GEPARD -> new Vec3(0, 2.0, 3.6);
-            case ZU23 -> new Vec3(0, 0.5, 1.5);
             default -> gunPivot();
         };
     }
@@ -156,10 +138,6 @@ public enum WeaponType {
             case M109 -> new Vec3(0, 2.3, 4.0);
             case TOMAHAWK_LAUNCHER -> new Vec3(0, 1.2, 0.6);
             case ISKANDER_LAUNCHER -> new Vec3(0, 2.2, 1.0);
-            case PANTSIR -> new Vec3(0, 3.1, 3.5);
-            case PATRIOT -> new Vec3(0, 1.9, 2.5);
-            case GEPARD -> new Vec3(0, 2.8, 3.8);
-            case ZU23 -> new Vec3(0, 1.15, 1.5);
             case SHAHED_LAUNCHER -> new Vec3(0, 0.4, 0.3);
             case ORLAN_CATAPULT -> new Vec3(0, 0.3, 0.2);
             default -> new Vec3(0, height, length / 2.0);
@@ -173,44 +151,11 @@ public enum WeaponType {
             case M109 -> new Vec3(0, 0, 5.3);
             case TOMAHAWK_LAUNCHER -> new Vec3(0, 0.9, 7.8);
             case ISKANDER_LAUNCHER -> new Vec3(0, 0.5, 8.2);
-            case PANTSIR -> new Vec3(1.25, 0, 2.4);
-            case PATRIOT -> new Vec3(0, 0.8, 4.4);
             case SHAHED_LAUNCHER -> new Vec3(0, 0.6, 4.6);
             case ORLAN_CATAPULT -> new Vec3(0, 0.4, 3.6);
             default -> Vec3.ZERO;
         };
     }
-
-    // ---- guns: real projectiles that have to be led onto the target ----
-
-    public boolean hasGuns() { return this == PANTSIR || this == GEPARD || this == ZU23; }
-
-    public boolean hasMissiles() { return this == PANTSIR || this == PATRIOT; }
-
-    /** Where bullets leave, relative to the gun pivot with the barrels level. Mirror X for the other barrel. */
-    public Vec3 gunMuzzle() {
-        return switch (this) {
-            case PANTSIR -> new Vec3(0.85, -0.55, 3.2);
-            case GEPARD -> new Vec3(1.3, 0, 3.4);
-            case ZU23 -> new Vec3(0.18, 0, 2.3);
-            default -> Vec3.ZERO;
-        };
-    }
-
-    /** Blocks per tick. Far slower than the real thing so the flight time matters at Minecraft distances. */
-    public double bulletSpeed() { return this == GEPARD ? 6.5 : this == ZU23 ? 5.5 : 6.0; }
-
-    public float bulletDamage() { return this == GEPARD ? 5f : this == ZU23 ? 3f : 4f; }
-
-    public double gunRange() { return this == GEPARD ? 96 : 64; }
-
-    /** Random error in degrees when the fire-control computer is aiming. */
-    public double dispersion() { return this == GEPARD ? 0.5 : this == ZU23 ? 1.6 : 0.6; }
-
-    public int roundsPerBelt() { return this == GEPARD ? 40 : 50; }
-
-    /** Seat for a human gunner, in model space, or null if the system cannot be manned. */
-    public Vec3 seat() { return this == ZU23 ? new Vec3(0, 0.45, 0.6) : null; }
 
     /** Radius of the jamming bubble for jammer systems. */
     public double jamRadius() {
@@ -222,8 +167,8 @@ public enum WeaponType {
         };
     }
 
-    /** mB of fuel a running jammer burns every half second. */
-    public int jamFuel() { return this == KRASUKHA ? 5 : 1; }
+    /** FE a running jammer draws every half second. */
+    public int jamEnergy() { return this == KRASUKHA ? 1250 : 250; }
 
     /** Fixed incline of rails that do not move. */
     public float fixedPitch() {

@@ -23,7 +23,6 @@ import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.inventory.MenuType;
@@ -34,7 +33,6 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
-import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.MapColor;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.common.extensions.IMenuTypeExtension;
@@ -60,10 +58,6 @@ public final class ModRegistry {
     public static final DeferredRegister<MenuType<?>> MENUS = DeferredRegister.create(Registries.MENU, MODID);
     public static final DeferredRegister<CreativeModeTab> TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MODID);
     public static final DeferredRegister<DataComponentType<?>> COMPONENTS = DeferredRegister.create(Registries.DATA_COMPONENT_TYPE, MODID);
-
-    /** Fluids a launcher tank accepts. Filled by other mods' diesel/gasoline through tags. */
-    public static final TagKey<Fluid> LAUNCHER_FUEL = TagKey.create(Registries.FLUID,
-            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(MODID, "launcher_fuel"));
 
     // ---- data components ----
     public static final Supplier<DataComponentType<List<BlockPos>>> LINKS = COMPONENTS.register("links",
@@ -105,7 +99,6 @@ public final class ModRegistry {
     public static final DeferredItem<Item> ROCKET_ENGINE = simple("rocket_engine", 64);
     public static final DeferredItem<Item> WARHEAD = simple("warhead", 64);
     public static final DeferredItem<Item> GUIDANCE_UNIT = simple("guidance_unit", 64);
-    public static final DeferredItem<Item> FUEL_CANISTER = simple("fuel_canister", 16);
 
     // ---- munitions ----
     public static final DeferredItem<Item> SHAHED_136 = simple("shahed_136", 8);
@@ -226,17 +219,24 @@ public final class ModRegistry {
     public static final DeferredHolder<EntityType<?>, EntityType<FpvDroneEntity>> FIBER_FPV = ENTITIES.register("fiber_fpv_drone",
             () -> EntityType.Builder.<FpvDroneEntity>of(FpvDroneEntity::new, MobCategory.MISC)
                     .sized(0.5f, 0.25f).eyeHeight(0.12f).clientTrackingRange(24).updateInterval(1).build("fiber_fpv_drone"));
-    /** Cannon round: a real projectile with flight time, never a hitscan. */
-    public static final DeferredHolder<EntityType<?>, EntityType<com.steelrain.entity.BulletEntity>> BULLET = ENTITIES.register("bullet",
-            () -> EntityType.Builder.<com.steelrain.entity.BulletEntity>of(com.steelrain.entity.BulletEntity::new, MobCategory.MISC)
-                    .sized(0.2f, 0.2f).clientTrackingRange(12).updateInterval(20).noSave().build("bullet"));
-    /** Gunner's seat on a manned gun. */
-    public static final DeferredHolder<EntityType<?>, EntityType<com.steelrain.entity.SeatEntity>> SEAT = ENTITIES.register("seat",
-            () -> EntityType.Builder.<com.steelrain.entity.SeatEntity>of(com.steelrain.entity.SeatEntity::new, MobCategory.MISC)
-                    .sized(0.3f, 0.1f).clientTrackingRange(8).noSave().build("seat"));
     public static final DeferredHolder<EntityType<?>, EntityType<FpvDroneEntity>> MAVIC_ENTITY = ENTITIES.register("mavic",
             () -> EntityType.Builder.<FpvDroneEntity>of(FpvDroneEntity::new, MobCategory.MISC)
                     .sized(0.45f, 0.2f).eyeHeight(0.05f).clientTrackingRange(24).updateInterval(1).build("mavic"));
+    // ---- air defence: real Superb Warfare vehicles ----
+    public static final Map<String, DeferredHolder<EntityType<?>, EntityType<com.steelrain.entity.AirDefenceVehicle>>> AIR_DEFENCE = new java.util.LinkedHashMap<>();
+    static {
+        airDefence("zu_23_2", 2.4f, 1.9f);
+        airDefence("gepard", 3.3f, 3.3f);
+        airDefence("pantsir", 3.0f, 3.6f);
+        airDefence("patriot", 3.0f, 3.4f);
+    }
+
+    private static void airDefence(String name, float width, float height) {
+        AIR_DEFENCE.put(name, ENTITIES.register(name, () -> EntityType.Builder
+                .<com.steelrain.entity.AirDefenceVehicle>of(com.steelrain.entity.AirDefenceVehicle::new, MobCategory.MISC)
+                .setTrackingRange(512).setUpdateInterval(1).fireImmune().sized(width, height).build(name)));
+    }
+
     /** Stand-in left where a player was standing while they watch a remote drone feed. */
     public static final DeferredHolder<EntityType<?>, EntityType<OperatorBodyEntity>> OPERATOR_BODY = ENTITIES.register("operator_body",
             () -> EntityType.Builder.<OperatorBodyEntity>of(OperatorBodyEntity::new, MobCategory.MISC)
@@ -245,7 +245,12 @@ public final class ModRegistry {
     public static final Supplier<CreativeModeTab> TAB = TABS.register("main", () -> CreativeModeTab.builder()
             .title(Component.translatable("itemGroup.steelrain"))
             .icon(() -> new ItemStack(TOMAHAWK_MISSILE.get()))
-            .displayItems((params, out) -> ITEMS.getEntries().forEach(e -> out.accept(e.get())))
+            .displayItems((params, out) -> {
+                // Vehicles come in Superb Warfare containers: place one and open it with a crowbar.
+                AIR_DEFENCE.values().forEach(v -> out.accept(
+                        com.atsuishio.superbwarfare.item.container.ContainerBlockItem.createInstance(v.get())));
+                ITEMS.getEntries().forEach(e -> out.accept(e.get()));
+            })
             .build());
 
     private static DeferredItem<Item> simple(String name, int stack) {

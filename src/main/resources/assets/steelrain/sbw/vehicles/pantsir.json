@@ -1,0 +1,8 @@
+{
+  "Models": [
+    {
+      "Model": "steelrain:models/bedrock/vehicle/pantsir.geo.json",
+      "Texture": "steelrain:textures/bedrock/vehicle/steelrain_vehicles.png"
+    }
+  ]
+}

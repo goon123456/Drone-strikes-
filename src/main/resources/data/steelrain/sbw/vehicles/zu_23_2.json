@@ -1,0 +1,120 @@
+{
+  "MaxEnergy": 2000000,
+  "KeepChunkLoaded": false,
+  "TurretPos": [
+    0,
+    0.5,
+    0
+  ],
+  "BarrelPos": [
+    0,
+    0.65,
+    0
+  ],
+  "SeekInfo": {
+    "MinSeekRange": 3,
+    "MaxSeekRange": 128,
+    "SeekIterative": 10,
+    "MinTargetSize": 0.2,
+    "SeekEnergyCost": 500
+  },
+  "VehicleIcon": "superbwarfare:textures/vehicle_icon/hpj_11_icon.png",
+  "DamageModifiers": [
+    "All - 6",
+    "All * 0.4",
+    "minecraft:explosion * 5",
+    "#superbwarfare:projectile * 0.3"
+  ],
+  "DestroyInfo": {
+    "ExplosionDamage": 60,
+    "ExplosionRadius": 5
+  },
+  "MaxHealth": 120,
+  "Mass": 4,
+  "EngineType": "Fixed",
+  "Type": "Defense",
+  "HudType": "@Land",
+  "VehicleContainerType": "Mini",
+  "TurretTurnSpeed": [
+    16,
+    12
+  ],
+  "TurretPitchRange": [
+    -5,
+    85
+  ],
+  "Seats": [
+    {
+      "HidePassenger": false,
+      "Transform": "Turret",
+      "Position": [
+        0,
+        0.0,
+        -0.9
+      ],
+      "CanRotateHead": true,
+      "MinPitch": -8,
+      "MaxPitch": 85,
+      "Weapons": [
+        "Main"
+      ],
+      "HasThermalImaging": false
+    }
+  ],
+  "Weapons": {
+    "Main": {
+      "DefaultFireMode": "Auto",
+      "AvailableFireModes": "Auto",
+      "Projectile": "superbwarfare:small_cannon_shell",
+      "ShellType": "AA",
+      "AmmoType": [
+        "50 steelrain:ammo_23mm",
+        {
+          "Ammo": "50 steelrain:ammo_23mm_ap",
+          "Override": {
+            "Damage": 14.4,
+            "ExplosionDamage": 0,
+            "ExplosionRadius": 0
+          }
+        }
+      ],
+      "RPM": 900,
+      "Velocity": 12,
+      "Gravity": 0.03,
+      "ProjectileLife": 30,
+      "Damage": 8,
+      "ExplosionDamage": 4,
+      "ExplosionRadius": 2.5,
+      "ExplosionDestroy": false,
+      "Spread": 0.5,
+      "HeatPerShoot": 0.8,
+      "NaturalCooldown": 0.6,
+      "DefaultZoom": 2,
+      "Crosshair": "@VehicleDynamicCross",
+      "Name": "weapon.steelrain.zu_23_2",
+      "Icon": "superbwarfare:textures/overlay/vehicle/weapon/icons/cannon_30mm_ap.png",
+      "ShootPos": {
+        "Transform": "Barrel",
+        "Positions": [
+          [
+            0.18,
+            0,
+            2.5
+          ],
+          [
+            -0.18,
+            0,
+            2.5
+          ]
+        ],
+        "Directions": [
+          "Barrel"
+        ]
+      },
+      "SoundInfo": {
+        "FireSoundInstances": "superbwarfare:hpj_11_fire"
+      }
+    }
+  },
+  "ContainerIcon": "superbwarfare:textures/gui/vehicle/type/defense.png"
+}

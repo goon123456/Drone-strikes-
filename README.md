@@ -1,12 +1,45 @@
 # Steel Rain
 
-A Minecraft mod about drones, missiles and artillery for **NeoForge 1.21.1**.
+An addon for **[Superb Warfare](https://modrinth.com/mod/superb-warfare)** (SBW) on **NeoForge 1.21.1**:
+drones, cruise and ballistic missiles, rocket artillery, air defence and electronic warfare.
 
-Fly kamikaze FPV drones through their own camera, plan cruise and ballistic missile strikes on a
-live map, shell targets with rocket and tube artillery, and defend your base with air defence and
-electronic warfare.
+Fly kamikaze FPV drones through their own camera, plan missile strikes on a live map, shell targets with rocket
+and tube artillery, and defend your base with air defence and jammers.
+
+**Requires:** Superb Warfare 0.8.9 or newer and Kotlin for Forge (which SBW itself needs).
+**Licence:** GPL-3.0-only, the same as Superb Warfare.
 
 The idea was inspired by the *Iron Drone* mod. All code, models and textures here are original.
+
+## Conversion status
+Steel Rain is being rebuilt on Superb Warfare's vehicle system in stages.
+
+| Stage | Systems | State |
+| --- | --- | --- |
+| 1 | Air defence: ZU-23-2, Flakpanzer Gepard, Pantsir-S1, MIM-104 Patriot | **Done: real SBW vehicles** |
+| 2 | Artillery and launchers: M109, HIMARS, Tomahawk, Iskander, Shahed rail | Still placed emplacements |
+| 3 | Ground Station, Orlan Catapult, jammers | Still placed emplacements |
+
+Everything runs on **Superb Warfare energy (FE)**: charge with an SBW Charging Station or any FE cable. There is
+no liquid fuel any more.
+
+### SBW air defence vehicles
+- They come packed in a Superb Warfare **container** (craftable, or from the Steel Rain and SBW vehicle tabs).
+  Place it and open it with an SBW **crowbar**. Sneak + crowbar packs a vehicle up again.
+- **Gepard** (tracked) and **Pantsir** (8x8) can be driven; the **ZU-23-2** and **Patriot** are static.
+- Get in to fire the cannons yourself with SBW's HUD. The radar-laid Gepard and Pantsir show a lead point; the
+  hand-laid ZU-23-2 deliberately does not.
+- **Automatic mode**: sneak + right-click (first player becomes the owner) toggles it. With nobody inside, the
+  vehicle then searches for hostile aircraft, drones and missiles anywhere in range, aims at where they will be,
+  and fires. This is Steel Rain's own area-defence logic: SBW's built-in turrets only defend themselves.
+- **Targets**: Steel Rain drones and missiles, crewed SBW aircraft and helicopters, SBW recon drones and SBW
+  guided weapons, unless they belong to you or your scoreboard team.
+- **Ammo** goes in the vehicle's SBW inventory (sneak + right-click): 23 / 35 / 30 mm HE or AP belts for the
+  guns, 57E6 missiles for the Pantsir, PAC-2 missiles for the Patriot. The cannons fire SBW's own shell
+  projectile, which has a flight time.
+- **Energy**: the radar draws 250 FE a second while searching (500 while tracking), a Pantsir missile 5000 FE,
+  a Patriot missile 25000 FE. Driving uses energy the SBW way.
+- Steel Rain's flying things can also be locked and shot by Superb Warfare's own weapons.
 
 ## What is in it
 
@@ -155,29 +188,21 @@ remote camera. If the copy is hit you are thrown out of the drone and take the d
   pick it up (it keeps its charge), and craft it together with a Drone Battery to recharge. If you let go of it in
   the air it settles to the ground by itself. Battery 360 s.
 
-### Fuel, power and loading
-Every vehicle has an 8000 mB tank and does nothing without fuel. Only hand-worked gear is exempt: the Shahed
-launch rail, the Orlan catapult, and a ZU-23-2 while you are sitting on it.
+### Energy and loading (emplacements)
+The launchers and jammers that are still emplacements hold 2,000,000 FE and do nothing uncharged. Put an SBW
+Charging Station next to any block of one, or connect an FE cable.
 
-| What | Fuel used |
+| What | Energy used |
 | --- | --- |
-| Air defence radar searching | 1 mB a second (2 while tracking a target) |
-| Pantsir / Patriot missile | 20 / 100 mB a shot |
-| M109 / HIMARS / Tomahawk / Iskander | 50 / 100 / 500 / 1000 mB a round |
-| Aircraft from the Ground Station | Bayraktar 1500, Reaper 1000, Global Hawk 4000 |
-| Jammers | EW and Trench about 2 mB a second, Krasukha about 10 |
+| M109 / HIMARS / Tomahawk / Iskander | 12.5k / 25k / 125k / 250k FE a round |
+| Aircraft from the Ground Station | Reaper 250k, Bayraktar 375k, Global Hawk 1M FE |
+| Jammers | EW and Trench 500 FE a second, Krasukha 2500 |
 | Jammer Dome | A trickle from the vehicle it is fitted to |
 
-Ways to fill the tank:
-- **Fuel Canister** (blaze powder and coal): 1000 mB each. **Drone Battery**: 500 mB each.
-- **Diesel and friends from other mods**, by bucket or pipe. Any fluid in the `steelrain:launcher_fuel` tag
-  works: diesel, gasoline and biodiesel from **Create: Diesel Generators**, plus TFMG, PneumaticCraft and
-  Immersive Engineering equivalents. Add more with a datapack.
-- **Forge Energy**: plug in any mod's power cable. 40 FE becomes 1 mB (configurable).
+The Shahed launch rail and Orlan catapult are worked by hand and need no power.
 
-**Loading by hand**: right-click any part of a vehicle while holding its ammunition, a Fuel Canister, a Drone
-Battery or a bucket of fuel and it goes straight in, with a message showing how full it is. The inventory
-screen works too, and hoppers, pipes and cables can connect to any block of the vehicle.
+**Loading by hand**: right-click any part of an emplacement while holding its ammunition and it goes straight
+in. The inventory screen works too, and hoppers can connect to any block of it.
 
 ### Ammunition
 Everything a vehicle fires has to be crafted and loaded. A slot holds one kind at a time; empty it to switch.
@@ -187,7 +212,7 @@ Everything a vehicle fires has to be crafted and loaded. A slot holds one kind a
 | M109 | **HE shell** (crater), **Cluster shell** (bursts overhead into 12 bomblets), **Smoke shell** (a minute-long screen that hides whatever is under it from recon drones), **Incendiary shell** (sets the area alight) |
 | HIMARS | 6 **GMLRS** rockets (range 1200), or 1 **ATACMS** (range 3000, big warhead, cannot be jammed, worth a Patriot) |
 | Gepard, Pantsir cannons, ZU-23-2 | **HE** belts (each shell bursts and hurts things within 2.5 blocks) or **AP** belts (no burst, 80% more damage on a direct hit) |
-| Pantsir / Patriot | 57E6 / PAC-2 interceptor missiles |
+| Pantsir / Patriot | 57E6 / PAC-2 interceptor missiles (in the vehicle's SBW inventory) |
 | Tomahawk, Iskander, Shahed launchers | Their missile or drone |
 | Ground Station | The aircraft, plus Hellfires for the Reaper |
 
@@ -226,8 +251,7 @@ Both need permission level 2.
 | `reconMarksPlayers` | true | Turn off so recon drones never show enemy players |
 | `spottedSpreadMultiplier` | 0.2 | Accuracy bonus under a friendly recon drone |
 | `jammerRange` | 64 | EW Jammer bubble |
-| `requireFuel` | true | Turn fuel use off entirely |
-| `fePerMb` | 40 | Forge Energy per mB of fuel |
+| `requireEnergy` | true | Turn energy use by emplacements off entirely |
 
 Every impact is written to the server log with its owner and coordinates.
 

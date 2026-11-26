@@ -3,7 +3,6 @@ package com.steelrain.client;
 import com.steelrain.ModRegistry;
 import com.steelrain.entity.AircraftEntity;
 import com.steelrain.entity.FpvDroneEntity;
-import com.steelrain.entity.SeatEntity;
 import com.steelrain.net.Payloads;
 import com.steelrain.weapon.AircraftType;
 import net.minecraft.client.DeltaTracker;
@@ -36,7 +35,6 @@ public final class FpvClient {
     private static int maxBattery = 3000;
     private static int waitTicks;
     private static boolean attached;
-    private static boolean gunFiring;
     private static final java.util.Random STATIC = new java.util.Random();
     private static float forward, strafe, vertical;
     private static boolean detonate;
@@ -106,14 +104,6 @@ public final class FpvClient {
         while (ClientSetup.EXIT_DRONE.consumeClick()) exit = true;
         if (feedId >= 0 && exit) PacketDistributor.sendToServer(new Payloads.StopFeed());
 
-        // Gunner's trigger: tell the server while the attack key is held on a manned gun.
-        boolean onGun = mc.player.getVehicle() instanceof SeatEntity;
-        boolean trigger = onGun && mc.screen == null && mc.options.keyAttack.isDown();
-        if (trigger != gunFiring) {
-            gunFiring = trigger;
-            PacketDistributor.sendToServer(new Payloads.GunFire(trigger));
-        }
-
         if (droneId < 0) return;
         FpvDroneEntity d = drone();
         if (d == null) {
@@ -146,9 +136,7 @@ public final class FpvClient {
 
     @SubscribeEvent
     public static void click(InputEvent.InteractionKeyMappingTriggered event) {
-        Minecraft mc = Minecraft.getInstance();
-        boolean onGun = mc.player != null && mc.player.getVehicle() instanceof SeatEntity;
-        if (droneId < 0 && feed() == null && !(onGun && event.isAttack())) return;
+        if (droneId < 0 && feed() == null) return;
         if (droneId >= 0 && event.isAttack()) detonate = true;
         event.setSwingHand(false);
         event.setCanceled(true);

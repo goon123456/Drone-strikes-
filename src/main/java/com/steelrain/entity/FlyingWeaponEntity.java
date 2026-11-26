@@ -25,7 +25,7 @@ import java.util.Comparator;
 import java.util.UUID;
 
 /** Shared plumbing of everything that flies: owner, hit points, chunk loading, smooth client movement. */
-public abstract class FlyingWeaponEntity extends Entity {
+public abstract class FlyingWeaponEntity extends Entity implements net.minecraft.world.entity.OwnableEntity {
     /** Expires on its own, so a crashed server never leaves chunks stuck loaded. */
     public static final TicketType<ChunkPos> FLIGHT_TICKET =
             TicketType.create("steelrain_flight", Comparator.comparingLong(ChunkPos::toLong), 300);
@@ -53,6 +53,17 @@ public abstract class FlyingWeaponEntity extends Entity {
     }
 
     @Nullable public UUID ownerId() { return ownerId; }
+
+    @Nullable
+    @Override
+    public UUID getOwnerUUID() { return ownerId; }
+
+    /** On the launching player's team, so Superb Warfare turrets and lock-on know friend from foe. */
+    @Nullable
+    @Override
+    public net.minecraft.world.scores.PlayerTeam getTeam() {
+        return ownerName == null ? null : level().getScoreboard().getPlayersTeam(ownerName);
+    }
     @Nullable public String ownerName() { return ownerName; }
 
     @Nullable

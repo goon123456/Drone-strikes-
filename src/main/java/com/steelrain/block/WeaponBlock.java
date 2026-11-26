@@ -130,9 +130,6 @@ public class WeaponBlock extends Block implements EntityBlock {
             }
         } else if (be.handLoad(player, stack)) {
             // ammunition or fuel went straight in
-        } else if (type.seat() != null && stack.isEmpty() && !player.isShiftKeyDown()) {
-            // Empty hand climbs on to the gun; sneak + empty hand opens the ammunition box instead.
-            be.mount(player);
         } else if (stack.is(ModRegistry.FIELD_LAPTOP.get())) {
             if (!type.laptopControlled()) {
                 player.displayClientMessage(Component.translatable("message.steelrain.not_linkable"), true);

@@ -28,6 +28,10 @@ public class SteelRain {
         modBus.addListener(RegisterCapabilitiesEvent.class, SteelRain::capabilities);
         modBus.addListener(EntityAttributeCreationEvent.class,
                 e -> e.put(ModRegistry.OPERATOR_BODY.get(), OperatorBodyEntity.attributes().build()));
+        // Also list our vehicles in Superb Warfare's own vehicle tab.
+        modBus.addListener(net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent.class, e -> e.enqueueWork(() ->
+                ModRegistry.AIR_DEFENCE.values().forEach(v -> com.atsuishio.superbwarfare.api.event.RegisterContainersEvent.CONTAINERS.add(
+                        com.atsuishio.superbwarfare.item.container.ContainerBlockItem.createInstance(v.get())))));
         NeoForge.EVENT_BUS.addListener(RegisterCommandsEvent.class, e -> SteelRainCommand.register(e.getDispatcher()));
         NeoForge.EVENT_BUS.addListener(ServerTickEvent.Post.class, e -> FeedManager.tick(e.getServer()));
         NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.event.tick.PlayerTickEvent.Post.class, e -> {
@@ -49,16 +53,11 @@ public class SteelRain {
 
     private static void capabilities(RegisterCapabilitiesEvent event) {
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModRegistry.WEAPON_BE.get(), (be, side) -> be.items);
-        event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, ModRegistry.WEAPON_BE.get(), (be, side) -> be.fuelPort);
         event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, ModRegistry.WEAPON_BE.get(), (be, side) -> be.energyPort);
         // Hoppers, pipes and cables can connect to any block of the vehicle, not just its core.
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModRegistry.WEAPON_PART_BE.get(), (part, side) -> {
             WeaponBlockEntity core = part.coreEntity();
             return core == null ? null : core.items;
-        });
-        event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, ModRegistry.WEAPON_PART_BE.get(), (part, side) -> {
-            WeaponBlockEntity core = part.coreEntity();
-            return core == null ? null : core.fuelPort;
         });
         event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, ModRegistry.WEAPON_PART_BE.get(), (part, side) -> {
             WeaponBlockEntity core = part.coreEntity();

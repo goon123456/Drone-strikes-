@@ -23,8 +23,6 @@ public final class ClientSetup {
     public static void renderers(EntityRenderersEvent.RegisterRenderers e) {
         e.registerEntityRenderer(ModRegistry.FPV.get(), c -> new EntityModelRenderer<>(c, Models.FPV, 0.14f, 0.25f));
         e.registerEntityRenderer(ModRegistry.FIBER_FPV.get(), c -> new EntityModelRenderer<>(c, Models.FIBER_FPV, 0.14f, 0.25f));
-        e.registerEntityRenderer(ModRegistry.BULLET.get(), c -> new EntityModelRenderer<>(c, Models.BULLET, 0.1f, 1f).fullBright());
-        e.registerEntityRenderer(ModRegistry.SEAT.get(), net.minecraft.client.renderer.entity.NoopRenderer::new);
         e.registerEntityRenderer(ModRegistry.MAVIC_ENTITY.get(), c -> new EntityModelRenderer<>(c, Models.MAVIC, 0.12f, 0f));
         e.registerEntityRenderer(ModRegistry.SHAHED.get(), c -> new EntityModelRenderer<>(c, Models.SHAHED, 0.3f, 1f));
         e.registerEntityRenderer(ModRegistry.TOMAHAWK.get(), c -> new EntityModelRenderer<>(c, Models.TOMAHAWK, 0.4f, 1f));
@@ -45,6 +43,8 @@ public final class ClientSetup {
             e.registerEntityRenderer(ModRegistry.AIRCRAFT.get(type).get(),
                     c -> new EntityModelRenderer<>(c, Models.aircraft(type), (float) type.gear, 1f));
         }
+        ModRegistry.AIR_DEFENCE.values().forEach(v -> e.registerEntityRenderer(v.get(),
+                com.atsuishio.superbwarfare.client.renderer.entity.BasicAutoAimableRenderer::new));
         e.registerEntityRenderer(ModRegistry.OPERATOR_BODY.get(), OperatorBodyRenderer::new);
         e.registerBlockEntityRenderer(ModRegistry.WEAPON_BE.get(), c -> new WeaponRenderer());
     }

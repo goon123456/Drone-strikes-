@@ -51,11 +51,11 @@ public class WeaponScreen extends AbstractContainerScreen<WeaponMenu> {
             g.fill(sx + 1, sy + 1, sx + 18, sy + 18, 0xFFFFFFFF);
             g.fill(sx + 1, sy + 1, sx + 17, sy + 17, 0xFF8B8B8B);
         }
-        if (WeaponMenu.usesFuel(menu.be.type())) {
+        if (WeaponMenu.usesEnergy(menu.be.type())) {
             g.fill(x + GX - 1, y + GY - 1, x + GX + GW + 1, y + GY + GH + 1, 0xFF373737);
             g.fill(x + GX, y + GY, x + GX + GW, y + GY + GH, 0xFF1B1B1B);
-            int filled = Math.min(GH, menu.fuel() * GH / WeaponBlockEntity.TANK_CAPACITY);
-            g.fill(x + GX, y + GY + GH - filled, x + GX + GW, y + GY + GH, 0xFFD9A441);
+            int filled = Math.min(GH, menu.energyK() * GH / (WeaponBlockEntity.ENERGY_CAPACITY / 1000));
+            g.fill(x + GX, y + GY + GH - filled, x + GX + GW, y + GY + GH, 0xFF4CC2E0);
         }
     }
 
@@ -67,11 +67,8 @@ public class WeaponScreen extends AbstractContainerScreen<WeaponMenu> {
         if (type.primaryAmmo() != null) {
             g.drawString(font, Component.translatable(type.launchesAircraft() ? "gui.steelrain.aircraft" : "gui.steelrain.ammo"), 44, 24, 0x404040, false);
         }
-        if (WeaponMenu.usesFuel(type)) {
+        if (WeaponMenu.usesEnergy(type)) {
             g.drawString(font, Component.translatable("gui.steelrain.fuel"), 112, 24, 0x404040, false);
-        }
-        if (type == WeaponType.PANTSIR) {
-            g.drawString(font, Component.translatable("gui.steelrain.belts"), 66, 55, 0x404040, false);
         }
         Component status = menu.busy() > 0
                 ? Component.translatable("gui.steelrain.busy", (menu.busy() + 19) / 20)
@@ -79,7 +76,6 @@ public class WeaponScreen extends AbstractContainerScreen<WeaponMenu> {
         g.drawString(font, status, 8, 60, menu.busy() > 0 ? 0xA03020 : 0x207020, false);
         Component hint = Component.translatable(switch (type.kind) {
             case LAUNCHER -> type == WeaponType.GROUND_STATION ? "gui.steelrain.hint_station" : "gui.steelrain.hint_launcher";
-            case AIR_DEFENCE -> type.seat() != null ? "gui.steelrain.hint_manned" : "gui.steelrain.hint_air_defence";
             case JAMMER -> "gui.steelrain.hint_jammer";
         });
         g.drawString(font, hint, 8, 72, 0x505050, false);
@@ -90,9 +86,9 @@ public class WeaponScreen extends AbstractContainerScreen<WeaponMenu> {
         super.render(g, mouseX, mouseY, partialTick);
         renderTooltip(g, mouseX, mouseY);
         int x = leftPos + GX, y = topPos + GY;
-        if (WeaponMenu.usesFuel(menu.be.type()) && mouseX >= x && mouseX < x + GW && mouseY >= y && mouseY < y + GH) {
-            g.renderTooltip(font, Component.translatable("gui.steelrain.fuel_amount", menu.fuel(),
-                    WeaponBlockEntity.TANK_CAPACITY), mouseX, mouseY);
+        if (WeaponMenu.usesEnergy(menu.be.type()) && mouseX >= x && mouseX < x + GW && mouseY >= y && mouseY < y + GH) {
+            g.renderTooltip(font, Component.translatable("gui.steelrain.fuel_amount", menu.energyK(),
+                    WeaponBlockEntity.ENERGY_CAPACITY / 1000), mouseX, mouseY);
         }
     }
 }

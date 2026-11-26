@@ -37,7 +37,9 @@ public class InterceptorEntity extends FlyingWeaponEntity {
     protected void serverTick(ServerLevel level) {
         age++;
         Entity e = level.getEntity(targetId);
-        if (!(e instanceof FlyingWeaponEntity target) || target.isRemoved() || age > (patriot ? 220 : 130)) {
+        FlyingWeaponEntity ours = e instanceof FlyingWeaponEntity f ? f : null;
+        Entity target = e;
+        if (target == null || target.isRemoved() || !target.isAlive() || age > (patriot ? 220 : 130)) {
             Blast.airburst(level, position());
             discard();
             return;
@@ -65,7 +67,7 @@ public class InterceptorEntity extends FlyingWeaponEntity {
         }
         // Flew past: it is not coming back round.
         if (dist > lastDist + 0.5 && age > 6 && ++opening > 6) {
-            target.engagedUntil = 0;
+            if (ours != null) ours.engagedUntil = 0;
             Blast.airburst(level, pos);
             discard();
             return;
@@ -75,7 +77,7 @@ public class InterceptorEntity extends FlyingWeaponEntity {
         Vec3 next = pos.add(move);
         keepChunksLoaded(level, next, move);
         if (age > 3 && blockHit(pos, next) != null) {
-            target.engagedUntil = 0;
+            if (ours != null) ours.engagedUntil = 0;
             Blast.airburst(level, pos);
             discard();
             return;

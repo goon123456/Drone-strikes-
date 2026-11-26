@@ -320,38 +320,7 @@ public final class Models {
                 .group("rail", "root", 0, 0.3, 0.2).tilt(-D15, 0, 0)
                 .box(STEEL, -0.08, 0.3, 0.2, 0.16, 0.12, 3.7));
 
-        WEAPONS.put(WeaponType.PANTSIR, new BoxModel()
-                .pair(TYRE, 0.9, 0, 0.8, 0.4, 1.2, 1.2).pair(TYRE, 0.9, 0, 2.2, 0.4, 1.2, 1.2)
-                .pair(TYRE, 0.9, 0, 6.2, 0.4, 1.2, 1.2).pair(TYRE, 0.9, 0, 7.6, 0.4, 1.2, 1.2)
-                .box(OLIVE_D, -1.0, 0.6, 0, 2.0, 0.8, 10.0)
-                .box(OLIVE, -1.25, 1.4, 8.0, 2.5, 1.6, 2.0)
-                .box(GLASS, -1.05, 2.2, 9.98, 2.1, 0.6, 0.05)
-                .pair(GLASS, 1.23, 2.2, 8.5, 0.04, 0.55, 1.0)
-                .box(OLIVE, -1.25, 1.4, 0.2, 2.5, 0.8, 7.6)
-                .group("turret", "root", 0, 2.2, 3.5)
-                .box(OLIVE_L, -1.0, 2.2, 2.2, 2.0, 1.4, 2.6)
-                .box(STEEL_D, -0.08, 3.6, 2.4, 0.16, 0.5, 0.16)
-                .box(OLIVE_D, -0.9, 4.1, 2.3, 1.8, 0.8, 0.12)
-                .box(OLIVE_D, -0.5, 2.9, 4.8, 1.0, 0.9, 0.12)
-                .group("gun", "turret", 0, 3.1, 3.5)
-                .pair(OLIVE_D, 1.0, 2.55, 2.0, 0.5, 1.1, 3.4)
-                .pair(BLACK, 1.05, 2.6, 5.4, 0.4, 1.0, 0.03)
-                .pair(STEEL_D, 0.8, 2.5, 4.8, 0.1, 0.1, 1.8));
 
-        BoxModel patriot = new BoxModel()
-                .pair(TYRE, 0.9, 0, 1.0, 0.4, 1.1, 1.1).pair(TYRE, 0.9, 0, 2.4, 0.4, 1.1, 1.1)
-                .pair(STEEL_D, 1.2, 0, 5.5, 0.25, 0.9, 0.25).pair(STEEL_D, 1.2, 0, 0.3, 0.25, 0.9, 0.25)
-                .box(SAND_D, -1.3, 0.9, 0, 2.6, 0.4, 9.0)
-                .box(SAND, -1.2, 1.3, 7.2, 2.4, 1.3, 1.7)
-                .group("turret", "root", 0, 1.3, 3.5).box(SAND_D, -1.2, 1.3, 2.3, 2.4, 0.4, 2.4)
-                .group("gun", "turret", 0, 1.9, 2.5).box(STEEL_D, -1.05, 1.7, 2.0, 2.1, 2.0, 0.15);
-        for (double sx : new double[]{-1.0, 0.05}) {
-            for (double sy : new double[]{1.75, 2.75}) {
-                patriot.box(SAND, sx, sy, 0.4, 0.95, 0.9, 6.1);
-                patriot.box(SAND_D, sx + 0.05, sy + 0.05, 6.5, 0.85, 0.8, 0.03);
-            }
-        }
-        WEAPONS.put(WeaponType.PATRIOT, patriot);
 
         WEAPONS.put(WeaponType.JAMMER, new BoxModel()
                 .box(OLIVE, -1.4, 0.2, 0.1, 2.8, 2.4, 2.8)
@@ -365,32 +334,7 @@ public final class Models {
                 .box(OLIVE_D, -0.3, 7.8, 2.88, 0.6, 0.9, 0.12)
                 .box(RED, -0.08, 9.0, 1.42, 0.16, 0.16, 0.16));
 
-        WEAPONS.put(WeaponType.GEPARD, new BoxModel()
-                .pair(TYRE, 1.05, 0, 0.2, 0.5, 1.0, 7.4)
-                .box(OLIVE, -1.5, 0.5, 0, 3.0, 1.5, 7.8)
-                .box(OLIVE_D, -1.4, 0.9, 7.8, 2.8, 0.7, 0.2)
-                .group("turret", "root", 0, 2.0, 3.6)
-                .box(OLIVE_L, -1.1, 2.0, 2.2, 2.2, 1.3, 3.0)
-                .box(STEEL_D, -0.08, 3.3, 2.4, 0.16, 0.5, 0.16)
-                .box(OLIVE_D, -0.9, 3.8, 2.3, 1.8, 0.5, 0.25)
-                .box(OLIVE_D, -0.45, 2.4, 5.2, 0.9, 0.9, 0.3)
-                .group("gun", "turret", 0, 2.8, 3.8)
-                .pair(OLIVE_D, 1.1, 2.4, 2.8, 0.45, 0.8, 2.2)
-                .pair(STEEL_D, 1.25, 2.74, 5.0, 0.12, 0.12, 2.4));
 
-        WEAPONS.put(WeaponType.ZU23, new BoxModel()
-                .pair(TYRE, 1.0, 0, 1.1, 0.25, 0.8, 0.8)
-                .box(STEEL_D, -1.0, 0.25, 0.6, 2.0, 0.2, 1.8)
-                .box(STEEL_D, -0.1, 0, 2.5, 0.2, 0.3, 0.4)
-                .group("turret", "root", 0, 0.5, 1.5)
-                .box(OLIVE, -0.5, 0.45, 1.0, 1.0, 0.5, 1.0)
-                .box(OLIVE_D, -0.3, 0.45, 0.3, 0.6, 0.15, 0.6)
-                .box(OLIVE_D, -0.3, 0.6, 0.25, 0.6, 0.6, 0.1)
-                .group("gun", "turret", 0, 1.15, 1.5)
-                .pair(OLIVE_D, 0.08, 1.0, 1.0, 0.22, 0.3, 1.2)
-                .pair(STEEL_D, 0.14, 1.1, 2.2, 0.09, 0.09, 1.7)
-                .pair(BLACK, 0.12, 1.08, 3.8, 0.13, 0.13, 0.2)
-                .pair(OLIVE, 0.35, 0.9, 1.1, 0.35, 0.45, 0.7));
 
         WEAPONS.put(WeaponType.TRENCH_JAMMER, new BoxModel()
                 .box(OLIVE, -0.35, 0, 0.15, 0.7, 0.6, 0.7)

@@ -311,7 +311,7 @@ public class LaptopScreen extends Screen {
             g.drawString(font, font.plainSubstrByWidth(name.getString(), 86), lx + 2, y + 2,
                     e.reachable() ? white : red, false);
             String info = type == null ? e.pos().toShortString()
-                    : e.ammo() + (type.secondaryAmmo() != null ? "+" + e.ammo2() : "") + " | " + e.fuel() + " mB";
+                    : e.ammo() + (type.secondaryAmmo() != null ? "+" + e.ammo2() : "") + " | " + e.fuel() + " kFE";
             g.drawString(font, font.plainSubstrByWidth(info, 86), lx + 2, y + 11, dim, false);
         }
 

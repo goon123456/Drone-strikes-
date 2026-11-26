@@ -29,7 +29,8 @@ public enum AircraftType {
     public final float health;
     /** Height of the fuselage axis above the ground when parked. */
     public final double gear;
-    public final int fuel;
+    /** FE drawn from the station to launch it. */
+    public final int energy;
     private final int maxRange;
     public final double orbitRadius;
 
@@ -45,7 +46,7 @@ public enum AircraftType {
         this.endurance = endurance;
         this.health = health;
         this.gear = gear;
-        this.fuel = fuel;
+        this.energy = fuel * 250;
         this.maxRange = maxRange;
         this.orbitRadius = orbitRadius;
     }

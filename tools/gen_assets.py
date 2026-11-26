@@ -155,26 +155,6 @@ BLOCKS = {
         el("white", [7, 3.5, 2, 9, 5.5, 11], ([8, 2, 16], 22.5)),
         el("white", [1, 5, 5, 15, 5.6, 8], ([8, 2, 16], 22.5)),
     ],
-    "gepard": [
-        el("tracks", [0, 0, 0, 3, 4, 16]), el("tracks", [13, 0, 0, 16, 4, 16]),
-        el("olive", [1, 2, 0, 15, 7, 16]),
-        el("panel", [4, 7, 5, 12, 12, 13]),
-        el("olive_dark", [1.5, 8, 5, 4, 11, 12], ([8, 9.5, 12], 22.5)),
-        el("olive_dark", [12, 8, 5, 14.5, 11, 12], ([8, 9.5, 12], 22.5)),
-        el("steel_dark", [2.3, 9, -3, 3.3, 10, 5], ([8, 9.5, 12], 22.5)),
-        el("steel_dark", [12.7, 9, -3, 13.7, 10, 5], ([8, 9.5, 12], 22.5)),
-        el("radar", [5, 13, 12, 11, 16, 13]),
-        el("steel", [7.5, 12, 12.5, 8.5, 13, 13.5]),
-    ],
-    "zu_23_2": [
-        el("tracks", [1, 0, 6, 4, 5, 11]), el("tracks", [12, 0, 6, 15, 5, 11]),
-        el("steel_dark", [3, 2, 4, 13, 4, 13]),
-        el("olive", [5, 4, 6, 11, 8, 11]),
-        el("olive_dark", [5.5, 4, 11, 10.5, 9, 13]),
-        el("steel_dark", [6, 8, -4, 7.2, 9.2, 9], ([8, 8.5, 9], 22.5)),
-        el("steel_dark", [8.8, 8, -4, 10, 9.2, 9], ([8, 8.5, 9], 22.5)),
-        el("olive", [3, 6, 5, 5.5, 10, 9]), el("olive", [10.5, 6, 5, 13, 10, 9]),
-    ],
     "trench_jammer": [
         el("panel", [3, 0, 3, 13, 9, 13]),
         el("steel_dark", [4, 9, 4, 12, 10, 12]),
@@ -190,26 +170,6 @@ BLOCKS = {
         el("olive_dark", [2, 6, 5, 14, 11, 12]),
         el("steel", [7.5, 6, 13, 8.5, 14, 14]),
         el("radar", [1, 9, 13.5, 15, 20, 14.5], ([8, 14, 14], -22.5)),
-    ],
-    "patriot": [
-        el("tracks", [1, 0, 6, 15, 3, 9.5]), el("tracks", [1, 0, 10.5, 15, 3, 14]),
-        el("steel_dark", [2, 3, 0, 14, 5, 16]),
-        el("tan", [3, 5, 0, 13, 9, 3]),
-        el("tan", [2.5, 5, 3, 7.5, 10, 15], ([8, 5, 15], 22.5)),
-        el("tan", [8.5, 5, 3, 13.5, 10, 15], ([8, 5, 15], 22.5)),
-        el("steel_dark", [3, 5.5, 2.8, 7, 9.5, 3], ([8, 5, 15], 22.5)),
-        el("steel_dark", [9, 5.5, 2.8, 13, 9.5, 3], ([8, 5, 15], 22.5)),
-    ],
-    "pantsir": wheels([1, 6.5, 12]) + [
-        el("olive", [2, 2, 0, 14, 6, 16]),
-        el("panel", [2, 6, 0, 14, 10, 4]),
-        el("glass", [3, 7.5, -0.2, 13, 9.5, 0]),
-        el("olive_dark", [4, 6, 6, 12, 11, 14]),
-        el("tubes", [1.5, 8, 4, 4, 12, 15], ([8, 10, 15], 22.5)),
-        el("tubes", [12, 8, 4, 14.5, 12, 15], ([8, 10, 15], 22.5)),
-        el("steel_dark", [4.5, 8, 1, 5.5, 9, 6]), el("steel_dark", [10.5, 8, 1, 11.5, 9, 6]),
-        el("steel", [7.5, 11, 12.5, 8.5, 14, 13.5]),
-        el("radar", [5, 13, 12, 11, 18, 13]),
     ],
     "jammer": [
         el("panel", [2, 0, 2, 14, 6, 14]),
@@ -377,11 +337,6 @@ def item_icons():
     d.point([(4, 11), (6, 11), (8, 11), (10, 11)], fill=c((230, 196, 80)))
     icons["guidance_unit"] = outlined(img)
 
-    img, d = canvas()   # jerrycan
-    d.rectangle([4, 4, 11, 13], fill=c((170, 46, 40)))
-    d.rectangle([5, 2, 7, 3], fill=c((60, 60, 60))); d.rectangle([8, 3, 11, 3], fill=c((120, 30, 28)))
-    d.line([(5, 6), (10, 11)], fill=c((120, 30, 28))); d.line([(10, 6), (5, 11)], fill=c((120, 30, 28)))
-    icons["fuel_canister"] = outlined(img)
 
     icons["patriot_missile"] = missile_icon((216, 216, 210), (184, 172, 140), (70, 74, 78), 2, a=(3, 13), b=(13, 3))
 
@@ -528,7 +483,6 @@ def recipes():
     shaped("rocket_engine", ["IPI", "IBI", "I I"], {"I": I, "P": P, "B": MC + "blaze_powder"})
     shaped("warhead", [" I ", "ITI", "ITI"], {"I": I, "T": T})
     shaped("guidance_unit", ["IGI", "CKC", "IRI"], {"I": I, "G": MC + "glass_pane", "C": "circuit_board", "K": MC + "compass", "R": R})
-    shaped("fuel_canister", ["ILI", "IZI", "ICI"], {"I": N, "L": MC + "coal", "Z": MC + "blaze_powder", "C": MC + "charcoal"}, 2)
 
     shaped("fpv_drone", ["PMP", "BCW", "PMP"], {"P": "propeller", "M": "electric_motor", "B": "drone_battery", "C": "circuit_board", "W": MC + "tnt"})
     shaped("fpv_controller", ["GAG", "ICI", " B "], {"G": MC + "glass_pane", "A": MC + "lightning_rod", "I": I, "C": "circuit_board", "B": "drone_battery"})
@@ -550,15 +504,12 @@ def recipes():
     shaped("shahed_launcher", ["  I", " I ", "BPB"], {"I": I, "B": B, "P": MC + "piston"})
     shaped("ground_station", ["SSS", "CUC", "BBB"], {"S": MC + "smooth_stone", "C": "circuit_board", "U": "guidance_unit", "B": B})
     shaped("orlan_catapult", ["  I", " I ", "IPI"], {"I": I, "P": MC + "piston"})
-    shaped("patriot", ["UDU", "MCM", "BBB"], {"U": "guidance_unit", "D": MC + "diamond", "M": "electric_motor", "C": "circuit_board", "B": B})
     shaped("patriot_missile", [" U ", "IWI", "IEI"], {"U": "guidance_unit", "I": I, "W": "warhead", "E": "rocket_engine"}, 2)
     shaped("mavic", ["PGP", "MCM", "PBP"], {"P": "propeller", "G": MC + "glass_pane", "M": "electric_motor", "C": "circuit_board", "B": "drone_battery"})
     shaped("drone_grenade", [" N ", "NGN", " N "], {"N": N, "G": P}, 4)
     shaped("orlan_10", ["IPI", "IUI", " M "], {"I": I, "P": "propeller", "U": "guidance_unit", "M": "electric_motor"})
     shaped("bayraktar_tb2", [" U ", "BMB", "DPD"], {"U": "guidance_unit", "B": B, "M": "electric_motor", "D": "drone_battery", "P": "propeller"})
     shaped("global_hawk", ["DUD", "BEB", "DUD"], {"D": MC + "diamond", "U": "guidance_unit", "B": B, "E": "rocket_engine"})
-    shaped("gepard", ["UOU", "MCM", "BBB"], {"U": "ammo_35mm", "O": MC + "observer", "M": "electric_motor", "C": "circuit_board", "B": B})
-    shaped("zu_23_2", ["I I", "IMI", "NBN"], {"I": I, "M": "electric_motor", "N": N, "B": B})
     shaped("trench_jammer", [" A ", "CDC", "III"], {"A": MC + "lightning_rod", "C": "circuit_board", "D": "drone_battery", "I": I})
     shaped("krasukha", ["AUA", "CUC", "BBB"], {"A": MC + "lightning_rod", "U": "guidance_unit", "C": "circuit_board", "B": B})
     shaped("jammer_dome", [" A ", "ICI", "IDI"], {"A": MC + "lightning_rod", "I": N, "C": "circuit_board", "D": "drone_battery"})
@@ -590,7 +541,6 @@ def recipes():
         "type": "minecraft:crafting_shapeless", "category": "misc",
         "ingredients": [{"item": f"{MOD}:mavic"}, {"item": f"{MOD}:drone_battery"}],
         "result": {"id": f"{MOD}:mavic", "count": 1}})
-    shaped("pantsir", ["UOU", "MCM", "BBB"], {"U": "guidance_unit", "O": MC + "observer", "M": "electric_motor", "C": "circuit_board", "B": B})
     shaped("jammer", [" A ", "CUC", "BDB"], {"A": MC + "lightning_rod", "C": "circuit_board", "U": "guidance_unit", "B": B, "D": "drone_battery"})
 
 
@@ -600,13 +550,6 @@ def tags():
     # Curios (optional): give players a back slot and allow the backpacks in it.
     write(f"{RES}/data/curios/tags/item/back.json", {"replace": False, "values": [f"{MOD}:fiber_backpack", f"{MOD}:jammer_backpack"]})
     write(f"{D}/curios/entities/steelrain_player.json", {"entities": ["minecraft:player"], "slots": ["back"]})
-    write(f"{D}/tags/fluid/launcher_fuel.json", {"replace": False, "values": [
-        opt("#c:diesel"), opt("#c:gasoline"), opt("#c:biodiesel"), opt("#c:kerosene"), opt("#c:fuel"),
-        opt("createdieselgenerators:diesel"), opt("createdieselgenerators:gasoline"), opt("createdieselgenerators:biodiesel"),
-        opt("tfmg:diesel"), opt("tfmg:gasoline"), opt("tfmg:kerosene"),
-        opt("mekanismgenerators:bioethanol"), opt("immersiveengineering:biodiesel"), opt("pneumaticcraft:diesel"),
-        opt("pneumaticcraft:kerosene"), opt("pneumaticcraft:gasoline"),
-    ]})
 
 
 # ---------------------------------------------------------------- lang
@@ -622,7 +565,6 @@ def lang():
         "item.steelrain.rocket_engine": "Rocket Engine",
         "item.steelrain.warhead": "Warhead",
         "item.steelrain.guidance_unit": "Guidance Unit",
-        "item.steelrain.fuel_canister": "Fuel Canister",
         "item.steelrain.field_laptop": "Field Laptop",
         "item.steelrain.fpv_controller": "FPV Goggles & Controller",
         "item.steelrain.fpv_drone": "FPV Kamikaze Drone",
@@ -641,10 +583,14 @@ def lang():
         "block.steelrain.shahed_launcher": "Shahed Launch Rail",
         "block.steelrain.ground_station": "UAV Ground Station",
         "block.steelrain.orlan_catapult": "Orlan Catapult",
-        "block.steelrain.patriot": "MIM-104 Patriot",
         "block.steelrain.weapon_part": "Weapon System",
-        "block.steelrain.gepard": "Flakpanzer Gepard",
-        "block.steelrain.zu_23_2": "ZU-23-2",
+        "entity.steelrain.gepard": "Flakpanzer Gepard",
+        "entity.steelrain.zu_23_2": "ZU-23-2",
+        "entity.steelrain.pantsir": "Pantsir-S1",
+        "entity.steelrain.patriot": "MIM-104 Patriot",
+        "weapon.steelrain.gepard": "35 mm Oerlikon KDA",
+        "weapon.steelrain.zu_23_2": "23 mm 2A14",
+        "weapon.steelrain.pantsir": "30 mm 2A38M",
         "block.steelrain.trench_jammer": "Trench Jammer",
         "block.steelrain.krasukha": "Krasukha-4 Long-Range Jammer",
         "item.steelrain.fiber_fpv_drone": "Fiber-Optic FPV Drone",
@@ -742,7 +688,6 @@ def lang():
         "gui.steelrain.airborne": "AIRBORNE",
         "gui.steelrain.aircraft": "Aircraft",
         "gui.steelrain.hint_station": "Needs a clear runway in front",
-        "block.steelrain.pantsir": "Pantsir-S1",
         "block.steelrain.jammer": "EW Jammer",
         "entity.steelrain.fpv_drone": "FPV Drone",
         "entity.steelrain.shahed_136": "Shahed-136",
@@ -765,7 +710,7 @@ def lang():
         "message.steelrain.no_signal": "No signal: launcher is too far away",
         "message.steelrain.busy": "Launcher is busy",
         "message.steelrain.no_ammo": "No ammunition loaded",
-        "message.steelrain.no_fuel": "Not enough fuel (needs %s mB)",
+        "message.steelrain.no_fuel": "Not enough energy (needs %s FE)",
         "message.steelrain.too_close": "Target too close (minimum %s blocks)",
         "message.steelrain.too_far": "Target out of range (maximum %s blocks)",
         "message.steelrain.launched": "Launch! Target %s, %s",
@@ -787,13 +732,13 @@ def lang():
         "hud.steelrain.distance": "DST %s m",
         "hud.steelrain.hint": "[%s] leave   [Attack] detonate   [Jump/Sneak] up/down   [Scroll] zoom",
         "gui.steelrain.ammo": "Ammo",
-        "gui.steelrain.fuel": "Fuel",
-        "gui.steelrain.fuel_amount": "%s / %s mB",
+        "gui.steelrain.fuel": "Energy",
+        "gui.steelrain.fuel_amount": "%s / %s kFE",
         "gui.steelrain.ready": "READY",
         "gui.steelrain.busy": "BUSY %ss",
         "gui.steelrain.hint_launcher": "Fire it from a Field Laptop",
         "gui.steelrain.hint_air_defence": "Needs fuel for radar and turret",
-        "gui.steelrain.hint_jammer": "Jams hostile links (needs fuel)",
+        "gui.steelrain.hint_jammer": "Jams hostile links (needs energy)",
         "gui.steelrain.laptop_title": "FIRE CONTROL",
         "gui.steelrain.no_links": "No launchers linked. Right-click a launcher with the laptop.",
         "gui.steelrain.offline": "Out of reach",
@@ -801,7 +746,7 @@ def lang():
         "gui.steelrain.launch": "LAUNCH",
         "gui.steelrain.range": "Rng %s-%s",
         "gui.steelrain.ammo_count": "Ammo: %s",
-        "gui.steelrain.fuel_count": "Fuel: %s mB",
+        "gui.steelrain.fuel_count": "Energy: %s kFE",
         "gui.steelrain.distance": "Dist: %s",
         "gui.steelrain.pick_target": "Pick a target",
         "gui.steelrain.no_signal": "NO SIGNAL",
@@ -811,6 +756,169 @@ def lang():
     write(f"{A}/lang/en_us.json", L)
 
 
+# ---------------------------------------------------------------- Superb Warfare vehicles
+# Box lists use vehicle space: x across, y up, z towards the front, origin on the ground under the middle, in blocks.
+OL, OD, OLL, TY, ST, SD, GL, WH, SA, SAD, BK, RD = (0x5C683E, 0x424C2E, 0x6E7C4C, 0x242426, 0x8A8E94, 0x3E4246,
+                                                    0x28405A, 0xD8D8D2, 0xB8AC8C, 0x8E846A, 0x18181A, 0xBE2824)
+PALETTE = [OL, OD, OLL, TY, ST, SD, GL, WH, SA, SAD, BK, RD]
+
+def pair(c, x, y, z, w, h, d):
+    return [(c, x, y, z, w, h, d), (c, -x - w, y, z, w, h, d)]
+
+def vehicle_texture():
+    img = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
+    rnd = random.Random(5)
+    for i, col in enumerate(PALETTE):
+        ox, oy = (i % 8) * 8, (i // 8) * 8
+        for y in range(8):
+            for x in range(8):
+                n = rnd.randint(-7, 7)
+                img.putpixel((ox + x, oy + y), tuple(max(0, min(255, ((col >> s) & 255) + n)) for s in (16, 8, 0)) + (255,))
+    save(img, f"{A}/textures/bedrock/vehicle/steelrain_vehicles.png")
+
+def cube(box):
+    c, x, y, z, w, h, d = box
+    i = PALETTE.index(c)
+    u, v = (i % 8) * 8 + 1, (i // 8) * 8 + 1
+    face = {"uv": [u, v], "uv_size": [6, 6]}
+    # Bedrock models face -Z, so the vehicle's front (+z here) becomes -Z.
+    return {"origin": [round(x * 16, 3), round(y * 16, 3), round(-(z + d) * 16, 3)],
+            "size": [round(w * 16, 3), round(h * 16, 3), round(d * 16, 3)],
+            "uv": {f: face for f in ("north", "south", "east", "west", "up", "down")}}
+
+def piv(p):
+    return [round(p[0] * 16, 3), round(p[1] * 16, 3), round(-p[2] * 16, 3)]
+
+def sbw_vehicle(name, base, turret, barrel, turret_pivot, barrel_pivot, data):
+    bones = [{"name": "root", "pivot": [0, 0, 0]},
+             {"name": "base", "parent": "root", "pivot": [0, 0, 0], "cubes": [cube(b) for b in base]},
+             {"name": "turret", "parent": "root", "pivot": piv(turret_pivot), "cubes": [cube(b) for b in turret]},
+             {"name": "barrel", "parent": "turret", "pivot": piv(barrel_pivot), "cubes": [cube(b) for b in barrel]}]
+    write(f"{A}/models/bedrock/vehicle/{name}.geo.json", {"format_version": "1.12.0", "minecraft:geometry": [{
+        "description": {"identifier": f"geometry.{name}", "texture_width": 64, "texture_height": 64,
+                        "visible_bounds_width": 16, "visible_bounds_height": 8, "visible_bounds_offset": [0, 3, 0]},
+        "bones": bones}]})
+    write(f"{A}/sbw/vehicles/{name}.json", {"Models": [{
+        "Model": f"{MOD}:models/bedrock/vehicle/{name}.geo.json",
+        "Texture": f"{MOD}:textures/bedrock/vehicle/steelrain_vehicles.png"}]})
+    full = {"MaxEnergy": 2000000, "KeepChunkLoaded": False,
+            "TurretPos": list(turret_pivot),
+            "BarrelPos": [round(barrel_pivot[i] - turret_pivot[i], 3) for i in range(3)],
+            "SeekInfo": {"MinSeekRange": 3, "MaxSeekRange": 128, "SeekIterative": 10, "MinTargetSize": 0.2, "SeekEnergyCost": 500},
+            "VehicleIcon": "superbwarfare:textures/vehicle_icon/hpj_11_icon.png",
+            "DamageModifiers": ["All - 6", "All * 0.4", "minecraft:explosion * 5", "#superbwarfare:projectile * 0.3"],
+            "DestroyInfo": {"ExplosionDamage": 60, "ExplosionRadius": 5}}
+    full.update(data)
+    write(f"{D}/sbw/vehicles/{name}.json", full)
+
+def cannon(name, belt, rounds, rpm, damage, muzzles, lead):
+    """An automatic cannon firing Superb Warfare's real shell projectile. HE and AP belts are separate ammo types."""
+    w = {"DefaultFireMode": "Auto", "AvailableFireModes": "Auto",
+         "Projectile": "superbwarfare:small_cannon_shell", "ShellType": "AA",
+         "AmmoType": [f"{rounds} {MOD}:{belt}",
+                      {"Ammo": f"{rounds} {MOD}:{belt}_ap",
+                       "Override": {"Damage": round(damage * 1.8, 1), "ExplosionDamage": 0, "ExplosionRadius": 0}}],
+         "RPM": rpm, "Velocity": 12, "Gravity": 0.03, "ProjectileLife": 30,
+         "Damage": damage, "ExplosionDamage": 4, "ExplosionRadius": 2.5, "ExplosionDestroy": False, "Spread": 0.5,
+         "HeatPerShoot": 0.8, "NaturalCooldown": 0.6, "DefaultZoom": 2,
+         "Crosshair": "@VehicleDynamicCross", "Name": f"weapon.{MOD}.{name}",
+         "Icon": "superbwarfare:textures/overlay/vehicle/weapon/icons/cannon_30mm_ap.png",
+         "ShootPos": {"Transform": "Barrel", "Positions": muzzles, "Directions": ["Barrel"]},
+         "SoundInfo": {"FireSoundInstances": "superbwarfare:hpj_11_fire"}}
+    if lead:   # radar-directed guns show the gunner a lead point; the hand-laid ZU-23-2 deliberately does not
+        w["SeekWeaponInfo"] = {"SeekDirection": "Barrel", "SeekRange": 192, "SeekAngle": 20, "SeekTime": 10,
+                               "MinTargetSize": 0.1, "OnlyLockEntity": True, "CalculateTrajectory": True}
+    return w
+
+def gunner_seat(pos, cam, hide=True):
+    return {"HidePassenger": hide, "Transform": "Turret", "Position": pos, "CanRotateHead": not hide,
+            "MinPitch": -8, "MaxPitch": 85, "Weapons": ["Main"], "HasThermalImaging": hide,
+            **({"CameraPos": {"Transform": "Turret", "UseFixedCameraPos": True, "Position": cam, "Direction": "Barrel"}} if cam else {})}
+
+def sbw_vehicles():
+    vehicle_texture()
+    wheels8 = lambda zs: [b for z in zs for b in pair(TY, 0.9, 0, z, 0.4, 1.2, 1.2)]
+
+    # ZU-23-2: towed twin 23 mm. Static, one exposed gunner, no lead computer.
+    sbw_vehicle("zu_23_2",
+        base=pair(TY, 1.0, 0, -0.4, 0.25, 0.8, 0.8) + [(SD, -1.0, 0.25, -0.9, 2.0, 0.2, 1.8), (SD, -0.1, 0, 1.0, 0.2, 0.3, 0.4)],
+        turret=[(OL, -0.5, 0.45, -0.5, 1.0, 0.5, 1.0), (OD, -0.3, 0.45, -1.2, 0.6, 0.15, 0.6), (OD, -0.3, 0.6, -1.25, 0.6, 0.6, 0.1)],
+        barrel=pair(OD, 0.08, 1.0, -0.5, 0.22, 0.3, 1.2) + pair(SD, 0.14, 1.1, 0.7, 0.09, 0.09, 1.7)
+               + pair(BK, 0.12, 1.08, 2.3, 0.13, 0.13, 0.2) + pair(OL, 0.35, 0.9, -0.4, 0.35, 0.45, 0.7),
+        turret_pivot=(0, 0.5, 0), barrel_pivot=(0, 1.15, 0),
+        data={"MaxHealth": 120, "Mass": 4, "EngineType": "Fixed", "Type": "Defense", "HudType": "@Land",
+              "VehicleContainerType": "Mini", "TurretTurnSpeed": [16, 12], "TurretPitchRange": [-5, 85],
+              "Seats": [gunner_seat([0, 0.0, -0.9], None, hide=False)],
+              "Weapons": {"Main": cannon("zu_23_2", "ammo_23mm", 50, 900, 8, [[0.18, 0, 2.5], [-0.18, 0, 2.5]], False)},
+              "ContainerIcon": "superbwarfare:textures/gui/vehicle/type/defense.png"})
+
+    # Flakpanzer Gepard: tracked, radar-laid twin 35 mm.
+    sbw_vehicle("gepard",
+        base=pair(TY, 1.05, 0, -3.7, 0.5, 1.0, 7.4) + [(OL, -1.5, 0.5, -3.9, 3.0, 1.5, 7.8), (OD, -1.4, 0.9, 3.9, 2.8, 0.7, 0.2)],
+        turret=[(OLL, -1.1, 2.0, -1.7, 2.2, 1.3, 3.0), (SD, -0.08, 3.3, -1.5, 0.16, 0.5, 0.16),
+                (OD, -0.9, 3.8, -1.6, 1.8, 0.5, 0.25), (OD, -0.45, 2.4, 1.3, 0.9, 0.9, 0.3)],
+        barrel=pair(OD, 1.1, 2.4, -1.1, 0.45, 0.8, 2.2) + pair(SD, 1.25, 2.74, 1.1, 0.12, 0.12, 2.4),
+        turret_pivot=(0, 2.0, -0.3), barrel_pivot=(0, 2.8, -0.1),
+        data={"MaxHealth": 500, "Mass": 20, "Type": "AA", "HudType": "@Land", "VehicleContainerType": "Small",
+              "EngineType": "Track",
+              "EngineInfo": {"EnergyCostRate": 96, "WheelRotSpeed": 1.25, "WheelDifferential": 0.5, "TrackRotSpeed": 1.9,
+                             "TrackDifferential": 0.8, "MaxForwardSpeedRate": 0.8, "MaxBackwardSpeedRate": 0.5,
+                             "Increment": 0.025, "Decrement": 0.015, "SteeringSpeed": 0.1},
+              "UpStep": 1.5, "RotateOffsetHeight": 2.0, "CollisionLevel": {"Level": 3},
+              "TerrainCompat": [[1.4, 0, 3.2], [-1.4, 0, 3.2], [1.4, 0, 0], [-1.4, 0, 0], [1.4, 0, -3.2], [-1.4, 0, -3.2]],
+              "TurretTurnSpeed": [14, 10], "TurretPitchRange": [-8, 85],
+              "Seats": [gunner_seat([0, -0.4, 0], [0, 1.9, 0.6])],
+              "Weapons": {"Main": cannon("gepard", "ammo_35mm", 40, 1100, 14, [[1.31, -0.06, 3.5], [-1.31, -0.06, 3.5]], True)},
+              "ContainerIcon": "superbwarfare:textures/gui/vehicle/type/land.png"})
+
+    # Pantsir-S1: 8x8 truck, twin 30 mm plus missiles (the missiles are launched by the vehicle's own fire control).
+    sbw_vehicle("pantsir",
+        base=wheels8([-4.2, -2.8, 1.2, 2.6]) + [(OD, -1.0, 0.6, -5.0, 2.0, 0.8, 10.0), (OL, -1.25, 1.4, 3.0, 2.5, 1.6, 2.0),
+              (GL, -1.05, 2.2, 4.98, 2.1, 0.6, 0.05), (OL, -1.25, 1.4, -4.8, 2.5, 0.8, 7.6)] + pair(GL, 1.23, 2.2, 3.5, 0.04, 0.55, 1.0),
+        turret=[(OLL, -1.0, 2.2, -2.8, 2.0, 1.4, 2.6), (SD, -0.08, 3.6, -2.6, 0.16, 0.5, 0.16),
+                (OD, -0.9, 4.1, -2.7, 1.8, 0.8, 0.12), (OD, -0.5, 2.9, -0.2, 1.0, 0.9, 0.12)],
+        barrel=pair(OD, 1.0, 2.55, -3.0, 0.5, 1.1, 3.4) + pair(BK, 1.05, 2.6, 0.4, 0.4, 1.0, 0.03) + pair(SD, 0.8, 2.5, -0.2, 0.1, 0.1, 1.8),
+        turret_pivot=(0, 2.2, -1.5), barrel_pivot=(0, 3.1, -1.5),
+        data={"MaxHealth": 400, "Mass": 18, "Type": "AA", "HudType": "@Land", "VehicleContainerType": "Small",
+              "EngineType": "Wheel",
+              "EngineInfo": {"EnergyCostRate": 64, "WheelRotSpeed": 1.75, "WheelDifferential": 0.3, "MaxForwardSpeedRate": 0.9,
+                             "MaxBackwardSpeedRate": 0.55, "Increment": 0.02, "Decrement": 0.017, "SteeringSpeed": 0.05},
+              "UpStep": 1.5, "RotateOffsetHeight": 2.2, "CollisionLevel": {"Level": 3},
+              "TerrainCompat": [[1.3, 0, 3.2], [-1.3, 0, 3.2], [1.3, 0, 1.8], [-1.3, 0, 1.8], [1.3, 0, -2.2], [-1.3, 0, -2.2], [1.3, 0, -3.6], [-1.3, 0, -3.6]],
+              "TurretTurnSpeed": [12, 8], "TurretPitchRange": [-5, 85],
+              "Seats": [gunner_seat([0, -0.6, 0], [0, 1.9, 0.5])],
+              "Weapons": {"Main": cannon("pantsir", "ammo_30mm", 50, 1000, 12, [[0.85, -0.55, 1.7], [-0.85, -0.55, 1.7]], True)},
+              "ContainerIcon": "superbwarfare:textures/gui/vehicle/type/land.png"})
+
+    # MIM-104 Patriot: static trailer launcher, missiles only, no crew position.
+    cans = [b for sx in (-1.0, 0.05) for sy in (1.75, 2.75)
+            for b in [(SA, sx, sy, -4.1, 0.95, 0.9, 6.1), (SAD, sx + 0.05, sy + 0.05, 2.0, 0.85, 0.8, 0.03)]]
+    sbw_vehicle("patriot",
+        base=pair(TY, 0.9, 0, -3.5, 0.4, 1.1, 1.1) + pair(TY, 0.9, 0, -2.1, 0.4, 1.1, 1.1) + pair(SD, 1.2, 0, 1.0, 0.25, 0.9, 0.25)
+             + pair(SD, 1.2, 0, -4.2, 0.25, 0.9, 0.25) + [(SAD, -1.3, 0.9, -4.5, 2.6, 0.4, 9.0), (SA, -1.2, 1.3, 2.7, 2.4, 1.3, 1.7)],
+        turret=[(SAD, -1.2, 1.3, -2.2, 2.4, 0.4, 2.4)],
+        barrel=[(SD, -1.05, 1.7, -2.5, 2.1, 2.0, 0.15)] + cans,
+        turret_pivot=(0, 1.3, -1.0), barrel_pivot=(0, 1.9, -2.0),
+        data={"MaxHealth": 300, "Mass": 30, "EngineType": "Fixed", "Type": "Defense", "HudType": "@Empty",
+              "VehicleContainerType": "Mini", "TurretTurnSpeed": [5, 3], "TurretPitchRange": [10, 80],
+              "Seats": [], "Weapons": {},
+              "ContainerIcon": "superbwarfare:textures/gui/vehicle/type/defense.png"})
+
+    # Survival recipes: each one crafts the vehicle packed in a Superb Warfare container (open it with a crowbar).
+    def crate(name, pattern, key):
+        write(f"{D}/recipe/{name}.json", {
+            "type": "minecraft:crafting_shaped", "category": "misc", "pattern": pattern,
+            "key": {k: {"item": v if ":" in v else f"{MOD}:{v}"} for k, v in key.items()},
+            "result": {"id": "superbwarfare:container", "count": 1, "components": {
+                "minecraft:block_entity_data": {"id": "superbwarfare:container", "EntityType": f"{MOD}:{name}"}}}})
+    I, N, B = MC + "iron_ingot", MC + "iron_nugget", MC + "iron_block"
+    crate("zu_23_2", ["I I", "IMI", "NBN"], {"I": I, "M": "electric_motor", "N": N, "B": B})
+    crate("gepard", ["UOU", "MCM", "BBB"], {"U": "ammo_35mm", "O": MC + "observer", "M": "electric_motor", "C": "circuit_board", "B": B})
+    crate("pantsir", ["UOU", "MCM", "BBB"], {"U": "guidance_unit", "O": MC + "observer", "M": "electric_motor", "C": "circuit_board", "B": B})
+    crate("patriot", ["UDU", "MCM", "BBB"], {"U": "guidance_unit", "D": MC + "diamond", "M": "electric_motor", "C": "circuit_board", "B": B})
+
+
 if __name__ == "__main__":
+    sbw_vehicles()
     block_textures(); block_models(); item_icons(); entity_textures(); recipes(); tags(); lang()
     print("assets generated")
