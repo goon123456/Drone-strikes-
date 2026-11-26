@@ -38,6 +38,27 @@ def _gear(name, pivot, foot, dia, rim=STEEL, twin=False, door=None):
     return _bone(name, pivot, parts)
 
 
+def _cylinders(y, z_positions, inner, outer, radius, exhaust=None):
+    """Air-cooled engine cylinders standing out either side of a crankcase: a finned barrel, a head with its
+    rocker cover and spark plug, and optionally a short exhaust stub swept back underneath."""
+    out = []
+    for z in z_positions:
+        for sx in (1, -1):
+            fins = [(sx * inner, radius * 0.7)]
+            n = max(3, int((outer - inner) / 0.014))
+            for i in range(n):                                   # alternate fin and gap along the barrel
+                a = inner + (outer - inner) * 0.78 * i / n
+                b = inner + (outer - inner) * 0.78 * (i + 0.5) / n
+                fins += [(sx * a, radius), (sx * b, radius), (sx * b, radius * 0.72), (sx * (inner + (outer - inner) * 0.78 * (i + 1) / n), radius * 0.72)]
+            head = inner + (outer - inner) * 0.78
+            fins += [(sx * head, radius * 0.95), (sx * outer * 0.985, radius * 0.9), (sx * outer, radius * 0.6), (sx * outer, 0.0)]
+            out.append(lathe(STEEL_D, "x", y, z, fins, seg=12))
+            out.append(bar(STEEL, (sx * outer, y + radius * 0.3, z), (sx * (outer + radius * 0.5), y + radius * 0.5, z), radius * 0.22))   # spark plug
+            if exhaust:
+                out.append(bar(COPPER, (sx * head, y - radius * 0.8, z), (sx * head * 0.9, y - radius * 1.6, z + exhaust), radius * 0.45))
+    return out
+
+
 def _hellfire(x, y, z):
     """An AGM-114 on its rail: seeker dome, body, mid and tail fins."""
     parts = [lathe(MUNITION, "z", x, y, [(z - 0.8, 0.0), (z - 0.8, 0.07), (z - 0.76, 0.089), (z + 0.6, 0.089), (z + 0.7, 0.085), (z + 0.7, 0.0)]),
@@ -114,7 +135,7 @@ def tb2():
     parts = [skin(g, [(3.25, 0, -0.05, 0, 0), (3.15, 0, -0.04, 0.2, 0.18), (2.8, 0, 0.0, 0.58, 0.46), (2.0, 0, 0.04, 0.82, 0.66), (1.2, 0, 0.05, 0.92, 0.72),
                       (-0.6, 0, 0.05, 0.95, 0.7), (-1.4, 0, 0.08, 0.76, 0.62), (-1.9, 0, 0.1, 0.56, 0.52), (-2.0, 0, 0.1, 0.46, 0.46)], power=2.6),
              lathe(STEEL_D, "z", 0, 0.1, [(-2.0, 0.2), (-2.25, 0.19), (-2.3, 0.1), (-2.34, 0.06), (-2.34, 0.0)]),   # pusher engine
-             B(STEEL_D, -0.32, 0.03, -2.22, 0.64, 0.14, 0.26, plain=True),                                          # its two cylinders
+             *_cylinders(0.1, (-2.08, -2.22), 0.16, 0.32, 0.06, exhaust=-0.14),                                     # its four cylinders
              B(g, 0.44, -0.12, 0.2, 0.006, 0.3, 1.2, plain=True, marks=[("left", "digits:T 253", 0.5, 0.5, 0)]),
              B(g, -0.446, -0.12, 0.2, 0.006, 0.3, 1.2, plain=True, marks=[("right", "digits:T 253", 0.5, 0.5, 0)])]
     # blended wing roots, long tapered panels and upturned tips
@@ -188,10 +209,12 @@ def global_hawk():
 def orlan():
     g = ORLAN_GREY
     parts = [lathe(STEEL_D, "z", 0, 0, [(0.8, 0.1), (0.9, 0.09), (0.95, 0.05), (0.95, 0.0)]),                       # engine nose
-             B(BLACK, -0.17, -0.04, 0.8, 0.34, 0.08, 0.1, plain=True),                                              # its two cylinders
+             *_cylinders(0.0, (0.86,), 0.07, 0.17, 0.035),                                                          # its two cylinders
              skin(g, [(0.8, 0, 0.0, 0.2, 0.22), (0.6, 0, -0.01, 0.26, 0.3), (0.2, 0, -0.01, 0.27, 0.32), (-0.15, 0, -0.01, 0.26, 0.3),
                       (-0.6, 0, 0.03, 0.14, 0.16), (-1.0, 0, 0.06, 0.08, 0.09), (-1.02, 0, 0.06, 0, 0)], power=2.6),
-             B(BLACK, -0.07, -0.2, 0.15, 0.14, 0.05, 0.2, plain=True), B(GLASS, -0.05, -0.205, 0.2, 0.1, 0.006, 0.1, plain=True),   # camera window
+             skin(BLACK, [(0.42, 0, -0.16, 0, 0), (0.36, 0, -0.18, 0.1, 0.05), (0.25, 0, -0.19, 0.15, 0.08), (0.14, 0, -0.18, 0.12, 0.06),
+                          (0.08, 0, -0.16, 0, 0)], seg=12),                                                         # camera blister
+             B(GLASS, -0.04, -0.232, 0.2, 0.08, 0.004, 0.1, plain=True),
              bar(STEEL_D, (0, 0.16, -0.2), (0, 0.4, -0.22), 0.012),                                                 # aerial
              B(g, -0.14, 0.14, -0.05, 0.28, 0.06, 0.42, plain=True),                                                # wing saddle
              B(g, 0.134, -0.08, -0.1, 0.004, 0.14, 0.4, plain=True, marks=[("left", "digits:10332", 0.5, 0.5, 0)])]
@@ -208,10 +231,12 @@ def orlan():
 def shahed():
     g, d = SHAHED_WHITE, SHAHED_DARK
     parts = [skin(g, [(1.75, 0, 0, 0, 0), (1.68, 0, 0, 0.14, 0.14), (1.45, 0, 0, 0.32, 0.32), (0.9, 0, 0, 0.46, 0.46), (-0.6, 0, 0, 0.46, 0.44),
-                      (-1.2, 0, 0, 0.42, 0.4), (-1.25, 0, 0, 0.34, 0.34)]),
-             lathe(STEEL_D, "z", 0, 0, [(-1.25, 0.17), (-1.5, 0.16), (-1.54, 0.08), (-1.54, 0.0)]),                    # engine
-             B(STEEL_D, -0.3, -0.06, -1.5, 0.6, 0.12, 0.24, plain=True), B(BLACK, -0.32, -0.04, -1.46, 0.64, 0.08, 0.14, plain=True),   # flat-four cylinders
+                      (-1.0, 0, 0, 0.4, 0.38), (-1.22, 0, 0, 0.3, 0.29), (-1.26, 0, 0, 0.26, 0.25)]),
+             # the engine: a flat-four on the tail with its crankcase, four finned cylinders and the propeller shaft
+             lathe(STEEL_D, "z", 0, 0, [(-1.26, 0.12), (-1.3, 0.1), (-1.5, 0.1), (-1.53, 0.07), (-1.56, 0.05), (-1.56, 0.0)]),
+             B(STEEL_D, -0.06, 0.08, -1.48, 0.12, 0.05, 0.18, plain=True),                                          # carburettor
              bar(STEEL_D, (0, 0.2, 0.3), (0, 0.34, 0.28), 0.014),
+             *_cylinders(0.0, (-1.34, -1.46), 0.09, 0.25, 0.055, exhaust=-0.12),
              B(g, 0.232, -0.08, -0.4, 0.004, 0.16, 0.7, plain=True, marks=[("left", "digits:M 214", 0.5, 0.5, 0)]),
              B(g, -0.236, -0.08, -0.4, 0.004, 0.16, 0.7, plain=True, marks=[("right", "digits:M 214", 0.5, 0.5, 0)])]
     # cropped delta blended into the body, with elevons and fins on the tips above and below
