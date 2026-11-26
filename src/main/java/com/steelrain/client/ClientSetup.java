@@ -31,7 +31,7 @@ public final class ClientSetup {
         e.registerEntityRenderer(ModRegistry.SHELL_CLUSTER_ENTITY.get(), c -> new EntityModelRenderer<>(c, Models.SHELL, 0.2f, 1f));
         e.registerEntityRenderer(ModRegistry.SHELL_SMOKE_ENTITY.get(), c -> new EntityModelRenderer<>(c, Models.SHELL, 0.2f, 1f));
         e.registerEntityRenderer(ModRegistry.SHELL_INCENDIARY_ENTITY.get(), c -> new EntityModelRenderer<>(c, Models.SHELL, 0.2f, 1f));
-        e.registerEntityRenderer(ModRegistry.MORTAR_SHELL_ENTITY.get(), c -> new EntityModelRenderer<>(c, Models.SHELL, 0.15f, 1f));
+        e.registerEntityRenderer(ModRegistry.MORTAR_SHELL_ENTITY.get(), c -> new EntityModelRenderer<>(c, Models.MORTAR_BOMB, 0.15f, 1f));
         e.registerEntityRenderer(ModRegistry.ATACMS.get(), c -> new EntityModelRenderer<>(c, Models.ATACMS, 0.4f, 1f));
         e.registerEntityRenderer(ModRegistry.BOMBLET.get(), c -> new EntityModelRenderer<>(c, Models.GRENADE, 0.12f, 1f));
         e.registerEntityRenderer(ModRegistry.SMOKE.get(), net.minecraft.client.renderer.entity.NoopRenderer::new);

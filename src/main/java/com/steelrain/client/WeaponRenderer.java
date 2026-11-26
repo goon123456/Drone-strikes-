@@ -49,7 +49,12 @@ public class WeaponRenderer implements BlockEntityRenderer<WeaponBlockEntity> {
                     AircraftType aircraft = AircraftType.values()[Mth.clamp(be.loaded(), 0, AircraftType.values().length - 1)];
                     pose.pushPose();
                     pose.translate(0, aircraft.gear, type.length + WeaponBlockEntity.RUNWAY_GAP + 0.5 + aircraft.length / 2);
-                    Models.aircraft(aircraft).render(pose, vc, light);
+                    BoxModel parked = Models.aircraft(aircraft);
+                    // The model is shared with aircraft in flight, so put its wheels back down first.
+                    for (String name : new String[]{"gearN", "gearL", "gearR"}) {
+                        if (parked.has(name)) { parked.get(name).xRot = 0; parked.get(name).visible = true; }
+                    }
+                    parked.render(pose, vc, light);
                     pose.popPose();
                 }
                 default -> { }

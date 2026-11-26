@@ -33,7 +33,12 @@ public class AircraftEntity extends FlyingWeaponEntity {
 
     public enum Phase { ROLL, OUTBOUND, ATTACK, ORBIT, RETURN, FINAL, ROLLOUT, CHUTE }
 
+    private static final net.minecraft.network.syncher.EntityDataAccessor<Boolean> GEAR_DOWN = net.minecraft.network.syncher.SynchedEntityData.defineId(
+            AircraftEntity.class, net.minecraft.network.syncher.EntityDataSerializers.BOOLEAN);
+
     private final AircraftType type;
+    /** Client only: 0 landing gear down, 1 folded away; and how far it is leaning into a turn, in radians. */
+    private float gearAnim, gearAnimO, bank, bankO;
     private BlockPos home = BlockPos.ZERO;
     private Vec3 runwayStart = Vec3.ZERO;
     private Vec3 forward = new Vec3(0, 0, 1);
@@ -58,6 +63,26 @@ public class AircraftEntity extends FlyingWeaponEntity {
     }
 
     public AircraftType type() { return type; }
+
+    @Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(GEAR_DOWN, true);
+    }
+
+    public float gearAnim(float partialTick) { return Mth.lerp(partialTick, gearAnimO, gearAnim); }
+
+    public float bank(float partialTick) { return Mth.lerp(partialTick, bankO, bank); }
+
+    @Override
+    protected void clientTick() {
+        gearAnimO = gearAnim;
+        bankO = bank;
+        gearAnim = Mth.clamp(gearAnim + (entityData.get(GEAR_DOWN) ? -0.04f : 0.04f), 0f, 1f);
+        // Lean into turns in proportion to how fast the heading is changing.
+        float target = Mth.clamp(Mth.wrapDegrees(getYRot() - yRotO) * 0.35f, -0.7f, 0.7f);
+        bank += (target - bank) * 0.08f;
+    }
     public Phase phase() { return phase; }
     public double targetX() { return targetX; }
     public double targetZ() { return targetZ; }
@@ -131,13 +156,22 @@ public class AircraftEntity extends FlyingWeaponEntity {
         return true;
     }
 
+    /** Wheels are down on the ground and on final approach, and for the first moments after lifting off. */
+    private void syncGear() {
+        boolean down = phase == Phase.ROLL || phase == Phase.FINAL || phase == Phase.ROLLOUT
+                || (phase == Phase.OUTBOUND && phaseTicks < 60);
+        if (entityData.get(GEAR_DOWN) != down) entityData.set(GEAR_DOWN, down);
+    }
+
     private void setPhase(Phase p) {
         phase = p;
         phaseTicks = 0;
+        syncGear();
     }
 
     @Override
     protected void serverTick(ServerLevel level) {
+        if (tickCount % 10 == 0) syncGear();
         age++;
         phaseTicks++;
         Vec3 pos = position();

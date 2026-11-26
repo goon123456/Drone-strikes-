@@ -301,8 +301,9 @@ python3 tools/gen_assets.py   # regenerate textures, models, recipes and languag
   their own sounds.
 
 ## Known limits
-- Vehicle models are simple generated shapes in SBW's Blockbench format, each with one plain hit box. A model
-  rework is planned.
+- Drones, aircraft, missiles and shells have detailed models built from reference photographs, in real-world
+  paint, with spinning propellers and rotors, retracting landing gear and banking in turns. The ground vehicles
+  and launch sites are still simple generated shapes, each with one plain hit box; their rework is next.
 - A loaded Iskander is not drawn on its launcher.
 - The Pantsir's missiles only fire in automatic mode.
 - A fitted Jammer Dome is not drawn.
