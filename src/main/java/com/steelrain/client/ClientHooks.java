@@ -37,14 +37,20 @@ public final class ClientHooks {
 
     public static void startLoop(com.steelrain.entity.FlyingWeaponEntity entity) { LoopSound.start(entity); }
 
-    /** Hiss of a jammed video link, louder the worse it is. */
-    public static void staticNoise(float jam) {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.player != null) {
-            mc.getSoundManager().play(net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
-                    com.steelrain.ModRegistry.STATIC.get(), 1f, Math.min(1f, jam)));
+    /** How badly the video link being watched is jammed right now, 0 to 1. Drives the static hiss. */
+    public static float jam;
+    private static boolean staticPlaying;
+
+    /** Starts the three static layers if they are not already running; they fade themselves by {@link #jam}. */
+    public static void staticNoise(float level) {
+        jam = level;
+        if (level > 0.08f && !staticPlaying) {
+            staticPlaying = true;
+            for (int i = 0; i < 3; i++) Minecraft.getInstance().getSoundManager().play(new LoopSound.Static(i));
         }
     }
+
+    static void staticStopped() { staticPlaying = false; }
 
     private ClientHooks() {}
 }

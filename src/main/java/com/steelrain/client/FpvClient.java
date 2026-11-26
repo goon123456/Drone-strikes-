@@ -106,7 +106,7 @@ public final class FpvClient {
 
         // A jammed link hisses, whether we are flying the drone or watching an aircraft's feed.
         int jam = drone() != null ? drone().jamPercent() : feed() != null ? feed().jamPercent() : 0;
-        if (jam > 10 && mc.player.tickCount % 20 == 0) ClientHooks.staticNoise(jam / 100f);
+        ClientHooks.staticNoise(jam / 100f);
 
         if (droneId < 0) return;
         FpvDroneEntity d = drone();

@@ -1,19 +1,73 @@
 {
-  "fpv_motor": {
-    "subtitle": "subtitles.steelrain.fpv_motor",
+  "fpv_low": {
+    "subtitle": "subtitles.steelrain.fpv_low",
     "sounds": [
       {
-        "name": "steelrain:fpv_motor",
+        "name": "steelrain:fpv_low",
+        "attenuation_distance": 48
+      }
+    ]
+  },
+  "fpv_medium": {
+    "subtitle": "subtitles.steelrain.fpv_medium",
+    "sounds": [
+      {
+        "name": "steelrain:fpv_medium",
+        "attenuation_distance": 56
+      }
+    ]
+  },
+  "fpv_high": {
+    "subtitle": "subtitles.steelrain.fpv_high",
+    "sounds": [
+      {
+        "name": "steelrain:fpv_high",
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "fpv_accelerate": {
+    "subtitle": "subtitles.steelrain.fpv_accelerate",
+    "sounds": [
+      {
+        "name": "steelrain:fpv_accelerate",
+        "attenuation_distance": 48
+      }
+    ]
+  },
+  "mavic_low": {
+    "subtitle": "subtitles.steelrain.mavic_low",
+    "sounds": [
+      {
+        "name": "steelrain:mavic_low",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "mavic_medium": {
+    "subtitle": "subtitles.steelrain.mavic_medium",
+    "sounds": [
+      {
+        "name": "steelrain:mavic_medium",
+        "attenuation_distance": 36
+      }
+    ]
+  },
+  "mavic_high": {
+    "subtitle": "subtitles.steelrain.mavic_high",
+    "sounds": [
+      {
+        "name": "steelrain:mavic_high",
         "attenuation_distance": 40
       }
     ]
   },
-  "mavic_motor": {
-    "subtitle": "subtitles.steelrain.mavic_motor",
+  "mavic_accelerate": {
+    "subtitle": "subtitles.steelrain.mavic_accelerate",
     "sounds": [
       {
-        "name": "steelrain:mavic_motor",
-        "attenuation_distance": 28
+        "name": "steelrain:mavic_accelerate",
+        "attenuation_distance": 32
       }
     ]
   },
@@ -22,25 +76,43 @@
     "sounds": [
       {
         "name": "steelrain:shahed_engine",
-        "attenuation_distance": 96
+        "attenuation_distance": 160
       }
     ]
   },
-  "turboprop": {
-    "subtitle": "subtitles.steelrain.turboprop",
+  "reaper_engine": {
+    "subtitle": "subtitles.steelrain.reaper_engine",
     "sounds": [
       {
-        "name": "steelrain:turboprop",
+        "name": "steelrain:reaper_engine",
+        "attenuation_distance": 128
+      }
+    ]
+  },
+  "tb2_engine": {
+    "subtitle": "subtitles.steelrain.tb2_engine",
+    "sounds": [
+      {
+        "name": "steelrain:tb2_engine",
         "attenuation_distance": 112
       }
     ]
   },
-  "jet": {
-    "subtitle": "subtitles.steelrain.jet",
+  "orlan_engine": {
+    "subtitle": "subtitles.steelrain.orlan_engine",
     "sounds": [
       {
-        "name": "steelrain:jet",
-        "attenuation_distance": 160
+        "name": "steelrain:orlan_engine",
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "global_hawk_jet": {
+    "subtitle": "subtitles.steelrain.global_hawk_jet",
+    "sounds": [
+      {
+        "name": "steelrain:global_hawk_jet",
+        "attenuation_distance": 192
       }
     ]
   },
@@ -53,11 +125,27 @@
       }
     ]
   },
-  "static": {
-    "subtitle": "subtitles.steelrain.static",
+  "static_light": {
+    "subtitle": "subtitles.steelrain.static_light",
     "sounds": [
       {
-        "name": "steelrain:static"
+        "name": "steelrain:static_light"
+      }
+    ]
+  },
+  "static_medium": {
+    "subtitle": "subtitles.steelrain.static_medium",
+    "sounds": [
+      {
+        "name": "steelrain:static_medium"
+      }
+    ]
+  },
+  "static_heavy": {
+    "subtitle": "subtitles.steelrain.static_heavy",
+    "sounds": [
+      {
+        "name": "steelrain:static_heavy"
       }
     ]
   },
@@ -65,7 +153,13 @@
     "subtitle": "subtitles.steelrain.cable_snap",
     "sounds": [
       {
-        "name": "steelrain:cable_snap"
+        "name": "steelrain:cable_snap_1"
+      },
+      {
+        "name": "steelrain:cable_snap_2"
+      },
+      {
+        "name": "steelrain:cable_snap_3"
       }
     ]
   }

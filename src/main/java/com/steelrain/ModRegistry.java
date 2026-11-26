@@ -59,15 +59,25 @@ public final class ModRegistry {
     public static final DeferredRegister<CreativeModeTab> TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MODID);
     public static final DeferredRegister<DataComponentType<?>> COMPONENTS = DeferredRegister.create(Registries.DATA_COMPONENT_TYPE, MODID);
 
-    // ---- sounds Superb Warfare does not have: synthesised by tools/gen_sounds.py ----
+    // ---- sounds Superb Warfare does not have: installed by tools/gen_sounds.py ----
     public static final DeferredRegister<net.minecraft.sounds.SoundEvent> SOUNDS = DeferredRegister.create(Registries.SOUND_EVENT, MODID);
-    public static final Supplier<net.minecraft.sounds.SoundEvent> FPV_MOTOR = sound("fpv_motor");
-    public static final Supplier<net.minecraft.sounds.SoundEvent> MAVIC_MOTOR = sound("mavic_motor");
+    public static final Supplier<net.minecraft.sounds.SoundEvent> FPV_LOW = sound("fpv_low");
+    public static final Supplier<net.minecraft.sounds.SoundEvent> FPV_MEDIUM = sound("fpv_medium");
+    public static final Supplier<net.minecraft.sounds.SoundEvent> FPV_HIGH = sound("fpv_high");
+    public static final Supplier<net.minecraft.sounds.SoundEvent> FPV_ACCELERATE = sound("fpv_accelerate");
+    public static final Supplier<net.minecraft.sounds.SoundEvent> MAVIC_LOW = sound("mavic_low");
+    public static final Supplier<net.minecraft.sounds.SoundEvent> MAVIC_MEDIUM = sound("mavic_medium");
+    public static final Supplier<net.minecraft.sounds.SoundEvent> MAVIC_HIGH = sound("mavic_high");
+    public static final Supplier<net.minecraft.sounds.SoundEvent> MAVIC_ACCELERATE = sound("mavic_accelerate");
     public static final Supplier<net.minecraft.sounds.SoundEvent> SHAHED_ENGINE = sound("shahed_engine");
-    public static final Supplier<net.minecraft.sounds.SoundEvent> TURBOPROP = sound("turboprop");
-    public static final Supplier<net.minecraft.sounds.SoundEvent> JET = sound("jet");
+    public static final Supplier<net.minecraft.sounds.SoundEvent> REAPER_ENGINE = sound("reaper_engine");
+    public static final Supplier<net.minecraft.sounds.SoundEvent> TB2_ENGINE = sound("tb2_engine");
+    public static final Supplier<net.minecraft.sounds.SoundEvent> ORLAN_ENGINE = sound("orlan_engine");
+    public static final Supplier<net.minecraft.sounds.SoundEvent> GLOBAL_HAWK_JET = sound("global_hawk_jet");
     public static final Supplier<net.minecraft.sounds.SoundEvent> JAMMER_HUM = sound("jammer_hum");
-    public static final Supplier<net.minecraft.sounds.SoundEvent> STATIC = sound("static");
+    public static final Supplier<net.minecraft.sounds.SoundEvent> STATIC_LIGHT = sound("static_light");
+    public static final Supplier<net.minecraft.sounds.SoundEvent> STATIC_MEDIUM = sound("static_medium");
+    public static final Supplier<net.minecraft.sounds.SoundEvent> STATIC_HEAVY = sound("static_heavy");
     public static final Supplier<net.minecraft.sounds.SoundEvent> CABLE_SNAP = sound("cable_snap");
 
     private static Supplier<net.minecraft.sounds.SoundEvent> sound(String name) {

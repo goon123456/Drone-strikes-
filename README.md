@@ -296,9 +296,9 @@ python3 tools/gen_assets.py   # regenerate textures, models, recipes and languag
 - Explosions, gunfire, missile launches, reloads, the incoming-shell whistle and the missile warning use Superb
   Warfare's own recordings. Blasts and launches switch to a duller distant version the further away you are,
   and big warheads can be heard from about a kilometre.
-- FPV and Mavic motors (pitch rises with speed), the Shahed's moped engine, turboprop and jet aircraft, rocket
-  motors on missiles, the jammer hum, video static when a link is being jammed and the fibre snapping all have
-  their own sounds.
+- FPV and Mavic rotors blend between low, medium and high-speed loops as the drone speeds up, with a spin-up
+  when you take control. The Shahed, Reaper, Bayraktar, Orlan and Global Hawk each have their own engine. The
+  jammer hums, a jammed video link hisses louder the worse it gets, and the fibre makes one of three snaps.
 
 ## Known limits
 - Drones, aircraft, missiles and shells have detailed models built from reference photographs, in real-world
@@ -307,6 +307,6 @@ python3 tools/gen_assets.py   # regenerate textures, models, recipes and languag
 - A loaded Iskander is not drawn on its launcher.
 - The Pantsir's missiles only fire in automatic mode.
 - A fitted Jammer Dome is not drawn.
-- The drone, engine, jammer and static sounds are synthesised by `tools/gen_sounds.py`, not recorded. Dropping a
-  better mono `.ogg` with the same name into `assets/steelrain/sounds/` replaces one.
+- The drone, engine, jammer, static and cable sounds are the files in `tools/sounds/`. Replace one there (mono
+  `.ogg`, same name) and rerun `tools/gen_assets.py` to change it. They are synthesised, not field recordings.
 - Low-flying drones (Orlan, Shahed) can fly into steep mountains.
