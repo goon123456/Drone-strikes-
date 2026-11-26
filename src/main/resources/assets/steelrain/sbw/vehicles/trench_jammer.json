@@ -1,8 +1,0 @@
-{
-  "Models": [
-    {
-      "Model": "steelrain:models/bedrock/vehicle/trench_jammer.geo.json",
-      "Texture": "steelrain:textures/bedrock/vehicle/trench_jammer.png"
-    }
-  ]
-}

@@ -32,6 +32,7 @@ public class Zu23 extends SrAirDefence {
     @Override public boolean hasRadar() { return false; }
     @Override protected Vec3[] muzzles() { return MUZZLES; }
     @Override protected int roundsPerMinute() { return 900; }
+    @Override protected int beltChangeTicks() { return 40; }   // two 50-round magazines changed by hand
     @Override protected float shellDamage() { return 8; }
     @Override protected float fuseReach() { return 1.2f; }
     @Override protected float fuseChance() { return 0.02f; }

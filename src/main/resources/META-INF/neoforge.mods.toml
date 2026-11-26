@@ -7,8 +7,8 @@ modId="steelrain"
 version="${file.jarVersion}"
 displayName="Steel Rain"
 description='''
-An addon for Superb Warfare: drones, cruise and ballistic missiles, rocket artillery, air defence and
-electronic warfare. Fly FPV drones from their camera, or plan strikes on the Field Laptop's map.
+Drones, cruise and ballistic missiles, rocket and tube artillery, air defence and electronic warfare, on
+drivable vehicles. Works with Superb Warfare if it is installed. Fly FPV drones from their camera, or plan strikes on the Field Laptop's map.
 '''
 
 [[dependencies.steelrain]]
@@ -27,7 +27,7 @@ electronic warfare. Fly FPV drones from their camera, or plan strikes on the Fie
 
 [[dependencies.steelrain]]
     modId="superbwarfare"
-    type="required"
+    type="optional"
     versionRange="[0.8.9,)"
     ordering="AFTER"
     side="BOTH"

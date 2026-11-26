@@ -457,6 +457,22 @@ def item_icons():
     d.line([(6, 8), (11, 5)], fill=c((120, 112, 86)))
     d.point([(3, 13), (11, 13)], fill=c((34, 34, 34)))
     icons["patriot"] = outlined(img)
+    img, d = canvas()   # EW Jammer: shelter with aerials
+    d.rectangle([2, 8, 13, 13], fill=c((96, 104, 70)))
+    d.line([(5, 8), (5, 1)], fill=c((60, 60, 60))); d.line([(10, 8), (10, 3)], fill=c((60, 60, 60)))
+    d.point([(5, 1), (10, 3)], fill=c((220, 60, 50)))
+    icons["jammer"] = outlined(img)
+    img, d = canvas()   # Trench Jammer: small box with a whip aerial
+    d.rectangle([4, 9, 11, 13], fill=c((70, 76, 52)))
+    d.line([(9, 9), (12, 1)], fill=c((50, 50, 50))); d.point((6, 11), fill=c((90, 220, 90)))
+    icons["trench_jammer"] = outlined(img)
+    img, d = canvas()   # Krasukha: truck with a big dish
+    d.rectangle([1, 9, 14, 11], fill=c((88, 104, 62)))
+    d.rectangle([11, 6, 14, 9], fill=c((96, 110, 70)))
+    d.ellipse([1, 1, 8, 8], outline=c((200, 200, 196)))
+    for x in (2, 5, 10, 13):
+        d.point((x, 12), fill=c((34, 34, 34)))
+    icons["krasukha"] = outlined(img)
     for name, body, cap in (("jerrycan", (70, 84, 56), (60, 60, 60)), ("diesel_jerrycan", (180, 60, 40), (230, 190, 60))):
         img, d = canvas()
         d.rectangle([4, 4, 11, 14], fill=c(body)); d.line([(5, 9), (10, 9)], fill=c(tuple(v - 25 for v in body)))
@@ -590,6 +606,11 @@ def lang():
         "item.steelrain.gepard": "Flakpanzer Gepard",
         "item.steelrain.pantsir": "Pantsir-S1",
         "item.steelrain.patriot": "MIM-104 Patriot",
+        "item.steelrain.jammer": "EW Jammer",
+        "item.steelrain.trench_jammer": "Trench Jammer",
+        "item.steelrain.krasukha": "Krasukha-4",
+        "message.steelrain.battery_full": "Battery is full",
+        "message.steelrain.battery_charged": "Battery: %sk / %sk FE",
         "key.steelrain.auto_mode": "Air defence: automatic mode on/off",
         "message.steelrain.auto_on": "Automatic mode ON: engages hostile aircraft and missiles while nobody is at the guns",
         "message.steelrain.auto_off": "Automatic mode OFF",
@@ -850,49 +871,6 @@ import vehicle_kit as VK
 def piv(p):
     return [round(p[0] * 16, 3), round(p[1] * 16, 3), round(-p[2] * 16, 3)]
 
-TRACKS = {}   # per tracked vehicle: where each link is at every point of its trip round the wheels
-
-def sbw_vehicle(name, base, turret, barrel, turret_pivot, barrel_pivot, data):
-    # The shapes come from gen_vehicles.py; the box lists passed in here are only the old placeholder models.
-    m = GV.MODELS[name]()
-    tex, tw, th = VK.bake(m, name)
-    save(Image.fromarray(tex).convert("RGB"), f"{A}/textures/bedrock/vehicle/{name}.png")
-    mesh = lambda parts: {"poly_mesh": VK.to_mesh(parts, tw, th)} if parts else {}
-    # base carries the running gear and stays level; body (hull, cab, load) leans on it under braking and in turns
-    # Superb Warfare freezes every bone into the model unless its name is on its list of moving ones; "move_" is
-    # the prefix it reserves for bones moved by a renderer, so all of ours carry it.
-    bones = [{"name": "root", "pivot": [0, 0, 0]},
-             {"name": "base", "parent": "root", "pivot": [0, 0, 0]},
-             {"name": "move_body", "parent": "base", "pivot": [0, 9.6, 0], **mesh(m["base"])}]
-    if turret_pivot is not None:
-        bones += [{"name": "turret", "parent": "move_body", "pivot": piv(turret_pivot), **mesh(m["turret"])},
-                  {"name": "barrel", "parent": "turret", "pivot": piv(barrel_pivot), **mesh(m["barrel"])}]
-    for extra in m["bones"]:
-        bones.append({"name": extra["name"], "parent": extra["parent"], "pivot": piv(extra["pivot"]), **mesh(extra["cubes"])})
-    if m.get("track"):
-        TRACKS[name] = m["track"]
-    path = f"{A}/models/bedrock/vehicle/{name}.geo.json"
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, "w") as f:   # compact: these files hold tens of thousands of points
-        json.dump({"format_version": "1.12.0", "minecraft:geometry": [{
-            "description": {"identifier": f"geometry.{name}", "texture_width": tw, "texture_height": th,
-                            "visible_bounds_width": 16, "visible_bounds_height": 8, "visible_bounds_offset": [0, 3, 0]},
-            "bones": bones}]}, f, separators=(",", ":"))
-    write(f"{A}/sbw/vehicles/{name}.json", {"Models": [{
-        "Model": f"{MOD}:models/bedrock/vehicle/{name}.geo.json",
-        "Texture": f"{MOD}:textures/bedrock/vehicle/{name}.png"}]})
-    full = {"MaxEnergy": 2000000, "KeepChunkLoaded": False,
-            **({"TurretPos": list(turret_pivot),
-                "BarrelPos": [round(barrel_pivot[i] - turret_pivot[i], 3) for i in range(3)]} if turret_pivot is not None else {}),
-            "SeekInfo": {"MinSeekRange": 3, "MaxSeekRange": 128, "SeekIterative": 10, "MinTargetSize": 0.2, "SeekEnergyCost": 500},
-            "VehicleIcon": "superbwarfare:textures/vehicle_icon/hpj_11_icon.png",
-            "DamageModifiers": ["All - 6", "All * 0.4", "minecraft:explosion * 5", "#superbwarfare:projectile * 0.3"],
-            "DestroyInfo": {"ExplosionDamage": 60, "ExplosionRadius": 5}}
-    full.update(data)
-    if m.get("track"):   # one trip round is 100 animation units; this makes the links on the ground stand still
-        full["EngineInfo"] = dict(full["EngineInfo"], TrackRotSpeed=round(100 / (math.pi * m["track"]["length"]), 4))
-    write(f"{D}/sbw/vehicles/{name}.json", full)
-
 def own_vehicle(name):
     """A vehicle driven and drawn by Steel Rain itself: one mesh file in the aircraft format with a bone tree,
     running gear on the root, hull on "body" (leans on its springs), turret on the hull, gun or pod on the turret."""
@@ -918,123 +896,21 @@ def own_vehicle(name):
     with open(path, "w") as f:
         json.dump(out, f, separators=(",", ":"))
 
-def cannon(name, belt, rounds, rpm, damage, muzzles, lead):
-    """An automatic cannon firing Superb Warfare's real shell projectile. HE and AP belts are separate ammo types."""
-    w = {"DefaultFireMode": "Auto", "AvailableFireModes": "Auto",
-         "Projectile": "superbwarfare:small_cannon_shell", "ShellType": "AA",
-         "AmmoType": [f"{rounds} {MOD}:{belt}",
-                      {"Ammo": f"{rounds} {MOD}:{belt}_ap",
-                       "Override": {"Damage": round(damage * 1.8, 1), "ExplosionDamage": 0, "ExplosionRadius": 0}}],
-         "RPM": rpm, "Velocity": 12, "Gravity": 0.03, "ProjectileLife": 30,
-         "Damage": damage, "ExplosionDamage": 4, "ExplosionRadius": 2.5, "ExplosionDestroy": False, "Spread": 0.3,
-         "HeatPerShoot": 0.8, "NaturalCooldown": 0.6, "DefaultZoom": 2,
-         "RecoilTime": 8, "RecoilForce": 0.12, "ShootAnimationTime": 2,
-         "Crosshair": "@VehicleDynamicCross", "Name": f"weapon.{MOD}.{name}",
-         "Icon": "superbwarfare:textures/overlay/vehicle/weapon/icons/cannon_30mm_ap.png",
-         "ShootPos": {"Transform": "Barrel", "Positions": muzzles, "Directions": ["Barrel"]},
-         "SoundInfo": {"FireSoundInstances": "superbwarfare:hpj_11_fire"}}
-    if lead:   # radar-directed guns show the gunner a lead point; the hand-laid ZU-23-2 deliberately does not
-        w["SeekWeaponInfo"] = {"SeekDirection": "Barrel", "SeekRange": 192, "SeekAngle": 20, "SeekTime": 10,
-                               "MinTargetSize": 0.1, "OnlyLockEntity": True, "CalculateTrajectory": True}
-    return w
-
-def gunner_seat(pos, cam, hide=True):
-    return {"HidePassenger": hide, "Transform": "Turret", "Position": pos, "CanRotateHead": not hide,
-            "MinPitch": -8, "MaxPitch": 85, "Weapons": ["Main"], "HasThermalImaging": hide,
-            **({"CameraPos": {"Transform": "Turret", "UseFixedCameraPos": True, "Position": cam, "Direction": "Barrel"}} if cam else {})}
-
-def sbw_vehicles():
-    wheels8 = lambda zs: [b for z in zs for b in pair(TY, 0.9, 0, z, 0.4, 1.2, 1.2)]
-
-    # ZU-23-2: towed twin 23 mm. Static, one exposed gunner, no lead computer.
+def vehicles():
+    """Steel Rain's own vehicles: mesh models and textures, and their survival recipes."""
     own_vehicle("zu_23_2")
-
-    # Flakpanzer Gepard: tracked, radar-laid twin 35 mm.
     own_vehicle("gepard")
-
-    # Pantsir-S1: 8x8 truck, twin 30 mm plus missiles (the missiles are launched by the vehicle's own fire control).
     own_vehicle("pantsir")
-
-    # MIM-104 Patriot: static trailer launcher, missiles only, no crew position.
-    cans = [b for sx in (-1.0, 0.05) for sy in (1.75, 2.75)
-            for b in [(SA, sx, sy, -4.1, 0.95, 0.9, 6.1), (SAD, sx + 0.05, sy + 0.05, 2.0, 0.85, 0.8, 0.03)]]
     own_vehicle("patriot")
-
-    # ---- artillery and missile launchers: fired from the Field Laptop, so they carry no Superb Warfare weapons ----
-    WHEEL = {"EngineSound": "superbwarfare:truck_engine", "EngineType": "Wheel", "EngineInfo": {"EnergyCostRate": 64, "WheelRotSpeed": 1.75, "WheelDifferential": 0.3,
-             "MaxForwardSpeedRate": 0.9, "MaxBackwardSpeedRate": 0.55, "Increment": 0.02, "Decrement": 0.017, "SteeringSpeed": 0.05},
-             "UpStep": 1.5, "RotateOffsetHeight": 2.0, "CollisionLevel": {"Level": 3}}
-    TRACK = {"EngineSound": "superbwarfare:plz_05_engine", "EngineType": "Track", "EngineInfo": {"EnergyCostRate": 96, "WheelRotSpeed": 1.25, "WheelDifferential": 0.5,
-             "TrackRotSpeed": 1.9, "TrackDifferential": 0.8, "MaxForwardSpeedRate": 0.7, "MaxBackwardSpeedRate": 0.45,
-             "Increment": 0.022, "Decrement": 0.015, "SteeringSpeed": 0.1},
-             "UpStep": 1.5, "RotateOffsetHeight": 2.0, "CollisionLevel": {"Level": 3}}
-    driver = lambda x, y, z: [{"HidePassenger": True, "Transform": "Vehicle", "Position": [x, y, z], "MinPitch": -30, "MaxPitch": 30}]
-    # Nobody steers these launchers by looking around: the fire-control order lays them.
-    LAID = {"TurretControllerIndex": 9, "Weapons": {}, "HudType": "@Land", "VehicleContainerType": "Small"}
-
     own_vehicle("himars")   # driven and laid by Steel Rain itself, not Superb Warfare
-
-    def charges(velocities, muzzle, ammo):
-        """One Superb Warfare weapon per propellant charge: same gun, same shells, different muzzle velocity."""
-        first = {"DefaultFireMode": "Semi", "AvailableFireModes": "Semi",
-                 "Projectile": f"{MOD}:{ammo[0]}",
-                 "AmmoType": [f"{MOD}:{ammo[0]}"] + [{"Ammo": f"{MOD}:{a}", "Projectile": f"{MOD}:{a}"} for a in ammo[1:]],
-                 "RPM": 15, "Velocity": velocities[0], "Spread": 0.12, "ProjectileLife": 2400, "DefaultZoom": 1.5,
-                 "RecoilTime": 42, "RecoilForce": 1.1 if "shell_155mm" in ammo else 0.2, "ShootAnimationTime": 24,
-                 "Crosshair": "@NoCross", "Name": f"weapon.{MOD}.charge_1",
-                 "Icon": "superbwarfare:textures/overlay/vehicle/weapon/icons/cannon_30mm_ap.png",
-                 "ShootPos": {"Transform": "Barrel", "Positions": [muzzle], "Directions": ["Barrel"]}}
-        out = {"Charge1": first}
-        for i, v in enumerate(velocities[1:], start=2):
-            out[f"Charge{i}"] = {"Template": "Charge1", "Velocity": v, "Name": f"weapon.{MOD}.charge_{i}"}
-        return out
-    SHELLS = ["shell_155mm", "shell_cluster", "shell_smoke", "shell_incendiary"]
-
-    # 120 mm mortar: baseplate, bipod and tube. High-angle fire only, laid by the crewman sitting beside it.
     own_vehicle("mortar_120")   # laid and fired through Steel Rain itself
-
     own_vehicle("m109")   # driven, laid and fired through Steel Rain itself
-
     own_vehicle("tomahawk_launcher")   # laid and fired through Steel Rain itself
-
     own_vehicle("iskander_launcher")   # laid and fired through Steel Rain itself
-
-    # ---- ground station, catapult and jammers ----
-    STATIC = {"EngineType": "Fixed", "Weapons": {}, "Seats": [], "HudType": "@Empty", "Type": "Defense",
-              "ContainerIcon": "superbwarfare:textures/gui/vehicle/type/defense.png"}
-    sbw_vehicle("jammer",
-        base=[(OL, -1.4, 0.2, -1.4, 2.8, 2.4, 2.8), (OD, -0.4, 0.3, -1.43, 0.8, 1.9, 0.04), (SD, -0.1, 2.6, -0.1, 0.2, 6.4, 0.2),
-              (SD, -1.5, 7.0, -0.05, 3.0, 0.1, 0.1), (SD, -0.05, 8.2, -1.5, 0.1, 0.1, 3.0), (OD, -0.3, 7.8, -1.5, 0.6, 0.9, 0.12),
-              (OD, -0.3, 7.8, 1.38, 0.6, 0.9, 0.12), (RD, -0.08, 9.0, -0.08, 0.16, 0.16, 0.16)]
-             + pair(OD, 1.3, 6.6, -0.3, 0.12, 0.9, 0.6) + pair(SD, 1.1, 0, -1.2, 0.2, 0.2, 0.2) + pair(SD, 1.1, 0, 1.0, 0.2, 0.2, 0.2),
-        turret=[], barrel=[], turret_pivot=None, barrel_pivot=None,
-        data={**STATIC, "MaxHealth": 150, "Mass": 12, "VehicleContainerType": "Empty"})
-    sbw_vehicle("trench_jammer",
-        base=[(OL, -0.35, 0, -0.35, 0.7, 0.6, 0.7), (OD, -0.3, 0.6, -0.3, 0.6, 0.06, 0.6), (SD, -0.04, 0.66, -0.04, 0.08, 1.2, 0.08),
-              (SD, -0.3, 1.5, -0.02, 0.6, 0.04, 0.04), (SD, -0.02, 1.3, -0.3, 0.04, 0.04, 0.6), (RD, -0.05, 1.86, -0.05, 0.1, 0.1, 0.1)],
-        turret=[], barrel=[], turret_pivot=None, barrel_pivot=None,
-        data={**STATIC, "MaxHealth": 30, "Mass": 1, "VehicleContainerType": "Empty"})
-    sbw_vehicle("krasukha",
-        base=wheels8([-4.7, -3.3, 1.5, 2.9]) + [(OD, -1.0, 0.6, -5.5, 2.0, 0.8, 11.0), (OL, -1.25, 1.4, 3.5, 2.5, 1.6, 2.0),
-              (GL, -1.05, 2.2, 5.48, 2.1, 0.6, 0.05), (OL, -1.25, 1.4, -2.5, 2.5, 1.9, 5.6), (OD, -0.6, 3.3, -0.5, 1.2, 0.5, 1.2),
-              (SD, -0.12, 1.4, -4.1, 0.24, 2.4, 0.24), (OLL, -1.5, 2.4, -4.3, 3.0, 2.6, 0.25, 25, (0, 3.6, -4.2))]
-             + pair(GL, 1.23, 2.2, 4.0, 0.04, 0.55, 1.0),
-        turret=[], barrel=[], turret_pivot=None, barrel_pivot=None,
-        data={**WHEEL, "Weapons": {}, "HudType": "@Land", "Type": "Special", "MaxHealth": 300, "Mass": 20,
-              "VehicleContainerType": "Empty", "Seats": driver(0.6, 1.6, 4.4), "RotateOffsetHeight": 2.2,
-              "TerrainCompat": [[1.3, 0, 3.5], [-1.3, 0, 3.5], [1.3, 0, 2.1], [-1.3, 0, 2.1], [1.3, 0, -2.7], [-1.3, 0, -2.7], [1.3, 0, -4.1], [-1.3, 0, -4.1]],
-              "ContainerIcon": "superbwarfare:textures/gui/vehicle/type/land.png"})
-
-    with open(f"{A}/sbw/tracks.json", "w") as f:
-        json.dump(TRACKS, f, separators=(",", ":"))
-
-    # Survival recipes: each one crafts the vehicle packed in a Superb Warfare container (open it with a crowbar).
-    def crate(name, pattern, key):
-        write(f"{D}/recipe/{name}.json", {
-            "type": "minecraft:crafting_shaped", "category": "misc", "pattern": pattern,
-            "key": {k: {"item": v if ":" in v else f"{MOD}:{v}"} for k, v in key.items()},
-            "result": {"id": "superbwarfare:container", "count": 1, "components": {
-                "minecraft:block_entity_data": {"id": "superbwarfare:container", "EntityType": f"{MOD}:{name}"}}}})
+    own_vehicle("jammer")
+    own_vehicle("trench_jammer")
+    own_vehicle("krasukha")
+    # Survival recipes: each one crafts the vehicle as an item; place it on the ground.
     I, N, B = MC + "iron_ingot", MC + "iron_nugget", MC + "iron_block"
     shaped("zu_23_2", ["I I", "IMI", "NBN"], {"I": I, "M": "electric_motor", "N": N, "B": B})
     shaped("gepard", ["UOU", "MCM", "BBB"], {"U": "ammo_35mm", "O": MC + "observer", "M": "electric_motor", "C": "circuit_board", "B": B})
@@ -1048,9 +924,9 @@ def sbw_vehicles():
         "ingredients": [{"item": f"{MOD}:jerrycan"}, {"tag": "minecraft:coals"}, {"tag": "minecraft:coals"}],
         "result": {"id": f"{MOD}:diesel_jerrycan", "count": 1}})
     shaped("m109", ["I  ", "BIC", "BMB"], {"I": I, "B": B, "C": "circuit_board", "M": "electric_motor"})
-    crate("jammer", [" A ", "CUC", "BDB"], {"A": MC + "lightning_rod", "C": "circuit_board", "U": "guidance_unit", "B": B, "D": "drone_battery"})
-    crate("trench_jammer", [" A ", "CDC", "III"], {"A": MC + "lightning_rod", "C": "circuit_board", "D": "drone_battery", "I": I})
-    crate("krasukha", ["AUA", "CUC", "BBB"], {"A": MC + "lightning_rod", "U": "guidance_unit", "C": "circuit_board", "B": B})
+    shaped("jammer", [" A ", "CUC", "BDB"], {"A": MC + "lightning_rod", "C": "circuit_board", "U": "guidance_unit", "B": B, "D": "drone_battery"})
+    shaped("trench_jammer", [" A ", "CDC", "III"], {"A": MC + "lightning_rod", "C": "circuit_board", "D": "drone_battery", "I": I})
+    shaped("krasukha", ["AUA", "CUC", "BBB"], {"A": MC + "lightning_rod", "U": "guidance_unit", "C": "circuit_board", "B": B})
     shaped("patriot", ["UDU", "MCM", "BBB"], {"U": "guidance_unit", "D": MC + "diamond", "M": "electric_motor", "C": "circuit_board", "B": B})
 
 
@@ -1072,7 +948,7 @@ def aircraft():
 if __name__ == "__main__":
     import gen_sounds
     gen_sounds.main()
-    sbw_vehicles()
+    vehicles()
     aircraft()
     block_textures(); block_models(); item_icons(); entity_textures(); recipes(); tags(); lang()
     print("assets generated")

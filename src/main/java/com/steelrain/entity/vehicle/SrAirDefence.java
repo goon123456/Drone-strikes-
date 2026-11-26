@@ -1,8 +1,5 @@
 package com.steelrain.entity.vehicle;
 
-import com.atsuishio.superbwarfare.data.vehicle.subdata.VehicleType;
-import com.atsuishio.superbwarfare.entity.projectile.DestroyableProjectile;
-import com.atsuishio.superbwarfare.entity.vehicle.base.VehicleEntity;
 import com.steelrain.Config;
 import com.steelrain.entity.CannonShellEntity;
 import com.steelrain.entity.FlyingWeaponEntity;
@@ -94,6 +91,8 @@ public abstract class SrAirDefence extends SrVehicle {
     @Nullable protected abstract Item heBelt();
     @Nullable protected abstract Item apBelt();
     protected int roundsPerBelt() { return 50; }
+    /** Ticks to put the next belt on: the radar guns feed from big magazines almost without a pause. */
+    protected int beltChangeTicks() { return 6; }
     public double minPitch() { return -8; }
     public double maxPitch() { return 85; }
     protected abstract float traverseRate();
@@ -225,7 +224,7 @@ public abstract class SrAirDefence extends SrVehicle {
         int slot = slotOf(want);
         if (slot < 0 && other != null) slot = slotOf(other);
         if (slot < 0) return;
-        if (++beltLoad < 40) return;                            // two seconds to load a belt
+        if (++beltLoad < beltChangeTicks()) return;
         boolean ap = inventory.getItem(slot).is(apBelt());
         inventory.removeItem(slot, 1);
         entityData.set(BELT_AP, ap);
@@ -294,7 +293,7 @@ public abstract class SrAirDefence extends SrVehicle {
         }
         Vec3 targetPos = target.position().add(0, target.getBbHeight() / 2, 0);
         double dist = centre.distanceTo(targetPos);
-        boolean highValue = target instanceof FlyingWeaponEntity f ? f.highValue() : target instanceof VehicleEntity;
+        boolean highValue = target instanceof FlyingWeaponEntity f ? f.highValue() : com.steelrain.compat.Sbw.isVehicle(target);
         boolean useGuns = hasRounds && dist <= gunRange() && (!hasMissile || !highValue);
         if (!useGuns && !hasMissile) {
             if (dist > gunRange() * 1.4) setTarget(null);
@@ -405,7 +404,7 @@ public abstract class SrAirDefence extends SrVehicle {
         return best;
     }
 
-    /** Hostile things in the air: Steel Rain drones and missiles, Superb Warfare aircraft and guided weapons. */
+    /** Hostile things in the air: Steel Rain drones and missiles, and (with Superb Warfare) its aircraft and guided weapons. */
     public boolean isThreat(Entity e) {
         if (!e.isAlive()) return false;
         UUID owner = getOwnerUUID();
@@ -413,20 +412,7 @@ public abstract class SrAirDefence extends SrVehicle {
             return !f.falling() && f.interceptable() && (!highValueOnly() || f.highValue())
                     && !Teams.friendly(level(), owner, ownerNameCache, f.ownerId(), f.ownerName());
         }
-        if (e instanceof VehicleEntity v) {
-            VehicleType type = v.getVehicleType();
-            if (v.isWreck() || (type != VehicleType.AIRPLANE && type != VehicleType.HELICOPTER && type != VehicleType.AIRSHIP
-                    && !(!highValueOnly() && type == VehicleType.DRONE))) return false;
-            if (v.onGround()) return false;
-            Entity crew = v.getFirstPassenger();
-            if (!(crew instanceof Player p)) return false;
-            return !Teams.friendly(level(), owner, ownerNameCache, p.getUUID(), p.getGameProfile().getName());
-        }
-        if (e instanceof DestroyableProjectile && e instanceof Projectile p && !highValueOnly()) {
-            return p.getOwner() instanceof Player shooter
-                    && !Teams.friendly(level(), owner, ownerNameCache, shooter.getUUID(), shooter.getGameProfile().getName());
-        }
-        return false;
+        return com.steelrain.compat.Sbw.isAirThreat(level(), e, highValueOnly(), owner, ownerNameCache);
     }
 
     /** A system nobody can sit in (the Patriot) is switched on and off by right-clicking it. */

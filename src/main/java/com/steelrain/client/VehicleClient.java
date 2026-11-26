@@ -124,7 +124,10 @@ public final class VehicleClient {
     }
 
     static void startSound(SrVehicle v) {
-        SoundEvent sound = BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.fromNamespaceAndPath("superbwarfare", v.tracked() ? "plz_05_engine" : "truck_engine"));
+        // Steel Rain's own engine recording when there is one, else Superb Warfare's, else silence
+        String name = v.tracked() ? "tracked_engine_drive" : "truck_engine_drive";
+        SoundEvent sound = BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.fromNamespaceAndPath(ModRegistry.MODID, name));
+        if (sound == null) sound = BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.fromNamespaceAndPath("superbwarfare", v.tracked() ? "plz_05_engine" : "truck_engine"));
         if (sound != null) Minecraft.getInstance().getSoundManager().play(new Engine(v, sound));
     }
 

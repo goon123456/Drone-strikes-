@@ -28,10 +28,6 @@ public class SteelRain {
         NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.event.entity.player.PlayerEvent.StartTracking.class, SteelRain::domeSeen);
         modBus.addListener(EntityAttributeCreationEvent.class,
                 e -> e.put(ModRegistry.OPERATOR_BODY.get(), OperatorBodyEntity.attributes().build()));
-        // Also list our vehicles in Superb Warfare's own vehicle tab.
-        modBus.addListener(net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent.class, e -> e.enqueueWork(() ->
-                ModRegistry.vehicles().forEach(v -> com.atsuishio.superbwarfare.api.event.RegisterContainersEvent.CONTAINERS.add(
-                        com.atsuishio.superbwarfare.item.container.ContainerBlockItem.createInstance(v)))));
         NeoForge.EVENT_BUS.addListener(RegisterCommandsEvent.class, e -> SteelRainCommand.register(e.getDispatcher()));
         NeoForge.EVENT_BUS.addListener(ServerTickEvent.Post.class, e -> FeedManager.tick(e.getServer()));
         NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.event.tick.PlayerTickEvent.Post.class, e -> {
@@ -62,6 +58,9 @@ public class SteelRain {
         // our own vehicles take FE from any mod's chargers into their battery
         event.registerEntity(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ENTITY, ModRegistry.HIMARS.get(), (v, ctx) -> v.energyPort);
         event.registerEntity(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ENTITY, ModRegistry.M109.get(), (v, ctx) -> v.energyPort);
+        event.registerEntity(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ENTITY, ModRegistry.JAMMER.get(), (v, ctx) -> v.energyPort);
+        event.registerEntity(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ENTITY, ModRegistry.TRENCH_JAMMER.get(), (v, ctx) -> v.energyPort);
+        event.registerEntity(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ENTITY, ModRegistry.KRASUKHA.get(), (v, ctx) -> v.energyPort);
         event.registerEntity(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ENTITY, ModRegistry.ZU23.get(), (v, ctx) -> v.energyPort);
         event.registerEntity(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ENTITY, ModRegistry.GEPARD.get(), (v, ctx) -> v.energyPort);
         event.registerEntity(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ENTITY, ModRegistry.PANTSIR.get(), (v, ctx) -> v.energyPort);
@@ -80,7 +79,7 @@ public class SteelRain {
         e.setCancellationResult(net.minecraft.world.InteractionResult.sidedSuccess(e.getLevel().isClientSide));
         if (e.getLevel().isClientSide) return;
         net.minecraft.nbt.CompoundTag data = v.getPersistentData();
-        if (data.getBoolean(DOME) || v instanceof com.steelrain.entity.SupportVehicle) {
+        if (data.getBoolean(DOME) || v instanceof com.steelrain.entity.vehicle.Jammer) {
             e.getEntity().displayClientMessage(net.minecraft.network.chat.Component.translatable("message.steelrain.dome_refused"), true);
             return;
         }
@@ -101,7 +100,7 @@ public class SteelRain {
     }
 
     private static boolean domeCarrier(net.minecraft.world.entity.Entity e) {
-        return e instanceof com.atsuishio.superbwarfare.entity.vehicle.base.VehicleEntity || e instanceof com.steelrain.entity.vehicle.SrVehicle;
+        return e instanceof com.steelrain.entity.vehicle.SrVehicle || com.steelrain.compat.Sbw.isVehicle(e);
     }
 
     /** A fitted dome keeps a small bubble up while the vehicle has energy, drawing a trickle from it. */
@@ -110,12 +109,8 @@ public class SteelRain {
         if (!domeCarrier(v) || !(v.level() instanceof net.minecraft.server.level.ServerLevel level) || v.tickCount % 10 != 0) return;
         net.minecraft.nbt.CompoundTag data = v.getPersistentData();
         if (!data.getBoolean(DOME)) return;
-        if (v instanceof com.atsuishio.superbwarfare.entity.vehicle.base.VehicleEntity sbw) {
-            if (sbw.isWreck()) return;
-            if (Config.REQUIRE_ENERGY.get() && sbw.hasEnergyStorage()) {
-                if (sbw.getEnergy() < 250) return;
-                if (v.tickCount % 100 == 0) sbw.consumeEnergy(250);
-            }
+        if (com.steelrain.compat.Sbw.isVehicle(v)) {
+            if (!com.steelrain.compat.Sbw.domePower(v, 250, v.tickCount % 100 == 0)) return;
         } else if (v instanceof com.steelrain.entity.vehicle.SrVehicle own && Config.REQUIRE_ENERGY.get()) {
             if (own.energy() < 250) return;
             if (v.tickCount % 100 == 0) own.useEnergy(250);

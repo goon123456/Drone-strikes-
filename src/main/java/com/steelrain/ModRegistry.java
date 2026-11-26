@@ -185,6 +185,12 @@ public final class ModRegistry {
             () -> new com.steelrain.item.VehicleItem(new Item.Properties().stacksTo(1), () -> ModRegistry.PANTSIR.get()));
     public static final DeferredItem<Item> PATRIOT_ITEM = ITEMS.register("patriot",
             () -> new com.steelrain.item.VehicleItem(new Item.Properties().stacksTo(1), () -> ModRegistry.PATRIOT.get()));
+    public static final DeferredItem<Item> JAMMER_ITEM = ITEMS.register("jammer",
+            () -> new com.steelrain.item.VehicleItem(new Item.Properties().stacksTo(1), () -> ModRegistry.JAMMER.get()));
+    public static final DeferredItem<Item> TRENCH_JAMMER_ITEM = ITEMS.register("trench_jammer",
+            () -> new com.steelrain.item.VehicleItem(new Item.Properties().stacksTo(1), () -> ModRegistry.TRENCH_JAMMER.get()));
+    public static final DeferredItem<Item> KRASUKHA_ITEM = ITEMS.register("krasukha",
+            () -> new com.steelrain.item.VehicleItem(new Item.Properties().stacksTo(1), () -> ModRegistry.KRASUKHA.get()));
     public static final DeferredItem<Item> M109_ITEM = ITEMS.register("m109",
             () -> new com.steelrain.item.VehicleItem(new Item.Properties().stacksTo(1), () -> ModRegistry.M109.get()));
 
@@ -312,26 +318,16 @@ public final class ModRegistry {
             () -> EntityType.Builder.<com.steelrain.entity.vehicle.M109>of(com.steelrain.entity.vehicle.M109::new, MobCategory.MISC)
                     .setTrackingRange(512).setUpdateInterval(1).fireImmune().sized(3.1f, 3.0f).build("m109"));
 
-    // ---- ground station, catapult and jammers ----
-    public static final Map<String, DeferredHolder<EntityType<?>, EntityType<com.steelrain.entity.SupportVehicle>>> SUPPORT = new java.util.LinkedHashMap<>();
-    static {
-        support("jammer", 2.8f, 2.8f);
-        support("trench_jammer", 0.8f, 1.0f);
-        support("krasukha", 2.8f, 3.4f);
-    }
-
-    private static void support(String name, float width, float height) {
-        SUPPORT.put(name, ENTITIES.register(name, () -> EntityType.Builder
-                .<com.steelrain.entity.SupportVehicle>of(com.steelrain.entity.SupportVehicle::new, MobCategory.MISC)
-                .setTrackingRange(512).setUpdateInterval(1).fireImmune().sized(width, height).build(name)));
-    }
-
-    /** Every Superb Warfare vehicle this mod adds, for containers and creative tabs. */
-    public static java.util.List<EntityType<?>> vehicles() {
-        java.util.List<EntityType<?>> all = new java.util.ArrayList<>();
-        SUPPORT.values().forEach(v -> all.add(v.get()));
-        return all;
-    }
+    // ---- jammers ----
+    public static final DeferredHolder<EntityType<?>, EntityType<com.steelrain.entity.vehicle.Jammer>> JAMMER = ENTITIES.register("jammer",
+            () -> EntityType.Builder.<com.steelrain.entity.vehicle.Jammer>of(com.steelrain.entity.vehicle.Jammer::new, MobCategory.MISC)
+                    .setTrackingRange(512).setUpdateInterval(1).fireImmune().sized(2.8f, 2.8f).build("jammer"));
+    public static final DeferredHolder<EntityType<?>, EntityType<com.steelrain.entity.vehicle.Jammer>> TRENCH_JAMMER = ENTITIES.register("trench_jammer",
+            () -> EntityType.Builder.<com.steelrain.entity.vehicle.Jammer>of(com.steelrain.entity.vehicle.Jammer::new, MobCategory.MISC)
+                    .setTrackingRange(512).setUpdateInterval(1).fireImmune().sized(0.8f, 1.0f).build("trench_jammer"));
+    public static final DeferredHolder<EntityType<?>, EntityType<com.steelrain.entity.vehicle.Jammer>> KRASUKHA = ENTITIES.register("krasukha",
+            () -> EntityType.Builder.<com.steelrain.entity.vehicle.Jammer>of(com.steelrain.entity.vehicle.Jammer::new, MobCategory.MISC)
+                    .setTrackingRange(512).setUpdateInterval(1).fireImmune().sized(2.8f, 3.4f).build("krasukha"));
 
     /** Stand-in left where a player was standing while they watch a remote drone feed. */
     public static final DeferredHolder<EntityType<?>, EntityType<OperatorBodyEntity>> OPERATOR_BODY = ENTITIES.register("operator_body",
@@ -342,9 +338,6 @@ public final class ModRegistry {
             .title(Component.translatable("itemGroup.steelrain"))
             .icon(() -> new ItemStack(TOMAHAWK_MISSILE.get()))
             .displayItems((params, out) -> {
-                // Vehicles come in Superb Warfare containers: place one and open it with a crowbar.
-                vehicles().forEach(v -> out.accept(
-                        com.atsuishio.superbwarfare.item.container.ContainerBlockItem.createInstance(v)));
                 ITEMS.getEntries().forEach(e -> out.accept(e.get()));
             })
             .build());

@@ -1,8 +1,6 @@
 package com.steelrain.util;
 
 import com.steelrain.Config;
-import com.atsuishio.superbwarfare.entity.vehicle.base.VehicleEntity;
-import com.steelrain.entity.SupportVehicle;
 import com.steelrain.entity.FlyingWeaponEntity;
 import com.steelrain.entity.OperatorBodyEntity;
 import com.steelrain.net.Payloads;
@@ -156,13 +154,15 @@ public final class Recon {
             data.add(Mth.floor(e.getZ()));
             data.add(kind);
         }
-        // Vehicles: anything built on Superb Warfare's vehicle base, ours or SBW's own.
-        for (VehicleEntity v : level.getEntitiesOfClass(VehicleEntity.class, box, v -> v.isAlive() && !v.isWreck())) {
+        // Vehicles: Steel Rain's own, and Superb Warfare's when it is installed.
+        java.util.List<net.minecraft.world.entity.Entity> vehicles = new java.util.ArrayList<>(
+                level.getEntitiesOfClass(com.steelrain.entity.vehicle.SrVehicle.class, box, net.minecraft.world.entity.Entity::isAlive));
+        vehicles.addAll(com.steelrain.compat.Sbw.vehicles(level, box));
+        for (net.minecraft.world.entity.Entity v : vehicles) {
             if (data.size() >= MAX_MARKERS * 3) break;
             double dx = v.getX() - x, dz = v.getZ() - z;
             if (dx * dx + dz * dz > radius * radius) continue;
             UUID owner = v instanceof net.minecraft.world.entity.OwnableEntity o ? o.getOwnerUUID()
-                    : v instanceof SupportVehicle s ? s.ownerId()
                     : v.getFirstPassenger() instanceof Player p ? p.getUUID() : null;
             Player ownerPlayer = owner == null ? null : level.getPlayerByUUID(owner);
             if (owner != null && Teams.friendly(level, drone.ownerId(), drone.ownerName(), owner,

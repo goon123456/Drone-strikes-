@@ -23,9 +23,22 @@ public final class Sfx {
     /** A Superb Warfare sound event by name, or a vanilla stand-in if that version of SBW does not have it. */
     public static SoundEvent sbw(String name) {
         return CACHE.computeIfAbsent(name, n -> {
-            SoundEvent e = BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.fromNamespaceAndPath("superbwarfare", n));
-            return e != null ? e : SoundEvents.GENERIC_EXPLODE.value();
+            // Steel Rain's own recording of that name first, then Superb Warfare's if it is installed
+            SoundEvent e = BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.fromNamespaceAndPath(com.steelrain.ModRegistry.MODID, n));
+            if (e == null) e = BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.fromNamespaceAndPath("superbwarfare", n));
+            return e != null ? e : standIn(n);
         });
+    }
+
+    /** The nearest vanilla sound, until Steel Rain's own recordings are in. */
+    private static SoundEvent standIn(String n) {
+        if (n.contains("explosion")) return SoundEvents.GENERIC_EXPLODE.value();
+        if (n.contains("reload") || n.contains("into_cannon")) return SoundEvents.IRON_DOOR_CLOSE;
+        if (n.contains("missile") || n.contains("rocket") || n.contains("javelin") || n.contains("rpg") || n.contains("igla"))
+            return SoundEvents.FIREWORK_ROCKET_LAUNCH;
+        if (n.contains("mortar") || n.contains("plz_05") || n.contains("howitzer")) return SoundEvents.FIREWORK_ROCKET_LARGE_BLAST;
+        if (n.contains("cannon") || n.contains("fire") || n.contains("far")) return SoundEvents.FIREWORK_ROCKET_BLAST;
+        return SoundEvents.GENERIC_EXPLODE.value();
     }
 
     public static void play(ServerLevel level, Vec3 pos, String sbwName, float volume, float pitch) {

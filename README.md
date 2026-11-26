@@ -1,33 +1,21 @@
 # Steel Rain
 
-An addon for **[Superb Warfare](https://modrinth.com/mod/superb-warfare)** (SBW) on **NeoForge 1.21.1**:
-drones, cruise and ballistic missiles, rocket artillery, air defence and electronic warfare.
+A standalone mod for **NeoForge 1.21.1**: drones, cruise and ballistic missiles, rocket and tube artillery, air
+defence and electronic warfare, on its own drivable vehicles.
 
 Fly kamikaze FPV drones through their own camera, plan missile strikes on a live map, shell targets with rocket
 and tube artillery, and defend your base with air defence and jammers.
 
-**Requires:** Superb Warfare 0.8.9 or newer and Kotlin for Forge (which SBW itself needs).
-**Licence:** GPL-3.0-only, the same as Superb Warfare.
+**Requires:** nothing but NeoForge. **Works with** [Superb Warfare](https://modrinth.com/mod/superb-warfare)
+0.8.9+ and Curios if they are installed (see below).
+**Licence:** GPL-3.0-only.
 
 The idea was inspired by the *Iron Drone* mod. All code, models and textures here are original.
 
-## Built on Superb Warfare
-Only the jammers (EW Jammer, Trench Jammer, Krasukha-4) are still Superb Warfare vehicles; everything else has
-moved to Steel Rain's own vehicle system. The rules in this section apply to the jammers. The drone and aircraft launch sites (UAV Ground Station, Orlan Catapult, Shahed Launch Rail) are placed
-full-size emplacements, and the drones and aircraft themselves are Steel Rain's own.
-
-- **Getting one**: each comes packed in an SBW **container** (craftable; also in the Steel Rain and SBW vehicle
-  creative tabs). Place it and open it with an SBW **crowbar**. Sneak + crowbar packs the vehicle up again.
-- **Energy**: everything runs on SBW energy (FE). Park next to an SBW Charging Station or use any FE source.
-  There is no liquid fuel.
-- **Inventory**: sneak + right-click opens the vehicle's SBW inventory for ammunition, missiles and aircraft.
-- **Driving**: the Krasukha (wheeled) can be driven; the other two jammers are static.
-- **Damage and repair** follow SBW's rules.
-
-### Steel Rain's own vehicles (moving off Superb Warfare)
-Linking to SBW caused too many problems, so the vehicles are being moved one at a time onto Steel Rain's own
-vehicle system. SBW stays required until the last one has moved. **Done so far: the HIMARS, M109, 120 mm mortar, Tomahawk and Iskander launchers, and all air defence
-(ZU-23-2, Gepard, Pantsir, Patriot).** Only the jammers are left.
+## Vehicles
+All twelve vehicles are Steel Rain's own: HIMARS, M109, 120 mm mortar, Tomahawk and Iskander launchers, ZU-23-2,
+Gepard, Pantsir, Patriot, EW Jammer, Trench Jammer and Krasukha-4. The drone and aircraft launch sites (UAV
+Ground Station, Orlan Catapult, Shahed Launch Rail) are placed full-size emplacements.
 
 - **Getting one**: craft it (or take it from the creative tab) and right-click the ground to put it down,
   facing the way you look. The owner sneak-hits it to pack it back into the item; the item keeps its damage,
@@ -57,8 +45,8 @@ vehicle system. SBW stays required until the last one has moved. **Done so far: 
 - **Automatic mode** (**I** while aboard; right-click the Patriot): with nobody at the guns it searches for hostile
   aircraft, drones and missiles in range, aims at where they will be and fires its guns or missiles. The owner
   switches it.
-- **Targets**: Steel Rain drones and missiles, crewed SBW aircraft and helicopters, SBW recon drones and guided
-  weapons, unless they belong to you or your scoreboard team. The Patriot only takes on missiles and aircraft.
+- **Targets**: Steel Rain drones and missiles (and, with Superb Warfare installed, its crewed aircraft and
+  helicopters, recon drones and guided weapons), unless they belong to you or your scoreboard team. The Patriot only takes on missiles and aircraft.
 - **Ammo**: one belt is 50 rounds (40 for the Gepard's 35 mm); the loader puts the next belt on in 2 seconds.
   HE rounds have a proximity fuse and a small blast; AP rounds hit 1.8x harder but must strike. Every second round
   is a tracer. 57E6 missiles for the Pantsir, PAC-2 for the Patriot.
@@ -68,7 +56,7 @@ vehicle system. SBW stays required until the last one has moved. **Done so far: 
   the ZU-23-2 about one in ten.
 
 ### Launchers and the Field Laptop
-1. Load ammunition into the vehicle's SBW inventory and make sure it is charged.
+1. Load ammunition into the vehicle's storage (sneak + right-click) and make sure it is charged.
 2. Right-click it while holding a **Field Laptop** to link it (up to 8 per laptop).
 3. Right-click the air with the laptop to open **Fire Control**:
    - left-click the map to pick a target, or type X / Z coordinates
@@ -216,12 +204,15 @@ The **HIMARS** and **Iskander-M launcher** (wheeled) can be driven; the **Tomaha
 - The Tomahawk and Iskander refuse to fire while moving: stop first. The Iskander opens its roof doors and stands
   the missile up; once fired it is gone from the cradle until another is loaded.
 
-### Jammers (SBW vehicles)
-- **EW Jammer**, **Trench Jammer** (static) and **Krasukha-4** (drivable): sneak + right-click with an empty hand
-  switches them on or off; whoever does so becomes the owner, and the owner's and their team's drones are left
-  alone. They draw 500 FE a second (Krasukha 2500).
-- **Jammer Dome**: right-click **any Superb Warfare vehicle** with it to give it a small jamming bubble that
-  draws a trickle of that vehicle's energy.
+### Jammers
+- **EW Jammer** and **Trench Jammer** (static) and **Krasukha-4** (drivable 8x8): place from the item; sneak +
+  right-click with an empty hand switches them on or off (owner only). The owner's and their team's drones are
+  left alone. They draw 500 FE a second (Krasukha 2500).
+- The EW Jammer and the Krasukha have a diesel power unit that charges the battery while there is fuel (Jerrycan
+  of Diesel). The Trench Jammer runs on its battery: right-click it with a **Drone Battery** for 40k FE. Any FE
+  cable or charger works on all three. Right-click a static one to see its fuel and battery.
+- **Jammer Dome**: right-click **any Steel Rain vehicle** (or Superb Warfare vehicle, if installed) with it to
+  give it a small jamming bubble that draws a trickle of that vehicle's energy.
 
 ### Drone and aircraft launch sites (placed emplacements)
 The **UAV Ground Station**, **Orlan Catapult** and **Shahed Launch Rail** are placed from a single item and
@@ -230,8 +221,8 @@ occupy their full footprint; breaking any part removes the whole thing and gives
 - Right-click to open the inventory, or right-click holding the aircraft, drone or missiles to load by hand.
   What is loaded is shown: the aircraft parked at the start of the runway, the Orlan or Shahed on its rail.
 - Right-click with a **Field Laptop** to link, then launch from Fire Control.
-- The Ground Station needs energy (Reaper 250k, Bayraktar 375k, Global Hawk 1M FE): put an SBW Charging Station
-  next to any block of it or connect an FE cable. The catapult and rail are worked by hand and need none.
+- The Ground Station needs energy (Reaper 250k, Bayraktar 375k, Global Hawk 1M FE): connect an FE cable or
+  charger to any block of it. The catapult and rail are worked by hand and need none.
 
 ### Ammunition
 Everything a vehicle fires has to be crafted and loaded. A slot holds one kind at a time; empty it to switch.
@@ -242,7 +233,7 @@ Everything a vehicle fires has to be crafted and loaded. A slot holds one kind a
 | M109 | **HE shell** (crater), **Cluster shell** (bursts overhead into 12 bomblets), **Smoke shell** (a minute-long screen that hides whatever is under it from recon drones), **Incendiary shell** (sets the area alight) |
 | HIMARS | 6 **GMLRS** rockets (range 1200), or 1 **ATACMS** (range 3000, big warhead, cannot be jammed, worth a Patriot) |
 | Gepard, Pantsir cannons, ZU-23-2 | **HE** belts (each shell bursts and hurts things within 2.5 blocks) or **AP** belts (no burst, 80% more damage on a direct hit) |
-| Pantsir / Patriot | 57E6 / PAC-2 interceptor missiles (in the vehicle's SBW inventory) |
+| Pantsir / Patriot | 57E6 / PAC-2 interceptor missiles (in the vehicle's storage) |
 | Tomahawk, Iskander, Shahed launchers | Their missile or drone |
 | Ground Station | The aircraft, plus Hellfires for the Reaper |
 
@@ -296,12 +287,20 @@ python3 tools/gen_assets.py   # regenerate textures, models, recipes and languag
 ```
 
 ## Sounds
-- Explosions, gunfire, missile launches, reloads, the incoming-shell whistle and the missile warning use Superb
-  Warfare's own recordings. Blasts and launches switch to a duller distant version the further away you are,
-  and big warheads can be heard from about a kilometre.
+- Explosions, gunfire, missile launches, reloads, engines and the missile warning will be Steel Rain's own
+  recordings (the list is in `docs/SOUNDS_NEEDED.md`). Until they are in, Superb Warfare's recordings are used
+  when it is installed, and the nearest vanilla sounds otherwise. Blasts and launches switch to a duller
+  distant version the further away you are, and big warheads can be heard from about a kilometre.
 - FPV and Mavic rotors blend between low, medium and high-speed loops as the drone speeds up, with a spin-up
   when you take control. The Shahed, Reaper, Bayraktar, Orlan and Global Hawk each have their own engine. The
   jammer hums, a jammed video link hisses louder the worse it gets, and the fibre makes one of three snaps.
+
+## Superb Warfare compatibility (optional)
+Steel Rain does not need Superb Warfare. If it is installed as well: Steel Rain air defence engages its crewed
+aircraft and helicopters, recon drones and guided weapons; Jammer Domes fit on its vehicles; its vehicles show
+on recon drones; and its recordings stand in for sounds Steel Rain does not have yet. All of this lives in
+`com.steelrain.compat`, which is only loaded when Superb Warfare is present. Run the development game with it
+using `./gradlew runClient -PwithSbw`.
 
 ## Known limits
 - Aircraft and drones (Reaper, TB2, Global Hawk, Orlan-10, Shahed-136, both FPV drones and the Mavic) are
@@ -322,7 +321,7 @@ python3 tools/gen_assets.py   # regenerate textures, models, recipes and languag
   the shoulders and down the chest, chest strap, waist belt): the fibre pack carries a big cable reel with a
   guide arm, the jammer pack an electronics case with a control panel, battery and five aerials.
   Tracer rounds are the only thing still drawn as a simple flat-coloured shape, which suits a streak of light.
-- Ground vehicles are true meshes (Superb Warfare's `poly_mesh` format), not boxes: turned wheels with dished
+- Ground vehicles are true meshes, not boxes: turned wheels with dished
   rims, round barrels, masts and dishes, and bevelled plate edges. Shapes are in `tools/gen_vehicles.py`; the kit
   of parts, the mesh builder and the texture painter are in `tools/vehicle_kit.py`.
 - Textures are 64 pixels per block (up to 2048 px per vehicle). Every surface has its own patch, painted from its
@@ -332,7 +331,7 @@ python3 tools/gen_assets.py   # regenerate textures, models, recipes and languag
 - Moving parts: tracks are made of separate links that travel round the sprocket, idler and road wheels as
   the vehicle drives (the Gepard and M109), with the sprockets, idlers and return rollers turning too. Front
   axles steer. The Gepard's and Pantsir's search radars turn and the Krasukha's dishes sweep. Track paths are
-  worked out by the generator from the wheel positions and read by `VehicleAnim` from `sbw/tracks.json`.
+  worked out by the generator from the wheel positions and stored with each vehicle's model.
 - Hulls, turrets, cabs, trailers, shelters and cases are built from their real outlines (side profiles carried
   across the vehicle, plan outlines rising to a smaller roof) rather than from blocks, on all twelve vehicles:
   sloped glacis plates, faceted turret fronts, raked cab noses, gooseneck trailers, chamfered shelters.
@@ -340,29 +339,24 @@ python3 tools/gen_assets.py   # regenerate textures, models, recipes and languag
   screw jacks, jerrycans, fire extinguishers, pioneer tools, sprung aerials, hatches, vision blocks, lamps in
   bezels, beacons, bedrolls, spare wheels, shackles, wheel chocks, hoses, cable runs and diagonal struts.
   Real artist-made models can still replace generated ones where a freely licensed one is available.
-- Air-defence turrets turn and elevate on screen as they track: the server syncs what each one is tracking and
-  every player's game works out the same aim, the way Superb Warfare's own turrets do.
-- Anti-aircraft shells have proximity fuses: one that passes close to the tracked target bursts there and does
-  light fragment damage (eight bursts down a Shahed). Each gun's fuse is tuned separately: against a Shahed
-  crossing overhead the Gepard downs nearly all around the closest point of the pass, the Pantsir's guns about
-  six in ten, and the ZU-23-2 about one in ten.
+- Turret, gun and launcher angles are synced to every player, so everyone sees them turn and elevate.
+- Anti-aircraft HE shells have proximity fuses: one that passes close to a hostile drone or missile may burst
+  there and do light fragment damage (eight bursts down a Shahed); a direct hit does full damage. Against a
+  Shahed crossing overhead in automatic mode the Gepard and the Pantsir's guns down nearly all, the ZU-23-2
+  about one in ten.
 - Shooting things down: a single heavy hit (10 damage or more: an interceptor missile, a direct cannon shell)
   blows a drone, aircraft or missile apart in the air without setting off its warhead. Being worn down by
   lighter hits such as proximity bursts leaves it in one piece: it tumbles to the ground trailing smoke and
   flame and goes off where it lands at about half strength (missiles and attack drones), or as a fuel fire
   (unarmed drones and aircraft). Defences stop shooting at a falling wreck; another heavy hit finishes it in
   the air. Interceptor missiles always just burst.
-- Animation, driven by `VehicleAnim` on top of Superb Warfare's renderer:
+- Animation, driven by Steel Rain's vehicle renderer:
   the hull sits on its own bone above the running gear and squats when pulling away, dips under braking and
   rolls in turns; gun barrels slide back on firing and run out again; search radars turn and the Krasukha's
   dishes sweep; stabiliser jacks wind up to drive and back down to park, and wheel chocks are stowed; hatch lids
   open when the vehicle stands with a crew aboard; aerials whip as it moves; the Iskander's roof doors swing open
   as the missile rises; on wheeled vehicles each wheel rides up and down over uneven ground on its own.
-- Superb Warfare freezes every bone into the model unless its name is on its list of moving ones, so all of
-  Steel Rain's own animated bones are named `move_...` (the prefix it reserves for renderer-driven bones).
-- A file named `steelrain_animtest` in the game folder holds doors and hatches open, for checking models.
-- A loaded Iskander is not drawn on its launcher.
-- The Pantsir's missiles only fire in automatic mode.
+- Animated model parts are named `move_...`, wheels `wheelL/R<n>` (`...Turn` steer), track links `trackL/R<n>`.
 - The drone, engine, jammer, static and cable sounds are the files in `tools/sounds/`. Replace one there (mono
   `.ogg`, same name) and rerun `tools/gen_assets.py` to change it. They are synthesised, not field recordings.
 - Low-flying drones (Orlan, Shahed) can fly into steep mountains.

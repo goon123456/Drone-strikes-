@@ -13,7 +13,6 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.projectile.Projectile;
-import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
@@ -106,8 +105,15 @@ public class CannonShellEntity extends Projectile {
         HitResult block = level.clip(new net.minecraft.world.level.ClipContext(from, to, net.minecraft.world.level.ClipContext.Block.COLLIDER,
                 net.minecraft.world.level.ClipContext.Fluid.NONE, this));
         if (block.getType() != HitResult.Type.MISS) to = block.getLocation();
-        EntityHitResult body = ProjectileUtil.getEntityHitResult(level, this, from, to, getBoundingBox().expandTowards(move).inflate(1.0),
-                this::canHitEntity, 0f);
+        // our own ray test against each body's real box (other mods change the shared one)
+        EntityHitResult body = null;
+        double best = Double.MAX_VALUE;
+        for (Entity e : level.getEntities(this, getBoundingBox().expandTowards(to.subtract(from)).inflate(1.0), this::canHitEntity)) {
+            var at = e.getBoundingBox().clip(from, to);
+            if (at.isEmpty()) continue;
+            double d = from.distanceToSqr(at.get());
+            if (d < best) { best = d; body = new EntityHitResult(e, at.get()); }
+        }
         return body != null ? body : block;
     }
 
