@@ -47,13 +47,12 @@ def gepard():
     gear, bones, track = running_gear(1.07, 0.55, -3.75, 3.75, 7, 0.7, NATO_D, rollers=4)
     N, D = NATO, NATO_D
     base = gear + [
-        B(D, -1.07, 0.42, -3.55, 2.14, 0.7, 6.9, plain=True),                                  # belly
-        B(N, -1.62, 1.08, -3.75, 3.24, 0.5, 6.0, marks=[("left", "panel", 0.3, 0.5, 0.9, 0.3), ("right", "panel", 0.7, 0.5, 0.9, 0.3)]),
-        B(N, -1.62, 1.58, -3.75, 3.24, 0.42, 5.95, marks=[("rear", "cross", 0.2, 0.5, 0.3), ("rear", "digits:Y-301", 0.75, 0.5, 0)]),
-        slope(N, -1.6, 3.2, 2.2, 2.0, 3.85, 1.25),                                             # glacis
-        slope(N, -1.07, 2.14, 3.0, 0.5, 3.85, 1.25),                                           # lower nose plate
-        B(N, -1.6, 1.08, 2.2, 3.2, 0.5, 0.95), B(N, -1.6, 1.08, 3.1, 3.2, 0.22, 0.55),         # nose sides under the glacis
-        B(D, -1.62, 1.2, 3.82, 3.24, 0.1, 0.08, plain=True)]                                   # front lip
+        # lower hull tub between the tracks, and the upper hull with its long sloped glacis and undercut tail
+        hull(D, -1.07, 1.07, [(-3.5, 0.5), (-3.72, 1.1), (3.4, 1.1), (3.78, 0.95), (3.25, 0.45), (-3.2, 0.42)], plain=True),
+        hull(N, -1.62, 1.62, [(-3.82, 1.1), (-3.86, 1.78), (-3.55, 2.0), (2.15, 2.0), (3.86, 1.27), (3.86, 1.12), (3.6, 1.08)],
+             marks=[("s0", "cross", 0.5, 0.5, 0.32), ("cap0", "panel", 0.3, 0.55, 0.9, 0.3), ("cap1", "panel", 0.3, 0.55, 0.9, 0.3)]),
+        B(D, -1.62, 1.2, 3.84, 3.24, 0.1, 0.06, plain=True),                                   # front lip
+        B(WHITE, 0.55, 1.3, -3.9, 0.5, 0.13, 0.02, marks=[("rear", "plate", 0.5, 0.5, 0.5, 0.13)])]
     # ---- nose: lights with guards, towing shackles, spare track links, driver's position
     for sx in (1, -1):
         base += [B(WHITE, sx * 1.2 - 0.1, 1.42, 3.5, 0.2, 0.18, 0.1), B(AMBER, sx * 0.95 - 0.05, 1.46, 3.55, 0.1, 0.1, 0.06),
@@ -99,13 +98,13 @@ def gepard():
     base += rod_x(BLACK, -0.9, 1.8, 1.9, -3.9, 0.07)
     # ---- turret
     turret = [
-        B(N, -1.05, 2.0, -1.9, 2.1, 1.25, 3.0, marks=[("left", "cross", 0.35, 0.45, 0.42), ("right", "cross", 0.65, 0.45, 0.42),
-                                                    ("left", "panel", 0.75, 0.6, 0.6, 0.5), ("right", "panel", 0.25, 0.6, 0.6, 0.5)]),
-        slope(N, -1.0, 2.0, 1.75, 2.0, 1.1, 3.25),                                              # sloped front
-        B(N, -1.0, 2.0, 1.1, 2.0, 0.5, 0.65),
-        B(D, -1.08, 3.25, -1.93, 2.16, 0.05, 2.96, plain=True),                                 # roof plate
-        B(N, -0.9, 2.1, -2.45, 1.8, 0.95, 0.55, marks=[("rear", "vent", 0.5, 0.5, 1.2, 0.4)]),  # rear bustle
-        B(D, -0.95, 3.05, -2.5, 1.9, 0.05, 0.6, plain=True),
+        # faceted turret: slab sides, a front that narrows and leans back, and a bustle behind
+        tower(N, 2.0, [(-1.05, -1.9), (1.05, -1.9), (1.05, 0.85), (0.72, 1.75), (-0.72, 1.75), (-1.05, 0.85)],
+              3.25, [(-1.0, -1.86), (1.0, -1.86), (1.0, 0.6), (0.64, 1.1), (-0.64, 1.1), (-1.0, 0.6)],
+              marks=[("s1", "cross", 0.3, 0.5, 0.42), ("s5", "cross", 0.7, 0.5, 0.42), ("s1", "panel", 0.72, 0.45, 0.6, 0.5), ("s5", "panel", 0.28, 0.45, 0.6, 0.5)]),
+        tower(N, 2.1, [(-0.92, -2.5), (0.92, -2.5), (0.98, -1.88), (-0.98, -1.88)], 3.05, [(-0.85, -2.42), (0.85, -2.42), (0.95, -1.88), (-0.95, -1.88)],
+              marks=[("s0", "vent", 0.5, 0.5, 1.2, 0.4)]),
+        B(D, -1.02, 3.25, -1.88, 2.04, 0.04, 2.5, plain=True),                                  # roof plate
         B(D, -1.12, 2.0, -1.95, 2.24, 0.1, 3.1, plain=True)]                                    # turret ring skirt
     turret += P(N, 1.05, 2.1, -1.7, 0.12, 0.9, 0.7) + P(N, 1.05, 2.15, 0.3, 0.1, 0.7, 0.6)       # side stowage bins
     # hatches, periscopes and sights on the roof
@@ -142,7 +141,7 @@ def gepard():
         turret += disc_x(D, sx * 1.05 - (0 if sx > 0 else 0.14), 0.14, 2.8, -0.1, 0.95)
         turret += [B(N, sx * 1.05 - (0 if sx > 0 else 0.1), 2.3, -0.75, 0.1, 0.95, 1.3)]
     # ---- guns: one 35 mm Oerlikon on each side
-    barrel = []
+    barrel, recoil = [], []
     for sx in (1, -1):
         cx = 1.31 * sx
         side = "left" if sx > 0 else "right"
@@ -151,12 +150,12 @@ def gepard():
                    B(D, cx - 0.15, 2.3, -0.3, 0.3, 0.14, 0.7), B(STEEL_D, cx - 0.1, 2.22, 0.0, 0.2, 0.1, 0.3, plain=True),   # case ejection chute
                    B(D, cx - 0.14, 2.6, 0.9, 0.28, 0.3, 0.45), B(STEEL_D, cx - 0.2, 2.5, -1.12, 0.4, 0.5, 0.08, plain=True)]
         barrel += rod_z(STEEL_D, cx, 2.74, 1.35, 0.6, 0.2)                                       # recoil sleeve
-        barrel += rod_z(STEEL_D, cx, 2.74, 1.95, 1.2, 0.11)                                      # barrel
-        barrel += rod_z(STEEL, cx, 2.74, 2.4, 0.06, 0.15) + rod_z(STEEL, cx, 2.74, 2.8, 0.06, 0.15)
-        barrel += rod_z(BLACK, cx, 2.74, 3.12, 0.3, 0.17)                                        # muzzle brake
-        barrel += [B(BLACK, cx - 0.1, 2.72, 3.2, 0.2, 0.04, 0.05, plain=True), B(BLACK, cx - 0.1, 2.72, 3.32, 0.2, 0.04, 0.05, plain=True),
+        recoil += [lathe(STEEL_D, "z", cx, 2.74, [(1.3, 0.0), (1.3, 0.06), (1.95, 0.06), (2.0, 0.055), (3.1, 0.048), (3.1, 0.085), (3.42, 0.085), (3.42, 0.04), (3.3, 0.04)])]
+        recoil += rod_z(STEEL, cx, 2.74, 2.4, 0.06, 0.15) + rod_z(STEEL, cx, 2.74, 2.8, 0.06, 0.15)
+        recoil += [B(BLACK, cx - 0.1, 2.72, 3.2, 0.2, 0.04, 0.05, plain=True), B(BLACK, cx - 0.1, 2.72, 3.32, 0.2, 0.04, 0.05, plain=True),
                    B(STEEL_D, cx - 0.045, 2.84, 3.05, 0.09, 0.1, 0.4, plain=True),                # muzzle-velocity gauge
                    B(STEEL_D, cx - 0.02, 2.82, 2.0, 0.04, 0.04, 1.05, plain=True)]
+    bones.append({"name": "recoilLight", "parent": "barrel", "pivot": (0, 2.74, 1.3), "cubes": recoil})
     return dict(base=base, turret=turret, barrel=barrel, bones=bones, track=track)
 
 
@@ -176,8 +175,10 @@ def pantsir():
     base += P(RUS_D, 1.05, 0.2, -1.2, 0.2, 1.1, 0.2) + P(STEEL_D, 0.95, 0.0, -1.35, 0.4, 0.2, 0.5)   # stabiliser jacks
     base += P(RUS_D, 1.05, 0.2, -4.95, 0.2, 1.1, 0.2) + P(RED, 1.0, 0.85, -5.07, 0.2, 0.12, 0.03)
     base += mudguards(RUS_D, 0.85, 0.45, zs, 1.2)
+    base += truck_details(RUS, RUS_D, zs, 0.85, 1.2, -5.0, 3.0, 1.25) + axles(zs, 0.85, 1.2)
     turret = [B(RUS, -0.9, 2.2, -2.75, 1.8, 0.5, 2.5),                             # turret ring housing
-              B(RUS, -0.7, 2.7, -2.6, 1.4, 1.5, 2.0),                              # central tower
+              tower(RUS, 2.7, [(-0.72, -2.62), (0.72, -2.62), (0.72, -0.9), (0.45, -0.58), (-0.45, -0.58), (-0.72, -0.9)],
+                    4.2, [(-0.62, -2.55), (0.62, -2.55), (0.62, -1.0), (0.4, -0.75), (-0.4, -0.75), (-0.62, -1.0)]),   # central tower
               B(RUS_D, -0.75, 4.2, -2.6, 1.5, 0.08, 2.0),
               # phased-array tracking radar on the tower front, leaning back
               B(RUS_D, -0.55, 2.9, -0.7, 1.1, 1.3, 0.25),
@@ -243,18 +244,20 @@ def himars():
     f, h = 1.25, 1.5
     base = [B(US_D, -0.5, 0.7, -3.5, 1.0, 0.45, 6.6),                              # chassis
             B(US, -1.2, 1.1, -3.5, 2.4, 0.12, 4.6),                                # deck
-            # angular armoured cab
-            B(US, -1.2, f, 1.3, 2.4, 0.8, 2.15),
-            B(US, -1.2, f + 0.8, 1.3, 2.4, 0.7, 1.7),
-            B(US_D, -1.15, f + h, 1.35, 2.3, 0.07, 1.6),
-            slope(US, -1.2, 2.4, 3.45, f + 0.8, 3.0, f + h, 0.08),                 # sloped armoured front
-            slope(GLASS, -1.0, 0.9, 3.46, f + 0.88, 3.08, f + h - 0.1, 0.04),
-            slope(GLASS, 0.1, 0.9, 3.46, f + 0.88, 3.08, f + h - 0.1, 0.04),
+            # angular armoured cab from its side profile: flat roof, steeply raked windscreen, blunt nose
+            hull(US, -1.2, 1.2, [(1.3, f), (1.3, f + h - 0.06), (1.4, f + h), (2.9, f + h), (3.0, f + h - 0.03), (3.45, f + 0.82), (3.5, f + 0.72), (3.5, f + 0.1), (3.4, f)],
+                 marks=[("cap0", "panel", 0.42, 0.62, 1.0, 0.95), ("cap1", "panel", 0.42, 0.62, 1.0, 0.95)]),
+            B(US_D, -1.12, f + h, 1.4, 2.24, 0.05, 1.45, plain=True), B(US_D, -0.35, f + h + 0.05, 1.7, 0.7, 0.06, 0.7, plain=True),
+            slope(GLASS, -1.0, 0.9, 3.47, f + 0.9, 3.07, f + h - 0.12, 0.04),
+            slope(GLASS, 0.1, 0.9, 3.47, f + 0.9, 3.07, f + h - 0.12, 0.04),
+            slope(US_D, -0.06, 0.12, 3.48, f + 0.86, 3.05, f + h - 0.06, 0.05, plain=True),
             B(GRILLE, -0.9, f + 0.1, 3.44, 1.8, 0.55, 0.04),
             B(US_D, -1.25, 0.75, 3.4, 2.5, 0.4, 0.22),                             # bumper
             B(US_D, -1.2, 1.2, 0.6, 2.4, 1.0, 0.65), B(BLACK, -0.9, 1.3, 0.75, 0.5, 0.9, 0.4),   # spare wheel, stowage
             B(STEEL_D, 0.75, 1.3, 0.72, 0.18, 1.3, 0.18)]                          # exhaust stack
-    base += P(GLASS, 1.19, f + 0.9, 1.7, 0.04, 0.42, 0.9) + P(GRILLE, 1.2, f + 0.85, 1.65, 0.03, 0.5, 1.0)   # louvred side windows
+    base += P(GLASS, 1.2, f + 0.92, 1.75, 0.02, 0.4, 0.8) + P(US_D, 1.2, f + 0.86, 1.68, 0.04, 0.06, 0.94, plain=True)   # armoured side windows
+    base += P(US_D, 1.2, f + 1.32, 1.68, 0.04, 0.06, 0.94, plain=True) + P(STEEL_D, 1.2, f + 0.5, 2.3, 0.05, 0.05, 0.18, plain=True)
+    base += truck_details(US, US_D, zs, 0.85, 1.0, -3.5, 1.2, 1.1)
     base += P(WHITE, 0.8, 0.85, 3.62, 0.22, 0.16, 0.03) + P(BLACK, 1.22, f + 0.9, 2.9, 0.2, 0.36, 0.05)
     base += P(US_D, 1.18, 0.75, 1.5, 0.08, 0.5, 0.45) + P(US_D, 0.6, 0.55, -0.4, 0.55, 0.55, 1.0)   # steps, tanks
     base += mudguards(US_D, 0.85, 0.4, zs, 1.0)
@@ -299,10 +302,10 @@ def m109():
     """M109A6 Paladin. Pivots (0,1.7,-.9) / (0,2.3,.9); the muzzle is 5.2 ahead of the barrel pivot."""
     gear, bones, track = running_gear(1.05, 0.5, -3.0, 3.0, 7, 0.62, US_D)
     base = gear + [
-        B(US, -1.05, 0.4, -2.95, 2.1, 0.6, 5.7),
-        B(US, -1.57, 0.95, -3.1, 3.14, 0.75, 5.3),                                 # hull
-        slope(US, -1.55, 3.1, 2.2, 1.7, 3.2, 1.05),                                # glacis
-        slope(US, -1.05, 2.1, 2.6, 0.45, 3.2, 1.05),
+        hull(US_D, -1.05, 1.05, [(-2.9, 0.42), (-3.12, 0.95), (3.22, 0.95), (2.72, 0.42)], plain=True),
+        # upper hull: flat deck, a long glacis running down to a blunt nose, vertical tail
+        hull(US, -1.57, 1.57, [(-3.14, 0.95), (-3.14, 1.66), (-3.08, 1.7), (2.2, 1.7), (3.26, 1.06), (3.26, 0.95)],
+             marks=[("cap0", "panel", 0.4, 0.45, 1.0, 0.36), ("cap1", "panel", 0.4, 0.45, 1.0, 0.36)]),
         B(GRILLE, 0.2, 1.7, 1.1, 1.2, 0.03, 0.9),                                  # engine louvres, front right
         B(US_D, -1.3, 1.7, 1.3, 0.7, 0.12, 0.6),                                   # driver's hatch
         B(US_D, -1.55, 1.0, -3.2, 3.1, 0.65, 0.12),
@@ -312,25 +315,27 @@ def m109():
     # travel lock for the barrel on the glacis
     base += [B(US_D, -0.3, 1.5, 2.6, 0.08, 0.5, 0.08), B(US_D, 0.22, 1.5, 2.6, 0.08, 0.5, 0.08)]
     turret = [
-        B(US, -1.45, 1.7, -3.0, 2.9, 1.2, 3.3),                                    # big turret set well back
-        slope(US, -1.4, 2.8, 0.9, 1.75, 0.3, 2.9),                                 # sloped front
-        B(US, -1.4, 1.7, 0.3, 2.8, 0.45, 0.55),
-        B(US_D, -1.45, 2.9, -3.0, 2.9, 0.06, 3.25),
+        # the big welded turret: sides lean in, the front narrows and leans back towards the gun
+        tower(US, 1.7, [(-1.47, -3.0), (1.47, -3.0), (1.47, -0.1), (1.0, 0.95), (-1.0, 0.95), (-1.47, -0.1)],
+              2.9, [(-1.3, -2.92), (1.3, -2.92), (1.3, -0.45), (0.86, 0.3), (-0.86, 0.3), (-1.3, -0.45)],
+              marks=[("s1", "panel", 0.5, 0.5, 1.5, 0.6), ("s5", "panel", 0.5, 0.5, 1.5, 0.6), ("s0", "hatch", 0.5, 0.55, 0.9, 0.8)]),
+        B(US_D, -1.28, 2.9, -2.9, 2.56, 0.04, 2.5, plain=True),
         B(US_D, -1.5, 1.85, -3.75, 3.0, 0.75, 0.75),                               # bustle rack
         B(GRILLE, -1.4, 2.6, -3.7, 2.8, 0.03, 0.65),
         B(US_D, 0.5, 2.96, -1.9, 0.75, 0.25, 0.75), B(GLASS, 0.6, 3.05, -1.14, 0.55, 0.1, 0.02),   # commander's cupola
         B(US_D, -1.1, 2.96, -1.2, 0.7, 0.1, 0.7),
         B(STEEL_D, 1.3, 2.96, -2.7, 0.05, 1.5, 0.05),                              # aerial
-        B(US_D, -1.52, 2.0, -2.2, 0.08, 0.6, 1.6), B(US_D, 1.44, 2.0, -2.2, 0.08, 0.6, 1.6)]       # stowage panels
+        B(US_D, -1.22, 2.94, -0.3, 0.5, 0.06, 0.4, plain=True)]
     # .50 cal on the cupola
     turret += [B(BLACK, 0.8, 3.22, -1.9, 0.12, 0.14, 0.7)] + rod_z(BLACK, 0.86, 3.3, -1.2, 0.9, 0.05)
     barrel = [B(US_D, -0.5, 1.95, 0.5, 1.0, 0.7, 0.75),                            # mantlet
               B(US, -0.35, 2.05, 1.2, 0.7, 0.5, 0.5)]
-    barrel += rod_z(US, 0, 2.3, 1.7, 3.9, 0.24)
-    barrel += rod_z(US_D, 0, 2.3, 1.7, 0.9, 0.34)                                   # recoil sleeve
-    barrel += rod_z(US, 0, 2.3, 3.6, 0.8, 0.38)                                     # fume extractor
-    barrel += rod_z(US_D, 0, 2.3, 5.55, 0.55, 0.4)                                  # muzzle brake
-    barrel += [B(BLACK, -0.24, 2.22, 5.7, 0.48, 0.16, 0.1), B(BLACK, -0.24, 2.22, 5.9, 0.48, 0.16, 0.1)]
+    barrel += rod_z(US_D, 0, 2.3, 1.7, 0.9, 0.36)                                   # recoil sleeve
+    # the tube slides back through the sleeve when the gun fires
+    recoil = [lathe(US, "z", 0, 2.3, [(0.9, 0.0), (0.9, 0.12), (3.6, 0.115), (3.62, 0.19), (4.4, 0.19), (4.42, 0.11), (5.5, 0.1),
+                                      (5.52, 0.2), (5.62, 0.21), (6.08, 0.21), (6.1, 0.19), (6.1, 0.08), (5.9, 0.08)])]
+    recoil += [B(BLACK, -0.23, 2.22, 5.68, 0.46, 0.16, 0.1, plain=True), B(BLACK, -0.23, 2.22, 5.9, 0.46, 0.16, 0.1, plain=True)]
+    bones.append({"name": "recoilHeavy", "parent": "barrel", "pivot": (0, 2.3, 1.7), "cubes": recoil})
     return dict(base=base, turret=turret, barrel=barrel, bones=bones, track=track)
 
 
@@ -365,13 +370,13 @@ def iskander_launcher():
     zs = [-5.5, -3.9, 1.7, 3.3]
     base = [B(RUS_D, -0.7, 0.8, -6.4, 1.4, 0.6, 12.6),                             # chassis
             B(RUS, -1.5, 1.4, -6.5, 3.0, 0.8, 10.7),                               # lower body
-            # wide, low cab right at the front
-            B(RUS, -1.5, 1.4, 4.2, 3.0, 0.9, 2.3),
-            B(RUS, -1.5, 2.3, 4.2, 3.0, 0.8, 1.9),
-            B(RUS_D, -1.45, 3.1, 4.25, 2.9, 0.07, 1.8),
-            slope(RUS, -1.5, 3.0, 6.5, 2.3, 6.1, 3.1, 0.08),
-            slope(GLASS, -1.3, 1.15, 6.52, 2.38, 6.18, 3.02, 0.04),
-            slope(GLASS, 0.15, 1.15, 6.52, 2.38, 6.18, 3.02, 0.04),
+            # wide, low cab right at the front, from its side profile
+            hull(RUS, -1.5, 1.5, [(4.2, 1.4), (4.2, 3.05), (4.3, 3.12), (5.95, 3.12), (6.08, 3.06), (6.5, 2.32), (6.52, 2.2), (6.52, 1.5), (6.42, 1.4)],
+                 marks=[("cap0", "panel", 0.4, 0.6, 1.0, 1.0), ("cap1", "panel", 0.4, 0.6, 1.0, 1.0)]),
+            B(RUS_D, -1.4, 3.12, 4.35, 2.8, 0.05, 1.5, plain=True),
+            slope(GLASS, -1.3, 1.15, 6.5, 2.4, 6.14, 3.0, 0.04),
+            slope(GLASS, 0.15, 1.15, 6.5, 2.4, 6.14, 3.0, 0.04),
+            slope(RUS_D, -0.08, 0.16, 6.51, 2.36, 6.12, 3.04, 0.05, plain=True),
             B(RUS_D, -1.52, 1.0, 6.42, 3.04, 0.45, 0.16),                          # bumper
             B(GRILLE, -1.3, 2.4, 3.5, 2.6, 0.75, 0.6),                             # engine bay behind the cab
             B(RUS, -1.5, 2.2, 3.4, 3.0, 0.2, 0.75),
@@ -382,14 +387,13 @@ def iskander_launcher():
     base += P(BLACK, 1.52, 2.5, 5.9, 0.22, 0.36, 0.05) + P(RUS_D, 1.3, 0.3, -1.2, 0.2, 1.1, 0.25)   # mirrors, jacks
     base += P(STEEL_D, 1.2, 0.0, -1.35, 0.4, 0.1, 0.55) + P(RUS_D, 0.9, 0.9, -1.0, 0.6, 0.5, 1.6)
     base += mudguards(RUS_D, 1.0, 0.52, zs, 1.3)
+    base += truck_details(RUS, RUS_D, zs, 1.0, 1.3, -6.5, 4.0, 1.4)
     barrel = [B(STEEL_D, -0.6, 2.2, -5.5, 1.2, 0.1, 5.4),                          # erector cradle
               B(STEEL_D, -0.65, 2.2, -5.5, 0.1, 0.5, 5.4), B(STEEL_D, 0.55, 2.2, -5.5, 0.1, 0.5, 5.4),
               B(STEEL_D, -0.6, 2.25, -1.2, 1.2, 0.6, 0.12), B(STEEL_D, -0.6, 2.25, -3.6, 1.2, 0.6, 0.12)]
-    barrel += rod_z(RUS, 0, 2.78, -5.5, 5.0, 0.92)                                  # the missile
-    barrel += rod_z(RUS, 0, 2.78, -0.5, 1.3, 0.78)
-    barrel += rod_z(RUS, 0, 2.78, 0.8, 0.9, 0.52)
-    barrel += rod_z(RUS_D, 0, 2.78, 1.7, 0.45, 0.26)
-    barrel += rod_z(BLACK, 0, 2.78, -5.62, 0.14, 0.66)
+    barrel += [lathe(RUS, "z", 0, 2.78, [(-5.62, 0.0), (-5.62, 0.33), (-5.5, 0.4), (-5.3, 0.46), (-0.6, 0.46), (0.6, 0.38), (1.6, 0.2),
+                                         (2.05, 0.07), (2.15, 0.0)])]                    # the missile
+    barrel += rod_z(RUS_D, 0, 2.78, -2.2, 0.1, 0.94) + rod_z(RUS_D, 0, 2.78, -0.62, 0.06, 0.93)
     barrel += [B(RUS_D, -0.8, 2.75, -5.3, 1.6, 0.06, 0.6), B(RUS_D, -0.03, 2.0, -5.3, 0.06, 1.56, 0.6)]   # tail fins
     return dict(base=base, turret=[], barrel=barrel, bones=truck_wheels(zs, 1.0, 0.5, 1.3, RUS_D, steer=2))
 
@@ -465,6 +469,7 @@ def krasukha():
     base += P(RUS_D, 1.05, 0.2, -1.8, 0.2, 1.1, 0.2) + P(STEEL_D, 0.95, 0.0, -1.95, 0.4, 0.2, 0.5)
     base += P(RUS_D, 1.05, 0.2, -5.45, 0.2, 1.1, 0.2) + P(RED, 1.0, 0.85, -5.57, 0.2, 0.12, 0.03)
     base += mudguards(RUS_D, 0.85, 0.45, zs, 1.2)
+    base += truck_details(RUS, RUS_D, zs, 0.85, 1.2, -5.5, 3.5, 1.25) + axles(zs, 0.85, 1.2)
     bones = truck_wheels(zs, 0.85, 0.42, 1.2, steer=2)
     bones.append({"name": "scanDish", "parent": "base", "pivot": (0, 4.3, -3.9), "cubes": dish})
     return dict(base=base, turret=[], barrel=[], bones=bones)

@@ -747,10 +747,12 @@ def sbw_vehicle(name, base, turret, barrel, turret_pivot, barrel_pivot, data):
     tex, tw, th = VK.bake(m, name)
     save(Image.fromarray(tex).convert("RGB"), f"{A}/textures/bedrock/vehicle/{name}.png")
     mesh = lambda parts: {"poly_mesh": VK.to_mesh(parts, tw, th)} if parts else {}
+    # base carries the running gear and stays level; body (hull, cab, load) leans on it under braking and in turns
     bones = [{"name": "root", "pivot": [0, 0, 0]},
-             {"name": "base", "parent": "root", "pivot": [0, 0, 0], **mesh(m["base"])}]
+             {"name": "base", "parent": "root", "pivot": [0, 0, 0]},
+             {"name": "body", "parent": "base", "pivot": [0, 9.6, 0], **mesh(m["base"])}]
     if turret_pivot is not None:
-        bones += [{"name": "turret", "parent": "root", "pivot": piv(turret_pivot), **mesh(m["turret"])},
+        bones += [{"name": "turret", "parent": "body", "pivot": piv(turret_pivot), **mesh(m["turret"])},
                   {"name": "barrel", "parent": "turret", "pivot": piv(barrel_pivot), **mesh(m["barrel"])}]
     for extra in m["bones"]:
         bones.append({"name": extra["name"], "parent": extra["parent"], "pivot": piv(extra["pivot"]), **mesh(extra["cubes"])})
@@ -788,6 +790,7 @@ def cannon(name, belt, rounds, rpm, damage, muzzles, lead):
          "RPM": rpm, "Velocity": 12, "Gravity": 0.03, "ProjectileLife": 30,
          "Damage": damage, "ExplosionDamage": 4, "ExplosionRadius": 2.5, "ExplosionDestroy": False, "Spread": 0.5,
          "HeatPerShoot": 0.8, "NaturalCooldown": 0.6, "DefaultZoom": 2,
+         "RecoilTime": 8, "RecoilForce": 0.12, "ShootAnimationTime": 2,
          "Crosshair": "@VehicleDynamicCross", "Name": f"weapon.{MOD}.{name}",
          "Icon": "superbwarfare:textures/overlay/vehicle/weapon/icons/cannon_30mm_ap.png",
          "ShootPos": {"Transform": "Barrel", "Positions": muzzles, "Directions": ["Barrel"]},
@@ -901,6 +904,7 @@ def sbw_vehicles():
                  "Projectile": f"{MOD}:{ammo[0]}",
                  "AmmoType": [f"{MOD}:{ammo[0]}"] + [{"Ammo": f"{MOD}:{a}", "Projectile": f"{MOD}:{a}"} for a in ammo[1:]],
                  "RPM": 15, "Velocity": velocities[0], "Spread": 0.12, "ProjectileLife": 2400, "DefaultZoom": 1.5,
+                 "RecoilTime": 42, "RecoilForce": 1.1 if "shell_155mm" in ammo else 0.2, "ShootAnimationTime": 24,
                  "Crosshair": "@NoCross", "Name": f"weapon.{MOD}.charge_1",
                  "Icon": "superbwarfare:textures/overlay/vehicle/weapon/icons/cannon_30mm_ap.png",
                  "ShootPos": {"Transform": "Barrel", "Positions": [muzzle], "Directions": ["Barrel"]}}

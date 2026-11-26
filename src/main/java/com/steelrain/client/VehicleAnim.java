@@ -63,13 +63,70 @@ public final class VehicleAnim {
         return f;
     }
 
-    /** Radar heads turn about once a second; jamming dishes sweep slowly from side to side. */
+    /** How far a hull is leaning on its suspension. Kept per vehicle and eased from tick to tick. */
+    private static final class Lean {
+        float pitch, roll, pitchO, rollO;
+        double speed;
+        float yaw;
+        int tick = -1;
+    }
+
+    private static final Map<VehicleEntity, Lean> LEANS = new java.util.WeakHashMap<>();
+
+    /**
+     * Radar heads turn about once a second and jamming dishes sweep slowly from side to side. The hull squats
+     * when the vehicle pulls away, dips when it brakes and rolls outwards in a turn. Gun barrels slide back
+     * when they fire and run out again.
+     */
     public static void extras(VehicleEntity entity, VehicleModelInstance model, float partialTicks) {
         float time = entity.tickCount + partialTicks;
         BoneState radar = model.getBone("spinRadar");
         if (radar != null) radar.rotation.rotationY(time * 0.3f);
         BoneState dish = model.getBone("scanDish");
         if (dish != null) dish.rotation.rotationY(Mth.sin(time * 0.02f) * 0.9f);
+
+        BoneState body = model.getBone("body");
+        if (body != null) {
+            Lean lean = LEANS.computeIfAbsent(entity, e -> new Lean());
+            if (lean.tick != entity.tickCount) {
+                net.minecraft.world.phys.Vec3 look = entity.getViewVector(1f);
+                double speed = entity.getDeltaMovement().dot(look);
+                float yaw = entity.getYRot();
+                boolean first = lean.tick < 0;
+                double accel = first ? 0 : speed - lean.speed;
+                float turn = first ? 0 : Mth.wrapDegrees(yaw - lean.yaw);
+                lean.speed = speed;
+                lean.yaw = yaw;
+                lean.tick = entity.tickCount;
+                lean.pitchO = lean.pitch;
+                lean.rollO = lean.roll;
+                // a soft spring: head for the lean the forces ask for, a quarter of the way each tick
+                float wantPitch = Mth.clamp((float) accel * 1.6f, -0.06f, 0.06f);
+                float wantRoll = Mth.clamp(turn * (float) speed * 0.03f, -0.07f, 0.07f);
+                lean.pitch += (wantPitch - lean.pitch) * 0.25f;
+                lean.roll += (wantRoll - lean.roll) * 0.25f;
+            }
+            body.rotation.rotationX(Mth.lerp(partialTicks, lean.pitchO, lean.pitch)).rotateZ(Mth.lerp(partialTicks, lean.rollO, lean.roll));
+        }
+
+        recoil(entity, model.getBone("recoilHeavy"), 0.9f, 24, partialTicks);
+        recoil(entity, model.getBone("recoilLight"), 0.1f, 2, partialTicks);
+    }
+
+    /** Slides a barrel straight back on firing (quickly) and lets it run out again (slowly). */
+    private static void recoil(VehicleEntity entity, BoneState bone, float travel, int duration, float partialTicks) {
+        if (bone == null) return;
+        int timer = 0;
+        for (int seat = 0; seat < 3; seat++) {
+            for (int weapon = 0; weapon < 4; weapon++) timer = Math.max(timer, entity.getShootAnimationTimer(seat, weapon));
+        }
+        float back = 0f;
+        if (timer > 0) {
+            float done = Mth.clamp(1f - (timer - partialTicks) / duration, 0f, 1f);
+            back = done < 0.12f ? done / 0.12f : 1f - (done - 0.12f) / 0.88f;
+        }
+        // the model faces -Z, so backwards is +Z; bone offsets are in sixteenths of a block
+        bone.z = bone.definition().pivotZ() * 16f + back * travel * 16f;
     }
 
     private VehicleAnim() {}

@@ -90,6 +90,26 @@ def lathe(mat, axis, c1, c2, profile, pitch=0, yaw=0, roll=0, pivot=None, **opt)
                 pivot=pivot or (0, 0, 0), opt=opt)
 
 
+def loft(mat, axis, a0, poly0, a1, poly1=None, **opt):
+    """A solid between two flat outlines with the same number of corners, set square to `axis` at a0 and a1.
+    Outline points are (y, z) for axis 'x', (x, z) for 'y' and (x, y) for 'z'. With one outline it is a plain
+    extrusion. Options: marks=[("s<side number>" or "cap0"/"cap1", kind, fu, fv, size)]."""
+    return dict(kind="loft", mat=mat, axis=axis, a=(a0, a1), polys=(list(poly0), list(poly1 or poly0)),
+                rot=(0, 0, 0), pivot=(0, 0, 0), opt=opt)
+
+
+def hull(mat, x0, x1, profile, profile2=None, **opt):
+    """A side profile given as (z, y) points, carried across the vehicle from x0 to x1 (optionally changing
+    to a second profile at x1): hulls, cabs, bodies."""
+    f = lambda pr: [(y, z) for z, y in pr]
+    return loft(mat, "x", x0, f(profile), x1, f(profile2) if profile2 else None, **opt)
+
+
+def tower(mat, y0, outline, y1, outline2=None, **opt):
+    """A plan outline given as (x, z) points at height y0, rising to a second outline at y1: turrets, shelters."""
+    return loft(mat, "y", y0, outline, y1, outline2, **opt)
+
+
 def rod_z(mat, cx, cy, z0, length, dia, **opt):
     """A round bar along the vehicle (barrels, tubes)."""
     return [lathe(mat, "z", cx, cy, [(z0, dia / 2), (z0 + length, dia / 2)], **opt)]
@@ -258,21 +278,27 @@ def running_gear(x, width, z0, z1, count, dia, body, rollers=3):
 
 # ---------------------------------------------------------------- shared truck parts
 def cab(mat, dark, z0, length, width, floor, height, bonnet=0.0):
-    """A cab-over truck cab starting at z0: sloped windscreen, doors, bumper, lights, mirrors, steps, wipers."""
+    """A cab-over truck cab starting at z0, built from its side profile: raked windscreen, rounded roof edge,
+    undercut nose; then doors, bumper, lights, mirrors, steps, wipers."""
     hw = width / 2
     front = z0 + length
-    c = [B(mat, -hw, floor, z0, width, height * 0.5, length, marks=[("left", "hatch", 0.55, 0.5, length * 0.5, height * 0.42),
-                                                                    ("right", "hatch", 0.45, 0.5, length * 0.5, height * 0.42)]),
-         B(mat, -hw, floor + height * 0.5, z0, width, height * 0.5, length - 0.3),
-         B(mat, -hw + 0.05, floor + height, z0 + 0.1, width - 0.1, 0.08, length - 0.5),
-         B(dark, -hw + 0.3, floor + height + 0.08, z0 + 0.3, 0.6, 0.06, 0.6, plain=True),      # roof hatch
-         slope(mat, -hw, width, front, floor + height * 0.5, front - 0.3, floor + height, 0.06),
-         slope(GLASS, -hw + 0.12, width * 0.5 - 0.17, front + 0.02, floor + height * 0.55, front - 0.25, floor + height * 0.95, 0.03),
-         slope(GLASS, 0.05, width * 0.5 - 0.17, front + 0.02, floor + height * 0.55, front - 0.25, floor + height * 0.95, 0.03),
+    h = height
+    profile = [(z0, floor), (z0, floor + h * 0.96), (z0 + 0.12, floor + h), (front - 0.42, floor + h), (front - 0.3, floor + h * 0.97),
+               (front - 0.02, floor + h * 0.52), (front, floor + h * 0.46), (front, floor + 0.08), (front - 0.08, floor)]
+    c = [hull(mat, -hw, hw, profile, marks=[("cap0", "panel", 0.55, 0.6, length * 0.5, h * 0.62), ("cap1", "panel", 0.55, 0.6, length * 0.5, h * 0.62)]),
+         B(dark, -hw + 0.3, floor + h, z0 + 0.3, 0.6, 0.05, 0.6, plain=True),                  # roof hatch
+         B(dark, -hw + 0.02, floor + h, z0 + 0.05, width - 0.04, 0.03, 0.06, plain=True),      # rain gutter
+         slope(GLASS, -hw + 0.12, width * 0.5 - 0.17, front + 0.012, floor + h * 0.56, front - 0.262, floor + h * 0.94, 0.03),
+         slope(GLASS, 0.05, width * 0.5 - 0.17, front + 0.012, floor + h * 0.56, front - 0.262, floor + h * 0.94, 0.03),
          B(dark, -hw - 0.03, floor - 0.25, front - 0.12, width + 0.06, 0.32, 0.22),             # bumper
          B(STEEL_D, -0.3, floor - 0.2, front + 0.1, 0.6, 0.12, 0.05, plain=True),              # tow bar
-         B(GRILLE, -hw * 0.55, floor + 0.12, front - 0.01, width * 0.55, height * 0.3, 0.04),
-         B(WHITE, -0.25, floor - 0.08, front + 0.1, 0.5, 0.12, 0.02, marks=[("front", "plate", 0.5, 0.5, 0.5, 0.12)])]
+         B(GRILLE, -hw * 0.55, floor + 0.12, front - 0.01, width * 0.55, h * 0.3, 0.04),
+         B(dark, -hw * 0.6, floor + 0.08, front, width * 0.6, 0.04, 0.05, plain=True),
+         B(WHITE, -0.25, floor - 0.08, front + 0.1, 0.5, 0.12, 0.02, marks=[("front", "plate", 0.5, 0.5, 0.5, 0.12)]),
+         B(dark, -hw * 0.9, floor - 0.1, z0 - 0.02, width * 0.9, h * 0.7, 0.05, plain=True)]   # back wall stiffener
+    for sx in (1, -1):                                                                           # snorkel, grab rails, sun visor
+        c += [B(dark, sx * hw - (0.0 if sx > 0 else 0.03), floor + h * 0.55, z0 + length * 0.22, 0.03, h * 0.4, 0.04, plain=True)]
+    c += [B(dark, -hw + 0.05, floor + h * 0.97, front - 0.36, width - 0.1, 0.03, 0.2, pitch=-12, plain=True)]
     c += P(GLASS, hw - 0.02, floor + height * 0.55, z0 + length * 0.3, 0.05, height * 0.36, length * 0.45)
     c += P(dark, hw, floor + height * 0.5, z0 + length * 0.28, 0.03, height * 0.04, length * 0.5, plain=True)   # window sill
     c += P(STEEL_D, hw, floor + height * 0.3, z0 + length * 0.36, 0.04, 0.05, 0.16, plain=True)                # door handles
@@ -286,6 +312,35 @@ def cab(mat, dark, z0, length, width, floor, height, bonnet=0.0):
     c += P(BLACK, 0.2, floor + height * 0.56, front + 0.03, 0.5, 0.02, 0.02, plain=True)        # wipers
     c += P(AMBER, hw - 0.25, floor + height + 0.08, front - 0.6, 0.12, 0.06, 0.08)              # roof marker lights
     c += [B(STEEL_D, hw - 0.15, floor + height, z0 + 0.15, 0.04, 1.3, 0.04, plain=True)]        # aerial
+    return c
+
+
+def truck_details(mat, dark, zs, x, dia, z_rear, z_front, bed):
+    """The clutter under and around a heavy truck: frame cross-members, drive shafts, fuel and air tanks,
+    battery box, exhaust, ladders, rear light clusters, reflectors and a tow hitch."""
+    c = []
+    zs = sorted(zs)
+    for z in np.arange(z_rear + 0.4, z_front - 0.2, 1.1):                                        # frame cross-members
+        c.append(B(dark, -0.55, bed - 0.42, float(z), 1.1, 0.1, 0.1, plain=True))
+    c += rod_z(STEEL_D, 0, dia / 2 + 0.05, zs[0], zs[-1] - zs[0], 0.11)                          # drive shaft
+    gap = [(a + b) / 2 for a, b in zip(zs, zs[1:]) if b - a > dia * 1.6]
+    mid = gap[0] if gap else (zs[0] + zs[-1]) / 2
+    for sx in (1, -1):
+        cx = sx * (x - 0.05)
+        c += [lathe(STEEL_D, "z", cx, bed - 0.62, [(mid - 0.75, 0.0), (mid - 0.75, 0.24), (mid - 0.7, 0.27), (mid + 0.1, 0.27), (mid + 0.15, 0.24), (mid + 0.15, 0.0)])]
+        c += [B(BLACK, cx - 0.28, bed - 0.9, mid - 0.55, 0.56, 0.03, 0.05, plain=True), B(BLACK, cx - 0.28, bed - 0.9, mid - 0.1, 0.56, 0.03, 0.05, plain=True)]
+        c += rod_z(STEEL, cx, bed - 0.55, mid + 0.3, 0.5, 0.2)                                    # air tanks
+        c += [B(dark, sx * x - 0.25 + (0.0 if sx > 0 else 0.0), bed - 0.85, mid + 0.9, 0.5, 0.45, 0.4, marks=[("left" if sx > 0 else "right", "panel", 0.5, 0.5, 0.3, 0.3)])]
+        c += [B(RED, sx * (x + 0.1) - 0.11, bed - 0.3, z_rear - 0.04, 0.22, 0.12, 0.04), B(AMBER, sx * (x - 0.16) - 0.07, bed - 0.3, z_rear - 0.04, 0.14, 0.12, 0.04),
+              B(WHITE, sx * (x - 0.36) - 0.06, bed - 0.3, z_rear - 0.04, 0.12, 0.12, 0.04),
+              B(AMBER, sx * (x + 0.36) - 0.02, bed - 0.12, mid, 0.04, 0.06, 0.1, plain=True)]    # side marker
+    c += [B(dark, -x - 0.3, bed - 0.42, z_rear - 0.06, 2 * x + 0.6, 0.22, 0.1, marks=[("rear", "hazard", 0.5, 0.5, 1.6, 0.12)]),   # under-run bar
+          B(STEEL_D, -0.1, bed - 0.55, z_rear - 0.2, 0.2, 0.16, 0.2, plain=True)]
+    c += rod_x(STEEL_D, -0.16, 0.32, bed - 0.47, z_rear - 0.22, 0.06)                             # tow pin
+    c += rod_y(STEEL_D, x + 0.1, mid + 1.5, bed - 0.2, 1.5, 0.14) + rod_z(STEEL_D, x + 0.1, bed - 0.35, mid + 1.1, 0.6, 0.26)   # exhaust stack and silencer
+    for i in range(4):                                                                            # ladder
+        c.append(B(STEEL_D, -x - 0.42, bed - 0.8 + i * 0.22, mid - 1.2, 0.04, 0.03, 0.4, plain=True))
+    c += [B(STEEL_D, -x - 0.42, bed - 0.85, mid - 1.22, 0.04, 0.9, 0.03, plain=True), B(STEEL_D, -x - 0.42, bed - 0.85, mid - 0.83, 0.04, 0.9, 0.03, plain=True)]
     return c
 
 
@@ -452,8 +507,80 @@ def _lathe_surfaces(part):
     return out
 
 
+def _ears(poly):
+    """Cuts a flat outline (which may have notches) into triangles."""
+    pts = list(range(len(poly)))
+    area = sum(poly[i][0] * poly[(i + 1) % len(poly)][1] - poly[(i + 1) % len(poly)][0] * poly[i][1] for i in range(len(poly)))
+    if area < 0:
+        pts.reverse()
+    def cross(o, a, b): return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+    tris, guard = [], 0
+    while len(pts) > 3 and guard < 2000:
+        guard += 1
+        for k in range(len(pts)):
+            i, j, l = pts[k - 1], pts[k], pts[(k + 1) % len(pts)]
+            a, b, c = poly[i], poly[j], poly[l]
+            if cross(a, b, c) <= 1e-12:
+                continue
+            if any(m not in (i, j, l) and cross(a, b, poly[m]) >= 0 and cross(b, c, poly[m]) >= 0 and cross(c, a, poly[m]) >= 0 for m in pts):
+                continue
+            tris.append((i, j, l)); pts.pop(k)
+            break
+        else:
+            break
+    if len(pts) == 3:
+        tris.append(tuple(pts))
+    return tris
+
+
+def _loft_surfaces(part):
+    axis, (a0, a1), (p0, p1) = part["axis"], part["a"], part["polys"]
+    n = len(p0)
+    ring0 = np.array([_axis_point(axis, a0, u, v) for u, v in p0], dtype=float)
+    ring1 = np.array([_axis_point(axis, a1, u, v) for u, v in p1], dtype=float)
+    centre = (ring0.mean(0) + ring1.mean(0)) / 2
+    out = []
+    for i in range(n):                                       # the sides, one flat panel each
+        j = (i + 1) % n
+        a, b, c, d = ring1[i], ring1[j], ring0[i], ring0[j]
+        w = (np.linalg.norm(b - a) + np.linalg.norm(d - c)) / 2
+        h = (np.linalg.norm(c - a) + np.linalg.norm(d - b)) / 2
+        if w < 1e-6 or h < 1e-6:
+            continue
+        nrm = np.cross(b - a, c - a) if np.linalg.norm(b - a) > 1e-6 else np.cross(d - c, a - c)
+        if np.linalg.norm(nrm) < 1e-9:
+            continue
+        nrm = nrm / np.linalg.norm(nrm)
+        if nrm @ ((a + b + c + d) / 4 - centre) < 0:
+            nrm = -nrm
+        out.append(_surface(part, [[a, b], [c, d]], nrm, w, h, f"s{i}"))
+    for tag, a, poly, sign in (("cap0", a0, p0, -1 if a1 > a0 else 1), ("cap1", a1, p1, 1 if a1 > a0 else -1)):
+        us, vs = [q[0] for q in poly], [q[1] for q in poly]
+        u0, u1, v0, v1 = min(us), max(us), min(vs), max(vs)
+        if u1 - u0 < 1e-6 or v1 - v0 < 1e-6:
+            continue
+        corners = [[_axis_point(axis, a, u0, v1), _axis_point(axis, a, u1, v1)], [_axis_point(axis, a, u0, v0), _axis_point(axis, a, u1, v0)]]
+        uv = [((q[0] - u0) / (u1 - u0), (v1 - q[1]) / (v1 - v0)) for q in poly]
+        faces = [[uv[i], uv[j], uv[k]] for i, j, k in _ears(uv)]
+        out.append(_surface(part, corners, _axis_point(axis, sign, 0, 0), u1 - u0, v1 - v0, tag, faces=faces, mask=("poly", uv)))
+    return out
+
+
 def surfaces(part):
-    return _box_surfaces(part) if part["kind"] == "box" else _lathe_surfaces(part)
+    return {"box": _box_surfaces, "lathe": _lathe_surfaces, "loft": _loft_surfaces}[part["kind"]](part)
+
+
+def _inside(poly, U, V):
+    """Which points of a grid lie inside a flat outline."""
+    inside = np.zeros(U.shape, bool)
+    n = len(poly)
+    for i in range(n):
+        (x1, y1), (x2, y2) = poly[i], poly[(i + 1) % n]
+        if y1 == y2:
+            continue
+        hit = ((y1 > V) != (y2 > V)) & (U < (x2 - x1) * (V - y1) / (y2 - y1) + x1)
+        inside ^= hit
+    return inside
 
 
 # ---------------------------------------------------------------- painting
@@ -539,6 +666,16 @@ def _sample(surf, wp, hp):
     E = ev if surf["wrap"] else np.minimum(eu, ev)
     if surf["mask"] == "disc":
         E = (0.5 - np.hypot(U - 0.5, V - 0.5)) * surf["w"]
+    elif surf["mask"]:
+        poly = surf["mask"][1]                                # distance to the nearest edge of the outline
+        E = np.full(U.shape, 1e9)
+        um, vm = U * surf["w"], V * surf["h"]
+        for i in range(len(poly)):
+            ax, ay = poly[i][0] * surf["w"], poly[i][1] * surf["h"]
+            bx, by = poly[(i + 1) % len(poly)][0] * surf["w"], poly[(i + 1) % len(poly)][1] * surf["h"]
+            dx, dy = bx - ax, by - ay
+            t = np.clip(((um - ax) * dx + (vm - ay) * dy) / max(1e-12, dx * dx + dy * dy), 0, 1)
+            E = np.minimum(E, np.hypot(um - ax - t * dx, vm - ay - t * dy))
     return Pm[..., 0], Pm[..., 1], Pm[..., 2], Nm, U, V, E
 
 
@@ -671,7 +808,7 @@ def paint(surf, wp, hp, seed):
                         np.where(ny > 0, 0.22 * vnoise(X, Y, Z, 0.4, seed + 3), 0.5))
         col = mix(col, DUST, dust)
     img = np.clip(col, 0, 255).astype(np.uint8)
-    if part["kind"] == "box":
+    if part["kind"] in ("box", "loft"):
         for m in opt.get("marks", []):
             if ALIAS.get(m[0], m[0]) == surf["tag"]:
                 _mark(img, surf["w"], *m[1:])
@@ -752,7 +889,7 @@ def to_mesh(parts, width, height):
             for face in s["faces"]:
                 corners = []
                 for (a, b) in face:
-                    if s["mask"] == "disc":                 # (u, v) on a flat disc
+                    if s["mask"]:                           # (u, v) on a flat face
                         u, v = a, b
                         g = s["grid"]
                         p = (g[0, 0] * (1 - u) * (1 - v) + g[0, 1] * u * (1 - v) + g[1, 0] * (1 - u) * v + g[1, 1] * u * v)
@@ -798,7 +935,9 @@ def render(model, img, yaw, pitch, size=900, bg=(150, 180, 210)):
             wp = max(2, int(s["w"] * sc * 1.5) + 2); hp = max(2, int(s["h"] * sc * 1.5) + 2)
             wp, hp = min(wp, 1400), min(hp, 1400)
             X, Y, Z, N, U, V, E = _sample(s, wp, hp)
-            keep = np.ones((hp, wp), bool) if s["mask"] != "disc" else (np.hypot(U - 0.5, V - 0.5) <= 0.5)
+            keep = np.ones((hp, wp), bool)
+            if s["mask"] == "disc": keep = np.hypot(U - 0.5, V - 0.5) <= 0.5
+            elif s["mask"]: keep = _inside(s["mask"][1], U, V)
             Nc = N @ M.T
             keep &= Nc[..., 2] > 0.0
             if not keep.any():

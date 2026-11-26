@@ -316,9 +316,13 @@ python3 tools/gen_assets.py   # regenerate textures, models, recipes and languag
   the vehicle drives (the Gepard and M109), with the sprockets, idlers and return rollers turning too. Front
   axles steer. The Gepard's and Pantsir's search radars turn and the Krasukha's dishes sweep. Track paths are
   worked out by the generator from the wheel positions and read by `VehicleAnim` from `sbw/tracks.json`.
-- The Gepard has the most modelled detail; the other vehicles use the same mesh and paint system but have fewer
-  parts so far. Real artist-made models can replace generated ones where a freely licensed one is available.
-- Not animated yet: suspension travel, gun recoil, hatches and stabiliser jacks.
+- Hulls, turrets and cabs are built from their real outlines (side profiles carried across the vehicle, plan
+  outlines rising to a smaller roof) rather than from blocks: sloped glacis plates, faceted turret fronts, raked
+  cab noses. Done for the Gepard, M109, HIMARS, Iskander and the shared truck cab (Pantsir, Krasukha); the
+  remaining vehicles still use bevelled blocks for their main bodies.
+- The hull sits on its own bone above the running gear: it squats when pulling away, dips under braking and
+  rolls in turns, and rocks when the main gun fires. Gun barrels slide back on firing and run out again.
+- Not animated yet: per-wheel suspension travel, hatches and stabiliser jacks.
 - A loaded Iskander is not drawn on its launcher.
 - The Pantsir's missiles only fire in automatic mode.
 - A fitted Jammer Dome is not drawn.
