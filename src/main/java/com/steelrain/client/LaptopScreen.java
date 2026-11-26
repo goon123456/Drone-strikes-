@@ -638,12 +638,7 @@ public class LaptopScreen extends Screen {
         header(g, font, x + 1, y, LIST_W - 2, Component.translatable("gui.steelrain.units"), Component.literal(Integer.toString(entries.size())));
         int ly = y + 14;
         if (entries.isEmpty()) {
-            for (int i = 0; i < 3; i++) {
-                int sy = ly + 6 + i * 26;
-                g.drawString(font, Integer.toString(i + 1), x + 6, sy, P_AMBER, false);
-                g.drawWordWrap(font, Component.translatable("gui.steelrain.step_" + (i + 1)), x + 18, sy, LIST_W - 26, P_DIM);
-                if (i < 2) g.fill(x + 6, sy + 22, x + LIST_W - 6, sy + 23, P_RULE);
-            }
+            g.drawString(font, Ui.upper(Component.translatable("gui.steelrain.no_links")).getString(), x + 6, ly + 6, P_DIM, false);
             return;
         }
         int shown = visibleCards();
@@ -803,7 +798,7 @@ public class LaptopScreen extends Screen {
         header(g, font, x + 1, y, SIDE_W - 2, Component.translatable("gui.steelrain.mission"), null);
         int ix = x + 6, iw = SIDE_W - 12;
         if (!ok) {
-            g.drawWordWrap(font, Component.translatable("gui.steelrain.select_unit"), ix, y + 18, iw, P_DIM);
+            g.drawString(font, Ui.upper(Component.translatable("gui.steelrain.select_unit")).getString(), ix, y + 18, P_DIM, false);
             return;
         }
         // the unit: name, state, what it carries and where it is
@@ -869,7 +864,7 @@ public class LaptopScreen extends Screen {
             row += 14;
             if (floorY - row >= 26) profile(g, ix, row, iw, floorY - row - 2, cur, prof, dist);
         } else {
-            g.drawWordWrap(font, Component.translatable("gui.steelrain.pick_target"), ix, ty + 20, iw, P_AMBER);
+            g.drawString(font, Ui.upper(Component.translatable("gui.steelrain.pick_target")).getString(), ix, ty + 20, P_DIM, false);
         }
         if (!cur.station() && !cur.manual()) {
             int by = top + h - FOOT - GAP - 1 - 40;
