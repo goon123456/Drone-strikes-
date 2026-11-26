@@ -1021,9 +1021,10 @@ def sbw_vehicles():
 
 
 def aircraft():
-    """Aircraft and drones: a mesh file and a painted texture each, read by Steel Rain's own renderer."""
+    """Aircraft, drones and munitions: a mesh file and a painted texture each, read by Steel Rain's own renderer."""
     import gen_aircraft as GA
-    for name, (build, px) in GA.MODELS.items():
+    import gen_munitions as GM
+    for name, (build, px) in {**GA.MODELS, **GM.MODELS}.items():
         model = build()
         tex, tw, th = VK.bake(model, name, px)
         save(Image.fromarray(tex).convert("RGB"), f"{A}/textures/entity/aircraft/{name}.png")

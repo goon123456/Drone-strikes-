@@ -306,7 +306,9 @@ python3 tools/gen_assets.py   # regenerate textures, models, recipes and languag
   skins through a row of cross-sections, aerofoil-section wings, tails and propeller blades, turned sensor
   balls, real wheels on folding gear legs, weapons on pylons, markings. They are drawn by Steel Rain's own
   renderer from `models/aircraft/*.json`. Propellers and rotors spin, landing gear retracts and aircraft bank.
-  Missiles and shells in flight, and the three launch sites, are still simple flat-coloured shapes.
+- Missiles, rockets, shells and grenades in flight are textured meshes too, in `tools/gen_munitions.py`: bodies of
+  revolution with true ogive noses, aerofoil fins, nozzles, paint bands and stencilled designations.
+  The three launch sites and tracer rounds are still simple flat-coloured shapes.
 - Ground vehicles are true meshes (Superb Warfare's `poly_mesh` format), not boxes: turned wheels with dished
   rims, round barrels, masts and dishes, and bevelled plate edges. Shapes are in `tools/gen_vehicles.py`; the kit
   of parts, the mesh builder and the texture painter are in `tools/vehicle_kit.py`.

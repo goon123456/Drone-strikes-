@@ -733,13 +733,14 @@ def _lathe_surfaces(part):
     seg = part["opt"].get("seg") or (8 if rmax < 0.04 else 12 if rmax < 0.12 else 18 if rmax < 0.4 else 28)
     ang = np.linspace(0, 2 * math.pi, seg + 1)
     rows, norms = [], []
+    # which way the outline runs along the axis decides which side of it is the outside
+    run = next((1 if b[0] > a_[0] else -1 for a_, b in zip(prof, prof[1:]) if b[0] != a_[0]), 1)
     for i, (a, r) in enumerate(prof):
         # surface normal from the slope of the profile either side of this point
         a0, r0 = prof[max(0, i - 1)]; a1, r1 = prof[min(len(prof) - 1, i + 1)]
         da, dr = a1 - a0, r1 - r0
         ln = math.hypot(da, dr) or 1.0
-        na, nr = -dr / ln, da / ln
-        if nr < 0 and da == 0: na, nr = -na, -nr
+        na, nr = -dr / ln * run, da / ln * run
         rows.append([_axis_point(axis, a, c1 + r * math.cos(t), c2 + r * math.sin(t)) for t in ang])
         norms.append([_axis_point(axis, na, nr * math.cos(t), nr * math.sin(t)) for t in ang])
     path = sum(math.hypot(prof[i + 1][0] - prof[i][0], prof[i + 1][1] - prof[i][1]) for i in range(len(prof) - 1))
@@ -752,7 +753,7 @@ def _lathe_surfaces(part):
             faces.append(f)
     out = [_surface(part, rows, norms, 2 * math.pi * rmax, path, "wall", faces=faces, wrap=True)]
     for end, (a, r) in ((0, prof[0]), (-1, prof[-1])):       # flat ends
-        if r <= 0:
+        if r <= 0 or part["opt"].get("open"):
             continue
         sign = -1 if (prof[-1][0] - prof[0][0]) * (1 if end == 0 else -1) > 0 else 1
         corners = [[_axis_point(axis, a, c1 - r, c2 + r), _axis_point(axis, a, c1 + r, c2 + r)],
@@ -1326,7 +1327,7 @@ def render(model, img, yaw, pitch, size=900, bg=(150, 180, 210)):
         for s in part["surfaces"]:
             r = s["rect"]
             wp = max(2, int(s["w"] * sc * 1.5) + 2); hp = max(2, int(s["h"] * sc * 1.5) + 2)
-            wp, hp = min(wp, 1400), min(hp, 1400)
+            wp, hp = min(wp, 3000), min(hp, 3000)
             X, Y, Z, N, U, V, E = _sample(s, wp, hp)
             keep = np.ones((hp, wp), bool)
             if s["mask"] == "disc": keep = np.hypot(U - 0.5, V - 0.5) <= 0.5

@@ -25,16 +25,16 @@ public final class Models {
 
     // ------------------------------------------------------------------ munitions
 
-    public static final BoxModel TOMAHAWK = MunitionModels.tomahawk();
-    public static final BoxModel ISKANDER = MunitionModels.iskander();
-    public static final BoxModel ATACMS = MunitionModels.atacms();
-    public static final BoxModel GMLRS = MunitionModels.gmlrs();
-    public static final BoxModel SHELL = MunitionModels.shell();
-    public static final BoxModel MORTAR_BOMB = MunitionModels.mortarBomb();
-    public static final BoxModel HELLFIRE = MunitionModels.hellfire();
-    public static final BoxModel PANTSIR_MISSILE = MunitionModels.pantsirMissile();
-    public static final BoxModel PATRIOT_MISSILE = MunitionModels.patriotMissile();
-    public static final BoxModel GRENADE = MunitionModels.grenade();
+    public static final BoxModel TOMAHAWK = BoxModel.load("tomahawk");
+    public static final BoxModel ISKANDER = BoxModel.load("iskander");
+    public static final BoxModel ATACMS = BoxModel.load("atacms");
+    public static final BoxModel GMLRS = BoxModel.load("gmlrs");
+    public static final BoxModel SHELL = BoxModel.load("shell_155");
+    public static final BoxModel MORTAR_BOMB = BoxModel.load("mortar_bomb");
+    public static final BoxModel HELLFIRE = BoxModel.load("hellfire");
+    public static final BoxModel PANTSIR_MISSILE = BoxModel.load("pantsir_missile");
+    public static final BoxModel PATRIOT_MISSILE = BoxModel.load("patriot_missile");
+    public static final BoxModel GRENADE = BoxModel.load("grenade");
 
     public static final BoxModel SHAHED = BoxModel.load("shahed_136");
     public static final BoxModel FPV = BoxModel.load("fpv_drone");
