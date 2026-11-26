@@ -37,6 +37,7 @@ public abstract class FlyingWeaponEntity extends Entity implements net.minecraft
     public long engagedUntil;
     protected double lastGround = Double.NaN;
 
+    private boolean loopStarted;
     private int lerpSteps;
     private double lerpX, lerpY, lerpZ;
     private float lerpYRot, lerpXRot;
@@ -125,6 +126,10 @@ public abstract class FlyingWeaponEntity extends Entity implements net.minecraft
             if (lerpSteps > 0) {
                 lerpPositionAndRotationStep(lerpSteps, lerpX, lerpY, lerpZ, lerpYRot, lerpXRot);
                 lerpSteps--;
+            }
+            if (!loopStarted && tickCount > 1) {
+                loopStarted = true;
+                com.steelrain.client.ClientHooks.startLoop(this);
             }
             clientTick();
         } else {

@@ -104,6 +104,10 @@ public final class FpvClient {
         while (ClientSetup.EXIT_DRONE.consumeClick()) exit = true;
         if (feedId >= 0 && exit) PacketDistributor.sendToServer(new Payloads.StopFeed());
 
+        // A jammed link hisses, whether we are flying the drone or watching an aircraft's feed.
+        int jam = drone() != null ? drone().jamPercent() : feed() != null ? feed().jamPercent() : 0;
+        if (jam > 10 && mc.player.tickCount % 20 == 0) ClientHooks.staticNoise(jam / 100f);
+
         if (droneId < 0) return;
         FpvDroneEntity d = drone();
         if (d == null) {

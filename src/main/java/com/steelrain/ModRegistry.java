@@ -59,6 +59,22 @@ public final class ModRegistry {
     public static final DeferredRegister<CreativeModeTab> TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MODID);
     public static final DeferredRegister<DataComponentType<?>> COMPONENTS = DeferredRegister.create(Registries.DATA_COMPONENT_TYPE, MODID);
 
+    // ---- sounds Superb Warfare does not have: synthesised by tools/gen_sounds.py ----
+    public static final DeferredRegister<net.minecraft.sounds.SoundEvent> SOUNDS = DeferredRegister.create(Registries.SOUND_EVENT, MODID);
+    public static final Supplier<net.minecraft.sounds.SoundEvent> FPV_MOTOR = sound("fpv_motor");
+    public static final Supplier<net.minecraft.sounds.SoundEvent> MAVIC_MOTOR = sound("mavic_motor");
+    public static final Supplier<net.minecraft.sounds.SoundEvent> SHAHED_ENGINE = sound("shahed_engine");
+    public static final Supplier<net.minecraft.sounds.SoundEvent> TURBOPROP = sound("turboprop");
+    public static final Supplier<net.minecraft.sounds.SoundEvent> JET = sound("jet");
+    public static final Supplier<net.minecraft.sounds.SoundEvent> JAMMER_HUM = sound("jammer_hum");
+    public static final Supplier<net.minecraft.sounds.SoundEvent> STATIC = sound("static");
+    public static final Supplier<net.minecraft.sounds.SoundEvent> CABLE_SNAP = sound("cable_snap");
+
+    private static Supplier<net.minecraft.sounds.SoundEvent> sound(String name) {
+        return SOUNDS.register(name, () -> net.minecraft.sounds.SoundEvent.createVariableRangeEvent(
+                net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(MODID, name)));
+    }
+
     // ---- data components ----
     public static final Supplier<DataComponentType<List<BlockPos>>> LINKS = COMPONENTS.register("links",
             () -> DataComponentType.<List<BlockPos>>builder()
@@ -340,6 +356,7 @@ public final class ModRegistry {
         BLOCK_ENTITIES.register(bus);
         MENUS.register(bus);
         ITEMS.register(bus);
+        SOUNDS.register(bus);
         ENTITIES.register(bus);
         TABS.register(bus);
         COMPONENTS.register(bus);

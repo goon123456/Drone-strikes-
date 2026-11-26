@@ -592,6 +592,14 @@ def lang():
         "message.steelrain.laptop_jammed": "Link jammed: you are inside an enemy jammer's bubble",
         "hud.steelrain.cable": "CABLE %s m",
         "hud.steelrain.jammed": "! JAMMING !",
+        "subtitles.steelrain.fpv_motor": "FPV drone buzzes",
+        "subtitles.steelrain.mavic_motor": "Quadcopter hums",
+        "subtitles.steelrain.shahed_engine": "Shahed engine rattles",
+        "subtitles.steelrain.turboprop": "Drone propeller drones",
+        "subtitles.steelrain.jet": "Jet engine roars",
+        "subtitles.steelrain.jammer_hum": "Jammer hums",
+        "subtitles.steelrain.static": "Video static",
+        "subtitles.steelrain.cable_snap": "Cable snaps",
         "gui.steelrain.switch_on": "Power: ON",
         "gui.steelrain.switch_off": "Power: OFF",
         "gui.steelrain.belts": "Belts",
@@ -860,10 +868,10 @@ def sbw_vehicles():
               "ContainerIcon": "superbwarfare:textures/gui/vehicle/type/defense.png"})
 
     # ---- artillery and missile launchers: fired from the Field Laptop, so they carry no Superb Warfare weapons ----
-    WHEEL = {"EngineType": "Wheel", "EngineInfo": {"EnergyCostRate": 64, "WheelRotSpeed": 1.75, "WheelDifferential": 0.3,
+    WHEEL = {"EngineSound": "superbwarfare:truck_engine", "EngineType": "Wheel", "EngineInfo": {"EnergyCostRate": 64, "WheelRotSpeed": 1.75, "WheelDifferential": 0.3,
              "MaxForwardSpeedRate": 0.9, "MaxBackwardSpeedRate": 0.55, "Increment": 0.02, "Decrement": 0.017, "SteeringSpeed": 0.05},
              "UpStep": 1.5, "RotateOffsetHeight": 2.0, "CollisionLevel": {"Level": 3}}
-    TRACK = {"EngineType": "Track", "EngineInfo": {"EnergyCostRate": 96, "WheelRotSpeed": 1.25, "WheelDifferential": 0.5,
+    TRACK = {"EngineSound": "superbwarfare:plz_05_engine", "EngineType": "Track", "EngineInfo": {"EnergyCostRate": 96, "WheelRotSpeed": 1.25, "WheelDifferential": 0.5,
              "TrackRotSpeed": 1.9, "TrackDifferential": 0.8, "MaxForwardSpeedRate": 0.7, "MaxBackwardSpeedRate": 0.45,
              "Increment": 0.022, "Decrement": 0.015, "SteeringSpeed": 0.1},
              "UpStep": 1.5, "RotateOffsetHeight": 2.0, "CollisionLevel": {"Level": 3}}
@@ -1001,6 +1009,8 @@ def sbw_vehicles():
 
 
 if __name__ == "__main__":
+    import gen_sounds
+    gen_sounds.main()
     sbw_vehicles()
     block_textures(); block_models(); item_icons(); entity_textures(); recipes(); tags(); lang()
     print("assets generated")

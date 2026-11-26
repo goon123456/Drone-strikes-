@@ -169,7 +169,7 @@ public class AirDefenceVehicle extends AutoAimableEntity {
         if (target instanceof FlyingWeaponEntity f) f.engagedUntil = now + (kind == Kind.PATRIOT ? 160 : 60);
         cooldown = kind.missileCooldown;
         targetId = -1;
-        level.playSound(null, blockPosition(), SoundEvents.FIREWORK_ROCKET_LAUNCH, SoundSource.NEUTRAL, 6f, kind == Kind.PATRIOT ? 0.5f : 1.4f);
+com.steelrain.util.Sfx.gunfire(level, muzzle, "missile_start", "igla_9k38_far", "rpg_veryfar");
         level.sendParticles(ParticleTypes.CLOUD, muzzle.x, muzzle.y, muzzle.z, 20, 0.3, 0.3, 0.3, 0.06);
     }
 

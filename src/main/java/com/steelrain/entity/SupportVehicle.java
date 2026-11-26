@@ -80,6 +80,9 @@ public class SupportVehicle extends VehicleEntity {
                 consumeEnergy(jamEnergy());
             }
             Jamming.emit(level, getUUID(), position().add(0, getBbHeight(), 0), jamRadius(), ownerId, ownerName);
+            if (tickCount % 40 == 0) {
+                level.playSound(null, getX(), getY() + 1, getZ(), ModRegistry.JAMMER_HUM.get(), net.minecraft.sounds.SoundSource.NEUTRAL, 1.2f, 1f);
+            }
         }
     }
 

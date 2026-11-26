@@ -221,7 +221,7 @@ public class AircraftEntity extends FlyingWeaponEntity {
                     hellfires--;
                     fireCooldown = 25;
                     MissileEntity.launch(level, MissileProfile.HELLFIRE, pos.add(0, -1.5, 0), targetX, targetZ, ownerId, ownerName, true);
-                    level.playSound(null, pos.x, pos.y, pos.z, SoundEvents.FIREWORK_ROCKET_LAUNCH, SoundSource.NEUTRAL, 6f, 0.7f);
+                    com.steelrain.util.Sfx.gunfire(level, pos, "bmp_2_missile_fire_3p", "javelin_far", "rpg_veryfar");
                 }
                 if (h < 20 || (hellfires <= 0 && fireCooldown < 5)) setPhase(Phase.ORBIT);
             }

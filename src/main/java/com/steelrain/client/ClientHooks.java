@@ -35,5 +35,16 @@ public final class ClientHooks {
 
     public static void onCable(Payloads.Cable p) { CableClient.update(p); }
 
+    public static void startLoop(com.steelrain.entity.FlyingWeaponEntity entity) { LoopSound.start(entity); }
+
+    /** Hiss of a jammed video link, louder the worse it is. */
+    public static void staticNoise(float jam) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player != null) {
+            mc.getSoundManager().play(net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
+                    com.steelrain.ModRegistry.STATIC.get(), 1f, Math.min(1f, jam)));
+        }
+    }
+
     private ClientHooks() {}
 }

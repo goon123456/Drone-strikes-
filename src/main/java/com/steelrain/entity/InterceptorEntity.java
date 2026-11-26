@@ -44,6 +44,12 @@ public class InterceptorEntity extends FlyingWeaponEntity {
             discard();
             return;
         }
+        // Whoever is flying the target hears the missile warning.
+        if (age % 10 == 1 && target.getFirstPassenger() instanceof net.minecraft.server.level.ServerPlayer crew) {
+            crew.playNotifySound(com.steelrain.util.Sfx.sbw("missile_warning"), net.minecraft.sounds.SoundSource.PLAYERS, 1f, 1f);
+        } else if (age % 10 == 1 && ours instanceof FpvDroneEntity drone && drone.ownerPlayer() instanceof net.minecraft.server.level.ServerPlayer pilot && drone.active()) {
+            pilot.playNotifySound(com.steelrain.util.Sfx.sbw("missile_warning"), net.minecraft.sounds.SoundSource.PLAYERS, 1f, 1f);
+        }
         Vec3 pos = position();
         Vec3 targetPos = target.position().add(0, target.getBbHeight() / 2, 0);
         Vec3 targetMove = Ballistics.velocity(target);

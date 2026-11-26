@@ -241,10 +241,10 @@ public class StrikeVehicle extends VehicleEntity implements Launcher {
                     if (getItem(i).is(ModRegistry.GMLRS_ROCKET.get())) pod += removeItem(i, POD_SIZE - pod).getCount();
                 }
             }
-            level().playSound(null, blockPosition(), SoundEvents.IRON_DOOR_CLOSE, SoundSource.NEUTRAL, 2f, 0.7f);
+            if (level() instanceof ServerLevel sl) com.steelrain.util.Sfx.play(sl, position(), "cannon_reload", 3f, 0.9f);
         } else if (ammoSlot() >= 0) {
             reload = RELOAD_TICKS;
-            level().playSound(null, blockPosition(), SoundEvents.PISTON_EXTEND, SoundSource.NEUTRAL, 2f, 0.6f);
+            if (level() instanceof ServerLevel sl) com.steelrain.util.Sfx.play(sl, position(), "missile_reload", 3f, 0.8f);
         }
     }
 
@@ -307,8 +307,9 @@ public class StrikeVehicle extends VehicleEntity implements Launcher {
                 kind == Kind.TOMAHAWK ? new Vec3(0, 1, 0) : dir);
         cooldown = kind.cooldown;
         boolean gun = false;
-        level.playSound(null, blockPosition(), gun ? SoundEvents.GENERIC_EXPLODE.value() : SoundEvents.FIREWORK_ROCKET_LAUNCH,
-                SoundSource.NEUTRAL, 6f, gun ? 1.6f : 0.6f);
+        // Superb Warfare's own launch recordings: a rocket salvo, or the heavier roar of a big missile leaving.
+        if (kind == Kind.HIMARS) com.steelrain.util.Sfx.gunfire(level, muzzle, "medium_rocket_fire", "rpg_far", "rpg_veryfar");
+        else com.steelrain.util.Sfx.gunfire(level, muzzle, "missile_start", "javelin_far", "rpg_veryfar");
         level.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, muzzle.x, muzzle.y, muzzle.z, 20, 0.5, 0.3, 0.5, 0.03);
         level.sendParticles(ParticleTypes.FLAME, muzzle.x, muzzle.y, muzzle.z, 12, 0.2, 0.2, 0.2, 0.05);
         return true;

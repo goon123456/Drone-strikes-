@@ -216,7 +216,7 @@ public class WeaponBlockEntity extends BlockEntity implements MenuProvider, com.
             int moved = before - rest.getCount();
             if (moved > 0) {
                 if (!player.getAbilities().instabuild) stack.shrink(moved);
-                if (level != null) level.playSound(null, worldPosition, SoundEvents.IRON_DOOR_CLOSE, SoundSource.BLOCKS, 0.8f, 1.3f);
+                if (level instanceof ServerLevel sl) com.steelrain.util.Sfx.play(sl, Vec3.atCenterOf(worldPosition), "bomb_reload", 1.5f, 1f);
             }
             ItemStack now = items.getStackInSlot(slot);
             player.displayClientMessage(Component.translatable(moved > 0 ? "message.steelrain.loaded" : "message.steelrain.load_full",
@@ -469,9 +469,8 @@ public class WeaponBlockEntity extends BlockEntity implements MenuProvider, com.
         }
         cooldown = type.cooldown;
         if (aircraft == null || aircraft.runway == 0) {
-            boolean gun = false;
-            level.playSound(null, BlockPos.containing(muzzle), gun ? SoundEvents.GENERIC_EXPLODE.value() : SoundEvents.FIREWORK_ROCKET_LAUNCH,
-                    SoundSource.BLOCKS, 6f, gun ? 1.6f : 0.6f);
+            // The Shahed leaves its rail on a rocket booster; the Orlan is flung off a catapult.
+            com.steelrain.util.Sfx.play(level, muzzle, type == WeaponType.SHAHED_LAUNCHER ? "small_rocket_fire_3p" : "yx_100_swarm_drone_release", 4f, 1f);
             level.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, muzzle.x, muzzle.y, muzzle.z, 20, 0.5, 0.3, 0.5, 0.03);
             level.sendParticles(ParticleTypes.FLAME, muzzle.x, muzzle.y, muzzle.z, 12, 0.2, 0.2, 0.2, 0.05);
         }

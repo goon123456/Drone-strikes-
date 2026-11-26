@@ -29,6 +29,7 @@
     "ExplosionDamage": 60,
     "ExplosionRadius": 5
   },
+  "EngineSound": "superbwarfare:plz_05_engine",
   "EngineType": "Track",
   "EngineInfo": {
     "EnergyCostRate": 96,

@@ -63,8 +63,7 @@ public final class Blast {
                 craterRadius * 0.5 + 0.5, 1.0, craterRadius * 0.5 + 0.5, 0.02);
         level.sendParticles(ParticleTypes.LAVA, pos.x, pos.y + 1, pos.z, 10 + craterRadius * 4,
                 craterRadius * 0.4, 0.5, craterRadius * 0.4, 0);
-        level.playSound(null, pos.x, pos.y, pos.z, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.BLOCKS,
-                4f + craterRadius * 2f, 0.55f + rnd.nextFloat() * 0.2f);
+        Sfx.explosion(level, pos, craterRadius >= 5 ? 2 : craterRadius >= 2 || power >= 3.5f ? 1 : 0);
     }
 
     private static void carveCrater(ServerLevel level, Vec3 centre, double radius, RandomSource rnd) {
@@ -106,7 +105,7 @@ public final class Blast {
     public static void airburst(ServerLevel level, Vec3 pos) {
         level.sendParticles(ParticleTypes.EXPLOSION, pos.x, pos.y, pos.z, 6, 0.6, 0.6, 0.6, 0);
         level.sendParticles(ParticleTypes.LARGE_SMOKE, pos.x, pos.y, pos.z, 20, 0.8, 0.8, 0.8, 0.02);
-        level.playSound(null, pos.x, pos.y, pos.z, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.BLOCKS, 6f, 1.3f);
+        Sfx.tiered(level, pos, "explosion_air", "explosion_far", "explosion_very_far", 64, 256, 512);
     }
 
     private Blast() {}

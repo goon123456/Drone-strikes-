@@ -19,6 +19,7 @@
     "ExplosionDamage": 60,
     "ExplosionRadius": 5
   },
+  "EngineSound": "superbwarfare:truck_engine",
   "EngineType": "Wheel",
   "EngineInfo": {
     "EnergyCostRate": 64,

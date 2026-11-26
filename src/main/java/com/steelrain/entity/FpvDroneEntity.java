@@ -211,7 +211,7 @@ public class FpvDroneEntity extends FlyingWeaponEntity {
         if (!hasGrenade() || !(level() instanceof ServerLevel sl)) return;
         entityData.set(GRENADE, false);
         MissileEntity.drop(sl, MissileProfile.GRENADE, position().add(0, -0.3, 0), getDeltaMovement().scale(0.5), ownerId, ownerName);
-        sl.playSound(null, blockPosition(), SoundEvents.DISPENSER_DISPENSE, SoundSource.NEUTRAL, 1f, 1.4f);
+        com.steelrain.util.Sfx.play(sl, position(), "bomb_release", 1f, 1.3f);
     }
 
     public boolean isPilot(Player player) { return pilot != null && pilot.equals(player.getUUID()); }
@@ -340,7 +340,7 @@ public class FpvDroneEntity extends FlyingWeaponEntity {
 
     private void snap(String messageKey) {
         cableOut = Math.max(cableOut, Math.min(cableMax, cableLength()));
-        level().playSound(null, blockPosition(), SoundEvents.SHEEP_SHEAR, SoundSource.NEUTRAL, 1f, 1.6f);
+        level().playSound(null, blockPosition(), ModRegistry.CABLE_SNAP.get(), SoundSource.NEUTRAL, 1.5f, 1f);
         releasePilot(messageKey);
     }
 

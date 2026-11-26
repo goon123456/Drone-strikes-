@@ -30,6 +30,7 @@ public class MissileEntity extends FlyingWeaponEntity {
     private int age;
     private int flightTicks = 1;
     private double apex;
+    private boolean whistled;
     private boolean jammed;
     private double driftAngle;
     /** Downward acceleration of an unguided shell, blocks per tick squared. Range tables are built on this. */
@@ -139,8 +140,11 @@ public class MissileEntity extends FlyingWeaponEntity {
             age = 0;
             Player gunner = level.getNearestPlayer(this, 12);
             if (gunner != null) setOwner(gunner.getUUID(), gunner.getGameProfile().getName());
-            level.playSound(null, blockPosition(), net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE.value(),
-                    net.minecraft.sounds.SoundSource.NEUTRAL, 5f, 1.5f);
+            if (profile == MissileProfile.MORTAR_SHELL) {
+                com.steelrain.util.Sfx.gunfire(level, position(), "mortar_fire", "mortar_distant", "mortar_distant");
+            } else {
+                com.steelrain.util.Sfx.gunfire(level, position(), "plz_05_fire_3p", "plz_05_far", "plz_05_veryfar");
+            }
             level.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, getX(), getY(), getZ(), 14, 0.3, 0.3, 0.3, 0.03);
         }
         age++;
@@ -162,6 +166,12 @@ public class MissileEntity extends FlyingWeaponEntity {
             }
         };
         Vec3 move = next.subtract(pos);
+        // The whistle of a shell coming in, a moment before it lands.
+        if (!whistled && move.y < -0.4 && !profile.smokeTrail() && profile.mode() != MissileProfile.FlightMode.DROP
+                && profile.mode() != MissileProfile.FlightMode.CRUISE && getY() - groundAt(getX(), getZ()) < -move.y * 30) {
+            whistled = true;
+            com.steelrain.util.Sfx.play(level, pos, "shell_fly", 6f, 1f);
+        }
         if (!keepChunksLoaded(level, next, move)) {
             age--; // hold until the terrain ahead has loaded
             return;
@@ -270,8 +280,7 @@ public class MissileEntity extends FlyingWeaponEntity {
         com.steelrain.entity.SmokeCloudEntity cloud = new com.steelrain.entity.SmokeCloudEntity(ModRegistry.SMOKE.get(), level);
         cloud.setPos(at.x, at.y + 0.5, at.z);
         level.addFreshEntity(cloud);
-        level.playSound(null, net.minecraft.core.BlockPos.containing(at), net.minecraft.sounds.SoundEvents.FIRE_EXTINGUISH,
-                net.minecraft.sounds.SoundSource.BLOCKS, 3f, 0.6f);
+        com.steelrain.util.Sfx.play(level, at, "smoke_grenade_release", 3f, 1f);
     }
 
     /** Spreads fire over the ground around the impact and sets everything nearby alight. */

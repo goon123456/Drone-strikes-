@@ -292,11 +292,20 @@ Requires Java 21.
 python3 tools/gen_assets.py   # regenerate textures, models, recipes and language file
 ```
 
+## Sounds
+- Explosions, gunfire, missile launches, reloads, the incoming-shell whistle and the missile warning use Superb
+  Warfare's own recordings. Blasts and launches switch to a duller distant version the further away you are,
+  and big warheads can be heard from about a kilometre.
+- FPV and Mavic motors (pitch rises with speed), the Shahed's moped engine, turboprop and jet aircraft, rocket
+  motors on missiles, the jammer hum, video static when a link is being jammed and the fibre snapping all have
+  their own sounds.
+
 ## Known limits
 - Vehicle models are simple generated shapes in SBW's Blockbench format, each with one plain hit box. A model
   rework is planned.
 - A loaded Iskander is not drawn on its launcher.
 - The Pantsir's missiles only fire in automatic mode.
 - A fitted Jammer Dome is not drawn.
-- There are no custom sounds yet.
+- The drone, engine, jammer and static sounds are synthesised by `tools/gen_sounds.py`, not recorded. Dropping a
+  better mono `.ogg` with the same name into `assets/steelrain/sounds/` replaces one.
 - Low-flying drones (Orlan, Shahed) can fly into steep mountains.
