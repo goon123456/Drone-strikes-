@@ -30,8 +30,8 @@ public class SteelRain {
                 e -> e.put(ModRegistry.OPERATOR_BODY.get(), OperatorBodyEntity.attributes().build()));
         // Also list our vehicles in Superb Warfare's own vehicle tab.
         modBus.addListener(net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent.class, e -> e.enqueueWork(() ->
-                ModRegistry.AIR_DEFENCE.values().forEach(v -> com.atsuishio.superbwarfare.api.event.RegisterContainersEvent.CONTAINERS.add(
-                        com.atsuishio.superbwarfare.item.container.ContainerBlockItem.createInstance(v.get())))));
+                ModRegistry.vehicles().forEach(v -> com.atsuishio.superbwarfare.api.event.RegisterContainersEvent.CONTAINERS.add(
+                        com.atsuishio.superbwarfare.item.container.ContainerBlockItem.createInstance(v)))));
         NeoForge.EVENT_BUS.addListener(RegisterCommandsEvent.class, e -> SteelRainCommand.register(e.getDispatcher()));
         NeoForge.EVENT_BUS.addListener(ServerTickEvent.Post.class, e -> FeedManager.tick(e.getServer()));
         NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.event.tick.PlayerTickEvent.Post.class, e -> {

@@ -1,11 +1,6 @@
 {
   "replace": false,
   "values": [
-    "steelrain:himars",
-    "steelrain:m109",
-    "steelrain:tomahawk_launcher",
-    "steelrain:iskander_launcher",
-    "steelrain:shahed_launcher",
     "steelrain:ground_station",
     "steelrain:orlan_catapult",
     "steelrain:trench_jammer",

@@ -65,6 +65,12 @@ public final class ModRegistry {
                     .persistent(BlockPos.CODEC.listOf())
                     .networkSynchronized(BlockPos.STREAM_CODEC.apply(ByteBufCodecs.list()))
                     .build());
+    /** Superb Warfare strike vehicles a laptop is linked to. */
+    public static final Supplier<DataComponentType<List<UUID>>> VEHICLE_LINKS = COMPONENTS.register("vehicle_links",
+            () -> DataComponentType.<List<UUID>>builder()
+                    .persistent(UUIDUtil.CODEC.listOf())
+                    .networkSynchronized(UUIDUtil.STREAM_CODEC.apply(ByteBufCodecs.list()))
+                    .build());
     public static final Supplier<DataComponentType<UUID>> LINKED_DRONE = COMPONENTS.register("linked_drone",
             () -> DataComponentType.<UUID>builder()
                     .persistent(UUIDUtil.CODEC)
@@ -237,6 +243,30 @@ public final class ModRegistry {
                 .setTrackingRange(512).setUpdateInterval(1).fireImmune().sized(width, height).build(name)));
     }
 
+    // ---- artillery and missile launchers: Superb Warfare vehicles fired from the Field Laptop ----
+    public static final Map<String, DeferredHolder<EntityType<?>, EntityType<com.steelrain.entity.StrikeVehicle>>> STRIKE = new java.util.LinkedHashMap<>();
+    static {
+        strike("m109", 3.2f, 3.2f);
+        strike("himars", 2.6f, 3.2f);
+        strike("tomahawk_launcher", 2.6f, 3.2f);
+        strike("iskander_launcher", 3.1f, 3.3f);
+        strike("shahed_launcher", 2.4f, 1.8f);
+    }
+
+    private static void strike(String name, float width, float height) {
+        STRIKE.put(name, ENTITIES.register(name, () -> EntityType.Builder
+                .<com.steelrain.entity.StrikeVehicle>of(com.steelrain.entity.StrikeVehicle::new, MobCategory.MISC)
+                .setTrackingRange(512).setUpdateInterval(1).fireImmune().sized(width, height).build(name)));
+    }
+
+    /** Every Superb Warfare vehicle this mod adds, for containers and creative tabs. */
+    public static java.util.List<EntityType<?>> vehicles() {
+        java.util.List<EntityType<?>> all = new java.util.ArrayList<>();
+        AIR_DEFENCE.values().forEach(v -> all.add(v.get()));
+        STRIKE.values().forEach(v -> all.add(v.get()));
+        return all;
+    }
+
     /** Stand-in left where a player was standing while they watch a remote drone feed. */
     public static final DeferredHolder<EntityType<?>, EntityType<OperatorBodyEntity>> OPERATOR_BODY = ENTITIES.register("operator_body",
             () -> EntityType.Builder.<OperatorBodyEntity>of(OperatorBodyEntity::new, MobCategory.MISC)
@@ -247,8 +277,8 @@ public final class ModRegistry {
             .icon(() -> new ItemStack(TOMAHAWK_MISSILE.get()))
             .displayItems((params, out) -> {
                 // Vehicles come in Superb Warfare containers: place one and open it with a crowbar.
-                AIR_DEFENCE.values().forEach(v -> out.accept(
-                        com.atsuishio.superbwarfare.item.container.ContainerBlockItem.createInstance(v.get())));
+                vehicles().forEach(v -> out.accept(
+                        com.atsuishio.superbwarfare.item.container.ContainerBlockItem.createInstance(v)));
                 ITEMS.getEntries().forEach(e -> out.accept(e.get()));
             })
             .build());

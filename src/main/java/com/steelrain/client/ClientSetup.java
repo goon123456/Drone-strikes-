@@ -45,6 +45,8 @@ public final class ClientSetup {
         }
         ModRegistry.AIR_DEFENCE.values().forEach(v -> e.registerEntityRenderer(v.get(),
                 com.atsuishio.superbwarfare.client.renderer.entity.BasicAutoAimableRenderer::new));
+        ModRegistry.STRIKE.values().forEach(v -> e.registerEntityRenderer(v.get(),
+                com.atsuishio.superbwarfare.client.renderer.entity.BasicVehicleRenderer::new));
         e.registerEntityRenderer(ModRegistry.OPERATOR_BODY.get(), OperatorBodyRenderer::new);
         e.registerBlockEntityRenderer(ModRegistry.WEAPON_BE.get(), c -> new WeaponRenderer());
     }

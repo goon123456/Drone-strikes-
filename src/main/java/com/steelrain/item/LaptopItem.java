@@ -43,6 +43,25 @@ public class LaptopItem extends Item {
         return linked;
     }
 
+    public static List<java.util.UUID> vehicles(ItemStack stack) {
+        return stack.getOrDefault(ModRegistry.VEHICLE_LINKS.get(), List.of());
+    }
+
+    /** @return true if the vehicle is linked after the call. */
+    public static boolean toggleVehicle(ItemStack stack, java.util.UUID id) {
+        List<java.util.UUID> list = new ArrayList<>(vehicles(stack));
+        boolean linked;
+        if (list.remove(id)) {
+            linked = false;
+        } else {
+            if (list.size() + links(stack).size() >= MAX_LINKS && !list.isEmpty()) list.remove(0);
+            list.add(id);
+            linked = true;
+        }
+        stack.set(ModRegistry.VEHICLE_LINKS.get(), List.copyOf(list));
+        return linked;
+    }
+
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
@@ -54,7 +73,7 @@ public class LaptopItem extends Item {
 
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
-        tooltip.add(Component.translatable("tooltip.steelrain.laptop_links", links(stack).size(), MAX_LINKS));
+        tooltip.add(Component.translatable("tooltip.steelrain.laptop_links", links(stack).size() + vehicles(stack).size(), MAX_LINKS));
         tooltip.add(Component.translatable("tooltip.steelrain.laptop_hint"));
     }
 }

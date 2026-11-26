@@ -51,7 +51,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.WeakHashMap;
 
-public class WeaponBlockEntity extends BlockEntity implements MenuProvider {
+public class WeaponBlockEntity extends BlockEntity implements MenuProvider, com.steelrain.weapon.Launcher {
     public static final int ENERGY_CAPACITY = 2_000_000;
     public static final int SLOT_PRIMARY = 0, SLOT_SECONDARY = 1;
     /** Gap between the front of a ground station and the first runway block. */
@@ -148,6 +148,24 @@ public class WeaponBlockEntity extends BlockEntity implements MenuProvider {
     }
 
     public WeaponType type() { return type; }
+
+    // ---- Launcher (Field Laptop) ----
+    @Override public String nameKey() { return type.translationKey(); }
+    @Override public boolean aircraftStation() { return type.launchesAircraft(); }
+    @Override public boolean hasSecondAmmo() { return type.secondaryAmmo() != null; }
+    @Override public int ammoCount() { return primaryCount(); }
+    @Override public int secondCount() { return secondaryCount(); }
+    @Override public int energyK() { return energy / 1000; }
+    @Override public int minRange() { return type.minRange(); }
+    @Override public Vec3 launcherPos() { return Vec3.atCenterOf(worldPosition); }
+
+    @Override
+    public int maxRangeNow() {
+        if (!type.launchesAircraft()) return type.maxRange();
+        AircraftEntity air = airborne();
+        AircraftType parked = AircraftType.of(items.getStackInSlot(SLOT_PRIMARY));
+        return air != null ? air.type().maxRange() : parked != null ? parked.maxRange() : 0;
+    }
     public int energy() { return energy; }
     public int primaryCount() { return items.getStackInSlot(SLOT_PRIMARY).getCount(); }
     public int secondaryCount() { return items.getStackInSlot(SLOT_SECONDARY).getCount(); }
@@ -391,6 +409,7 @@ public class WeaponBlockEntity extends BlockEntity implements MenuProvider {
         return null;
     }
 
+    @Override
     public boolean recall() {
         AircraftEntity a = airborne();
         return a != null && a.recall();
@@ -443,11 +462,6 @@ public class WeaponBlockEntity extends BlockEntity implements MenuProvider {
         String on = salvoOwner != null ? salvoOwnerName : ownerName;
         boolean last = salvoLeft <= 1;
         switch (type) {
-            case TOMAHAWK_LAUNCHER -> MissileEntity.launch(level, MissileProfile.TOMAHAWK, muzzle, salvoX, salvoZ, o, on, true, dir);
-            case ISKANDER_LAUNCHER -> MissileEntity.launch(level, MissileProfile.ISKANDER, muzzle, salvoX, salvoZ, o, on, true, dir);
-            case HIMARS -> MissileEntity.launch(level, ModRegistry.profileOfAmmo(round, MissileProfile.GMLRS), muzzle, salvoX, salvoZ, o, on, last, dir);
-            case M109 -> MissileEntity.launch(level, ModRegistry.profileOfAmmo(round, MissileProfile.SHELL), muzzle, salvoX, salvoZ, o, on, last, dir);
-            case SHAHED_LAUNCHER -> MissileEntity.launch(level, MissileProfile.SHAHED, muzzle, salvoX, salvoZ, o, on, true, dir);
             case GROUND_STATION, ORLAN_CATAPULT -> {
                 int hellfires = aircraft.armed() ? items.extractItem(SLOT_SECONDARY, 4, false).getCount() : 0;
                 aircraftId = AircraftEntity.launch(level, aircraft, this, salvoX, salvoZ, hellfires, o, on).getUUID();
@@ -456,7 +470,7 @@ public class WeaponBlockEntity extends BlockEntity implements MenuProvider {
         }
         cooldown = type.cooldown;
         if (aircraft == null || aircraft.runway == 0) {
-            boolean gun = type == WeaponType.M109;
+            boolean gun = false;
             level.playSound(null, BlockPos.containing(muzzle), gun ? SoundEvents.GENERIC_EXPLODE.value() : SoundEvents.FIREWORK_ROCKET_LAUNCH,
                     SoundSource.BLOCKS, 6f, gun ? 1.6f : 0.6f);
             level.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, muzzle.x, muzzle.y, muzzle.z, 20, 0.5, 0.3, 0.5, 0.03);

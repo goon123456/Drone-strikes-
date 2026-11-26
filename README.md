@@ -17,7 +17,7 @@ Steel Rain is being rebuilt on Superb Warfare's vehicle system in stages.
 | Stage | Systems | State |
 | --- | --- | --- |
 | 1 | Air defence: ZU-23-2, Flakpanzer Gepard, Pantsir-S1, MIM-104 Patriot | **Done: real SBW vehicles** |
-| 2 | Artillery and launchers: M109, HIMARS, Tomahawk, Iskander, Shahed rail | Still placed emplacements |
+| 2 | Artillery and launchers: M109, HIMARS, Tomahawk, Iskander, Shahed rail | **Done: real SBW vehicles** |
 | 3 | Ground Station, Orlan Catapult, jammers | Still placed emplacements |
 
 Everything runs on **Superb Warfare energy (FE)**: charge with an SBW Charging Station or any FE cable. There is
@@ -188,18 +188,28 @@ remote camera. If the copy is hit you are thrown out of the drone and take the d
   pick it up (it keeps its charge), and craft it together with a Drone Battery to recharge. If you let go of it in
   the air it settles to the ground by itself. Battery 360 s.
 
+### SBW strike vehicles
+The **M109** (tracked), **HIMARS** and **Iskander-M launcher** (wheeled) can be driven; the **Tomahawk launcher**
+and **Shahed launch rail** are static. Like the air defence vehicles they come in SBW containers.
+
+- Put ammunition in the vehicle's SBW inventory (sneak + right-click). It fires whatever it finds there.
+- Right-click the vehicle with a **Field Laptop** to link it, then use Fire Control as before. Links follow the
+  vehicle when it moves.
+- On a fire order the launcher lays itself first: the M109 turret and HIMARS pod swing onto the target, the
+  Tomahawk container and Iskander missile raise. Then it fires the salvo.
+- Energy per round: M109 12.5k, HIMARS 25k, Tomahawk 125k, Iskander 250k FE. The Shahed rail needs none.
+
 ### Energy and loading (emplacements)
 The launchers and jammers that are still emplacements hold 2,000,000 FE and do nothing uncharged. Put an SBW
 Charging Station next to any block of one, or connect an FE cable.
 
 | What | Energy used |
 | --- | --- |
-| M109 / HIMARS / Tomahawk / Iskander | 12.5k / 25k / 125k / 250k FE a round |
 | Aircraft from the Ground Station | Reaper 250k, Bayraktar 375k, Global Hawk 1M FE |
 | Jammers | EW and Trench 500 FE a second, Krasukha 2500 |
 | Jammer Dome | A trickle from the vehicle it is fitted to |
 
-The Shahed launch rail and Orlan catapult are worked by hand and need no power.
+The Orlan catapult is worked by hand and needs no power.
 
 **Loading by hand**: right-click any part of an emplacement while holding its ammunition and it goes straight
 in. The inventory screen works too, and hoppers can connect to any block of it.

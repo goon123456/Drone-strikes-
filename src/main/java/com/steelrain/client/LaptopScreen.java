@@ -3,7 +3,6 @@ package com.steelrain.client;
 import com.mojang.blaze3d.platform.NativeImage;
 import com.steelrain.ModRegistry;
 import com.steelrain.net.Payloads;
-import com.steelrain.weapon.WeaponType;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
@@ -69,8 +68,9 @@ public class LaptopScreen extends Screen {
         return selected >= 0 && selected < entries.size() ? entries.get(selected) : null;
     }
 
-    private static WeaponType typeOf(Payloads.Entry e) {
-        return e.weapon() >= 0 && e.weapon() < WeaponType.values().length ? WeaponType.values()[e.weapon()] : null;
+    /** False for a linked launcher that is out of reach or gone. */
+    private static boolean known(Payloads.Entry e) {
+        return !e.name().isEmpty();
     }
 
     @Override
@@ -141,12 +141,12 @@ public class LaptopScreen extends Screen {
     private void launch() {
         Payloads.Entry e = current();
         if (e == null || !hasTarget) return;
-        PacketDistributor.sendToServer(new Payloads.Launch(e.pos(), targetX, targetZ, count));
+        PacketDistributor.sendToServer(new Payloads.Launch(e.pos(), e.vehicle(), targetX, targetZ, count));
     }
 
     private void order(int action) {
         Payloads.Entry e = current();
-        if (e != null) PacketDistributor.sendToServer(new Payloads.AircraftOrder(e.pos(), action));
+        if (e != null) PacketDistributor.sendToServer(new Payloads.AircraftOrder(e.pos(), e.vehicle(), action));
     }
 
     @Override
@@ -156,12 +156,12 @@ public class LaptopScreen extends Screen {
         if (age % 20 == 0) PacketDistributor.sendToServer(new Payloads.LaptopRefresh());
         if (age % 40 == 0) mapDirty = true;
         Payloads.Entry e = current();
-        WeaponType t = e == null ? null : typeOf(e);
-        launchButton.active = e != null && hasTarget && e.reachable() && t != null;
+        boolean ok = e != null && known(e);
+        launchButton.active = ok && hasTarget && e.reachable();
         boolean airborne = e != null && e.aircraft() >= 0 && e.reachable();
         launchButton.setMessage(Component.translatable(airborne ? "gui.steelrain.retask" : "gui.steelrain.launch"));
-        cameraButton.visible = recallButton.visible = t != null && t.launchesAircraft();
-        minusButton.visible = plusButton.visible = t != null && !t.launchesAircraft();
+        cameraButton.visible = recallButton.visible = ok && e.station();
+        minusButton.visible = plusButton.visible = ok && !e.station();
         cameraButton.active = recallButton.active = airborne;
     }
 
@@ -303,15 +303,14 @@ public class LaptopScreen extends Screen {
         }
         for (int i = 0; i < entries.size() && i < 8; i++) {
             Payloads.Entry e = entries.get(i);
-            WeaponType type = typeOf(e);
+            boolean type = known(e);
             int y = ly + i * 22;
             g.fill(lx, y, lx + 90, y + 20, i == selected ? 0xFF3C4C34 : 0xFF262E22);
-            Component name = type == null ? Component.translatable("gui.steelrain.offline")
-                    : Component.translatable(type.translationKey());
+            Component name = !type ? Component.translatable("gui.steelrain.offline") : Component.translatable(e.name());
             g.drawString(font, font.plainSubstrByWidth(name.getString(), 86), lx + 2, y + 2,
                     e.reachable() ? white : red, false);
-            String info = type == null ? e.pos().toShortString()
-                    : e.ammo() + (type.secondaryAmmo() != null ? "+" + e.ammo2() : "") + " | " + e.fuel() + " kFE";
+            String info = !type ? (e.vehicle().isPresent() ? "" : e.pos().toShortString())
+                    : e.ammo() + (e.second() ? "+" + e.ammo2() : "") + " | " + e.fuel() + " kFE";
             g.drawString(font, font.plainSubstrByWidth(info, 86), lx + 2, y + 11, dim, false);
         }
 
@@ -320,8 +319,8 @@ public class LaptopScreen extends Screen {
         g.fill(mx - 1, my - 1, mx + MAP + 1, my + MAP + 1, 0xFF50603F);
         g.blit(MAP_TEXTURE, mx, my, 0, 0f, 0f, MAP, MAP, MAP, MAP);
         Payloads.Entry cur = current();
-        WeaponType curType = cur == null ? null : typeOf(cur);
-        if (cur != null && curType != null) {
+        boolean curType = cur != null && known(cur);
+        if (curType) {
             ring(g, cur.pos().getX() + 0.5, cur.pos().getZ() + 0.5, cur.maxRange(), 0xC0E0B040);
             ring(g, cur.pos().getX() + 0.5, cur.pos().getZ() + 0.5, cur.minRange(), 0xC0FF6060);
         }
@@ -363,8 +362,8 @@ public class LaptopScreen extends Screen {
 
         // Selected launcher.
         int rx = left + 236, ry = top + 18;
-        if (cur != null && curType != null) {
-            g.drawWordWrap(font, Component.translatable(curType.translationKey()), rx, ry, 80, white);
+        if (curType) {
+            g.drawWordWrap(font, Component.translatable(cur.name()), rx, ry, 80, white);
             g.drawString(font, Component.translatable("gui.steelrain.range", cur.minRange(), cur.maxRange()), rx, ry + 22, dim, false);
             g.drawString(font, Component.translatable("gui.steelrain.ammo_count", cur.ammo()), rx, ry + 33, dim, false);
             g.drawString(font, Component.translatable("gui.steelrain.fuel_count", cur.fuel()), rx, ry + 44, dim, false);
@@ -382,7 +381,7 @@ public class LaptopScreen extends Screen {
                     : Component.translatable("gui.steelrain.ready");
             g.drawString(font, status, rx, ry + 66, !cur.reachable() || (cur.busy() > 0 && cur.aircraft() < 0) ? red
                     : cur.aircraft() >= 0 ? 0xFF40E0FF : green, false);
-            if (!curType.launchesAircraft()) {
+            if (!cur.station()) {
                 g.drawString(font, Component.translatable("gui.steelrain.rounds"), rx, top + 107, dim, false);
                 String n = Integer.toString(count);
                 g.drawString(font, n, rx + 39 - font.width(n) / 2, top + 122, white, false);

@@ -6,7 +6,7 @@ import com.steelrain.block.WeaponBlockEntity;
 import com.steelrain.entity.AircraftEntity;
 import com.steelrain.entity.FpvDroneEntity;
 import com.steelrain.util.FeedManager;
-import com.steelrain.weapon.AircraftType;
+import com.steelrain.weapon.Launcher;
 import com.steelrain.item.LaptopItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -29,6 +29,7 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 public final class Payloads {
     private static <T extends CustomPacketPayload> CustomPacketPayload.Type<T> id(String name) {
@@ -69,17 +70,21 @@ public final class Payloads {
     }
 
     /**
-     * One linked launcher as shown on the laptop. {@code aircraft} is the AircraftType ordinal of the drone this
-     * station has in the air (-1 if none), with its position in ax / az.
+     * One linked launcher as shown on the laptop. {@code vehicle} is set for Superb Warfare vehicles (pos is then
+     * where it currently stands). {@code name} is empty when it cannot be reached. {@code aircraft} is the
+     * AircraftType ordinal of the drone a station has in the air (-1 if none), with its position in ax / az.
      */
-    public record Entry(BlockPos pos, int weapon, int ammo, int ammo2, int fuel, int minRange, int maxRange, int busy,
-                        boolean reachable, int aircraft, int ax, int az) {
+    public record Entry(BlockPos pos, Optional<UUID> vehicle, String name, boolean station, boolean second, int ammo, int ammo2,
+                        int fuel, int minRange, int maxRange, int busy, boolean reachable, int aircraft, int ax, int az) {
         Entry(FriendlyByteBuf b) {
-            this(b.readBlockPos(), b.readVarInt(), b.readVarInt(), b.readVarInt(), b.readVarInt(), b.readVarInt(),
-                    b.readVarInt(), b.readVarInt(), b.readBoolean(), b.readVarInt(), b.readInt(), b.readInt());
+            this(b.readBlockPos(), b.readOptional(buf -> buf.readUUID()), b.readUtf(), b.readBoolean(), b.readBoolean(),
+                    b.readVarInt(), b.readVarInt(), b.readVarInt(), b.readVarInt(), b.readVarInt(), b.readVarInt(),
+                    b.readBoolean(), b.readVarInt(), b.readInt(), b.readInt());
         }
         void write(FriendlyByteBuf b) {
-            b.writeBlockPos(pos); b.writeVarInt(weapon); b.writeVarInt(ammo); b.writeVarInt(ammo2); b.writeVarInt(fuel);
+            b.writeBlockPos(pos); b.writeOptional(vehicle, (buf, u) -> buf.writeUUID(u)); b.writeUtf(name);
+            b.writeBoolean(station); b.writeBoolean(second);
+            b.writeVarInt(ammo); b.writeVarInt(ammo2); b.writeVarInt(fuel);
             b.writeVarInt(minRange); b.writeVarInt(maxRange); b.writeVarInt(busy); b.writeBoolean(reachable);
             b.writeVarInt(aircraft); b.writeInt(ax); b.writeInt(az);
         }
@@ -129,12 +134,12 @@ public final class Payloads {
     }
 
     /** Client -> server: laptop buttons for a station's airborne aircraft. */
-    public record AircraftOrder(BlockPos pos, int action) implements CustomPacketPayload {
+    public record AircraftOrder(BlockPos pos, Optional<UUID> vehicle, int action) implements CustomPacketPayload {
         public static final int CAMERA = 0, RECALL = 1;
         public static final Type<AircraftOrder> TYPE = id("aircraft_order");
         public static final StreamCodec<FriendlyByteBuf, AircraftOrder> CODEC = StreamCodec.ofMember(AircraftOrder::write, AircraftOrder::new);
-        AircraftOrder(FriendlyByteBuf b) { this(b.readBlockPos(), b.readVarInt()); }
-        void write(FriendlyByteBuf b) { b.writeBlockPos(pos); b.writeVarInt(action); }
+        AircraftOrder(FriendlyByteBuf b) { this(b.readBlockPos(), b.readOptional(buf -> buf.readUUID()), b.readVarInt()); }
+        void write(FriendlyByteBuf b) { b.writeBlockPos(pos); b.writeOptional(vehicle, (buf, u) -> buf.writeUUID(u)); b.writeVarInt(action); }
         @Override public Type<AircraftOrder> type() { return TYPE; }
     }
 
@@ -161,11 +166,11 @@ public final class Payloads {
     }
 
     /** Client -> server: fire a linked launcher at a column. */
-    public record Launch(BlockPos pos, int x, int z, int count) implements CustomPacketPayload {
+    public record Launch(BlockPos pos, Optional<UUID> vehicle, int x, int z, int count) implements CustomPacketPayload {
         public static final Type<Launch> TYPE = id("launch");
         public static final StreamCodec<FriendlyByteBuf, Launch> CODEC = StreamCodec.ofMember(Launch::write, Launch::new);
-        Launch(FriendlyByteBuf b) { this(b.readBlockPos(), b.readInt(), b.readInt(), b.readVarInt()); }
-        void write(FriendlyByteBuf b) { b.writeBlockPos(pos); b.writeInt(x); b.writeInt(z); b.writeVarInt(count); }
+        Launch(FriendlyByteBuf b) { this(b.readBlockPos(), b.readOptional(buf -> buf.readUUID()), b.readInt(), b.readInt(), b.readVarInt()); }
+        void write(FriendlyByteBuf b) { b.writeBlockPos(pos); b.writeOptional(vehicle, (buf, u) -> buf.writeUUID(u)); b.writeInt(x); b.writeInt(z); b.writeVarInt(count); }
         @Override public Type<Launch> type() { return TYPE; }
     }
 
@@ -214,37 +219,45 @@ public final class Payloads {
         }
     }
 
+    /**
+     * Finds the linked launcher an order is for and checks the laptop may command it.
+     * @return the launcher, or a Component saying why not
+     */
+    private static Object resolve(ServerPlayer sp, BlockPos pos, Optional<UUID> vehicle) {
+        ItemStack laptop = heldLaptop(sp);
+        if (laptop.isEmpty()) return Component.translatable("message.steelrain.not_linked");
+        if (jammed(sp)) return Component.translatable("message.steelrain.laptop_jammed");
+        Launcher launcher = null;
+        if (vehicle.isPresent()) {
+            if (!LaptopItem.vehicles(laptop).contains(vehicle.get())) return Component.translatable("message.steelrain.not_linked");
+            if (sp.serverLevel().getEntity(vehicle.get()) instanceof Launcher l) launcher = l;
+        } else {
+            if (!LaptopItem.links(laptop).contains(pos)) return Component.translatable("message.steelrain.not_linked");
+            if (sp.level().isLoaded(pos) && sp.level().getBlockEntity(pos) instanceof Launcher l) launcher = l;
+        }
+        if (launcher == null || !inRange(sp, launcher.launcherPos())) return Component.translatable("message.steelrain.no_signal");
+        return launcher;
+    }
+
     private static void onLaunch(Launch p, IPayloadContext ctx) {
         if (!(ctx.player() instanceof ServerPlayer sp)) return;
-        ItemStack laptop = heldLaptop(sp);
+        Object found = resolve(sp, p.pos(), p.vehicle());
         Component result;
-        if (laptop.isEmpty() || !LaptopItem.links(laptop).contains(p.pos())) {
-            result = Component.translatable("message.steelrain.not_linked");
-        } else if (jammed(sp)) {
-            result = Component.translatable("message.steelrain.laptop_jammed");
-        } else if (!reachable(sp, p.pos()) || !(sp.level().getBlockEntity(p.pos()) instanceof WeaponBlockEntity be)) {
-            result = Component.translatable("message.steelrain.no_signal");
+        if (found instanceof Launcher launcher) {
+            result = launcher.tryLaunch(sp, p.x(), p.z(), p.count());
+            if (result == null) result = Component.translatable("message.steelrain.launched", p.x(), p.z());
         } else {
-            result = be.tryLaunch(sp, p.x(), p.z(), p.count());
-            if (result == null) {
-                result = Component.translatable("message.steelrain.launched", p.x(), p.z());
-            }
+            result = (Component) found;
         }
         sendLaptop(sp, false, result);
     }
 
     private static void onAircraftOrder(AircraftOrder p, IPayloadContext ctx) {
         if (!(ctx.player() instanceof ServerPlayer sp)) return;
-        ItemStack laptop = heldLaptop(sp);
+        Object found = resolve(sp, p.pos(), p.vehicle());
         Component result;
-        if (laptop.isEmpty() || !LaptopItem.links(laptop).contains(p.pos())) {
-            result = Component.translatable("message.steelrain.not_linked");
-        } else if (jammed(sp)) {
-            result = Component.translatable("message.steelrain.laptop_jammed");
-        } else if (!reachable(sp, p.pos()) || !(sp.level().getBlockEntity(p.pos()) instanceof WeaponBlockEntity be)) {
-            result = Component.translatable("message.steelrain.no_signal");
-        } else {
-            AircraftEntity aircraft = be.airborne();
+        if (found instanceof Launcher launcher) {
+            AircraftEntity aircraft = launcher.airborne();
             if (aircraft == null) {
                 result = Component.translatable("message.steelrain.not_airborne");
             } else if (p.action() == AircraftOrder.RECALL) {
@@ -253,6 +266,8 @@ public final class Payloads {
                 result = FeedManager.start(sp, aircraft);
                 if (result == null) return; // the screen closes itself when the feed starts
             }
+        } else {
+            result = (Component) found;
         }
         sendLaptop(sp, false, result);
     }
@@ -271,38 +286,45 @@ public final class Payloads {
         return ItemStack.EMPTY;
     }
 
-    private static boolean reachable(ServerPlayer player, BlockPos pos) {
+    private static boolean inRange(ServerPlayer player, net.minecraft.world.phys.Vec3 pos) {
         double range = Config.LAPTOP_LINK_RANGE.get();
-        return player.level().isLoaded(pos) && player.distanceToSqr(pos.getCenter()) <= range * range;
+        return player.position().distanceToSqr(pos) <= range * range;
     }
 
     public static void sendLaptop(ServerPlayer player, boolean open) {
         sendLaptop(player, open, null);
     }
 
+    private static Entry entry(ServerPlayer player, BlockPos pos, Optional<UUID> vehicle, Launcher l) {
+        AircraftEntity air = l.airborne();
+        return new Entry(pos, vehicle, l.nameKey(), l.aircraftStation(), l.hasSecondAmmo(), l.ammoCount(), l.secondCount(),
+                l.energyK(), l.minRange(), l.maxRangeNow(), l.busyTicks(), inRange(player, l.launcherPos()),
+                air == null ? -1 : air.type().ordinal(),
+                air == null ? 0 : air.blockPosition().getX(), air == null ? 0 : air.blockPosition().getZ());
+    }
+
     public static void sendLaptop(ServerPlayer player, boolean open, @Nullable Component message) {
         ItemStack laptop = heldLaptop(player);
         List<Entry> entries = new ArrayList<>();
         if (!laptop.isEmpty()) {
+            // Superb Warfare vehicles first: they move, so they are found by id.
+            for (UUID id : LaptopItem.vehicles(laptop)) {
+                if (player.serverLevel().getEntity(id) instanceof Launcher l && l instanceof net.minecraft.world.entity.Entity e && e.isAlive()) {
+                    entries.add(entry(player, e.blockPosition(), Optional.of(id), l));
+                } else {
+                    entries.add(new Entry(BlockPos.ZERO, Optional.of(id), "", false, false, 0, 0, 0, 0, 0, 0, false, -1, 0, 0));
+                }
+            }
             List<BlockPos> links = LaptopItem.links(laptop);
             List<BlockPos> kept = new ArrayList<>(links);
             for (BlockPos pos : links) {
                 boolean loaded = player.level().isLoaded(pos);
-                if (loaded && player.level().getBlockEntity(pos) instanceof WeaponBlockEntity be) {
-                    AircraftEntity air = be.airborne();
-                    int maxRange = be.type().maxRangeFor(be.items.getStackInSlot(WeaponBlockEntity.SLOT_PRIMARY));
-                    if (be.type().launchesAircraft()) {
-                        AircraftType parked = AircraftType.of(be.items.getStackInSlot(WeaponBlockEntity.SLOT_PRIMARY));
-                        maxRange = air != null ? air.type().maxRange() : parked != null ? parked.maxRange() : 0;
-                    }
-                    entries.add(new Entry(pos, be.type().ordinal(), be.primaryCount(), be.secondaryCount(), be.energy() / 1000,
-                            be.type().minRange(), maxRange, be.busyTicks(), reachable(player, pos),
-                            air == null ? -1 : air.type().ordinal(),
-                            air == null ? 0 : air.blockPosition().getX(), air == null ? 0 : air.blockPosition().getZ()));
+                if (loaded && player.level().getBlockEntity(pos) instanceof Launcher l) {
+                    entries.add(entry(player, pos, Optional.empty(), l));
                 } else if (loaded) {
-                    kept.remove(pos); // the launcher is gone: forget the link
+                    kept.remove(pos); // the emplacement is gone: forget the link
                 } else {
-                    entries.add(new Entry(pos, -1, 0, 0, 0, 0, 0, 0, false, -1, 0, 0));
+                    entries.add(new Entry(pos, Optional.empty(), "", false, false, 0, 0, 0, 0, 0, 0, false, -1, 0, 0));
                 }
             }
             if (kept.size() != links.size()) laptop.set(ModRegistry.LINKS.get(), List.copyOf(kept));

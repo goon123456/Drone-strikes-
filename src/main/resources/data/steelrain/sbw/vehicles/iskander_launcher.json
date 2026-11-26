@@ -1,0 +1,123 @@
+{
+  "MaxEnergy": 2000000,
+  "KeepChunkLoaded": false,
+  "TurretPos": [
+    0,
+    2.25,
+    -5.5
+  ],
+  "BarrelPos": [
+    0,
+    0.0,
+    0.0
+  ],
+  "SeekInfo": {
+    "MinSeekRange": 3,
+    "MaxSeekRange": 128,
+    "SeekIterative": 10,
+    "MinTargetSize": 0.2,
+    "SeekEnergyCost": 500
+  },
+  "VehicleIcon": "superbwarfare:textures/vehicle_icon/hpj_11_icon.png",
+  "DamageModifiers": [
+    "All - 6",
+    "All * 0.4",
+    "minecraft:explosion * 5",
+    "#superbwarfare:projectile * 0.3"
+  ],
+  "DestroyInfo": {
+    "ExplosionDamage": 60,
+    "ExplosionRadius": 5
+  },
+  "EngineType": "Wheel",
+  "EngineInfo": {
+    "EnergyCostRate": 64,
+    "WheelRotSpeed": 1.75,
+    "WheelDifferential": 0.3,
+    "MaxForwardSpeedRate": 0.9,
+    "MaxBackwardSpeedRate": 0.55,
+    "Increment": 0.02,
+    "Decrement": 0.017,
+    "SteeringSpeed": 0.05
+  },
+  "UpStep": 1.5,
+  "RotateOffsetHeight": 2.2,
+  "CollisionLevel": {
+    "Level": 3
+  },
+  "TurretControllerIndex": 9,
+  "Weapons": {},
+  "HudType": "@Land",
+  "VehicleContainerType": "Small",
+  "MaxHealth": 350,
+  "Mass": 30,
+  "Type": "Artillery",
+  "TerrainCompat": [
+    [
+      1.3,
+      0,
+      4.0
+    ],
+    [
+      -1.3,
+      0,
+      4.0
+    ],
+    [
+      1.3,
+      0,
+      2.3
+    ],
+    [
+      -1.3,
+      0,
+      2.3
+    ],
+    [
+      1.3,
+      0,
+      -3.3
+    ],
+    [
+      -1.3,
+      0,
+      -3.3
+    ],
+    [
+      1.3,
+      0,
+      -4.9
+    ],
+    [
+      -1.3,
+      0,
+      -4.9
+    ]
+  ],
+  "TurretTurnSpeed": [
+    0.01,
+    1.2
+  ],
+  "TurretYawRange": [
+    0,
+    0
+  ],
+  "TurretPitchRange": [
+    0,
+    89
+  ],
+  "Seats": [
+    {
+      "HidePassenger": true,
+      "Transform": "Vehicle",
+      "Position": [
+        0.8,
+        2.3,
+        5.2
+      ],
+      "MinPitch": -30,
+      "MaxPitch": 30
+    }
+  ],
+  "ContainerIcon": "superbwarfare:textures/gui/vehicle/type/land.png"
+}

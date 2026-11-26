@@ -48,15 +48,6 @@ public class WeaponRenderer implements BlockEntityRenderer<WeaponBlockEntity> {
         if (be.loaded() >= 0) {
             Vec3 g = type.gunPivot();
             switch (type) {
-                case ISKANDER_LAUNCHER -> {
-                    pose.pushPose();
-                    pose.translate(g.x, g.y, g.z);
-                    pose.mulPose(Axis.XP.rotation(-pitch));
-                    pose.translate(0, 0.5, 3.65);
-                    Models.ISKANDER.render(pose, vc, light);
-                    pose.popPose();
-                }
-                case SHAHED_LAUNCHER -> cargo(pose, vc, light, g, type.fixedPitch(), 0.55, 2.3, Models.SHAHED);
                 case ORLAN_CATAPULT -> cargo(pose, vc, light, g, type.fixedPitch(), 0.3, 1.9, Models.aircraft(AircraftType.ORLAN));
                 case GROUND_STATION -> {
                     // The aircraft waits at the start of the runway in front of the station.
