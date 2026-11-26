@@ -160,6 +160,45 @@ def wings(mat, x0, y0, lead0, chord0, t0, x1, y1, lead1, chord1, t1, **opt):
             wing(mat, -x0, y0, lead0, chord0, t0, -x1, y1, lead1, chord1, t1, **opt)]
 
 
+def ribbon(mat, rings, **opt):
+    """A smooth body through any row of closed rings of points (all with the same number of points), wherever
+    they are in space: propeller blades, bent pipes."""
+    return dict(kind="ribbon", mat=mat, rings=[list(r) for r in rings], rot=(0, 0, 0), pivot=(0, 0, 0), opt=opt)
+
+
+def propeller(mat, x, y, z, dia, count, chord, facing=1, hub=None):
+    """A propeller on an axis along z, turning about (x, y). Each blade faces broad-side to the airflow and
+    twists from a coarse angle at the root to a fine one at the tip, wider in the middle than at either end;
+    `facing` is 1 when it pulls towards +z and -1 for a pusher at the tail."""
+    out = []
+    R = dia / 2
+    stations = [(0.1, 0.55, 52, 0.3), (0.22, 0.85, 42, 0.2), (0.45, 1.0, 30, 0.13), (0.7, 0.9, 21, 0.1), (0.9, 0.62, 16, 0.08), (0.985, 0.3, 14, 0.07)]
+    for i in range(count):
+        a = math.radians(360 * i / count)
+        rx, ry = math.sin(a), math.cos(a)                       # out along the blade
+        tx, ty = math.cos(a), -math.sin(a)                      # the way the blade travels
+        rings = []
+        for f, cm, pitch, tk in stations:
+            c, p = chord * cm, math.radians(pitch)
+            cx, cy = x + rx * R * f, y + ry * R * f
+            ring = []
+            for u, v in _FOIL:
+                along, thick = (0.4 - u) * c, v * c * tk * 0.5      # leading edge ahead of the blade axis
+                # chord lies mostly in the disc, tilted towards the airflow by the pitch; thickness is square to it
+                dt = along * math.cos(p) - thick * math.sin(p)
+                dz = (along * math.sin(p) + thick * math.cos(p)) * facing
+                ring.append((cx + tx * dt, cy + ty * dt, z + dz))
+            rings.append(ring)
+        tip = (x + rx * R, y + ry * R, z)
+        rings.append([tip] * len(_FOIL))                        # close the tip to a rounded point
+        out.append(ribbon(mat, rings, plain=True))
+    if hub:
+        r = max(chord * 0.55, dia * 0.045)
+        out.append(lathe(hub, "z", x, y, [(z - facing * r * 0.9, r * 0.92), (z - facing * r * 0.2, r), (z + facing * r * 0.5, r * 0.86),
+                                         (z + facing * r * 1.2, r * 0.5), (z + facing * r * 1.6, 0.0)]))
+    return out
+
+
 def rod_z(mat, cx, cy, z0, length, dia, **opt):
     """A round bar along the vehicle (barrels, tubes)."""
     return [lathe(mat, "z", cx, cy, [(z0, dia / 2), (z0 + length, dia / 2)], **opt)]
@@ -827,8 +866,36 @@ def _skin_surfaces(part):
     return out
 
 
+def _ribbon_surfaces(part):
+    rings = part["rings"]
+    rows = np.array([r + [r[0]] for r in rings], dtype=float)                   # close each ring
+    centres = rows[:, :-1].mean(axis=1)
+    dr = np.gradient(rows, axis=0)
+    dc = np.roll(rows, -1, axis=1) - np.roll(rows, 1, axis=1)
+    dc[:, 0] = rows[:, 1] - rows[:, -2]; dc[:, -1] = dc[:, 0]
+    nrm = np.cross(dc, dr)
+    ln = np.linalg.norm(nrm, axis=2, keepdims=True)
+    radial = rows - centres[:, None, :]
+    rl = np.linalg.norm(radial, axis=2, keepdims=True)
+    along = centres[-1] - centres[0]
+    along = along / (np.linalg.norm(along) or 1.0)
+    fallback = np.where(rl > 1e-9, radial / np.maximum(rl, 1e-9), along)
+    nrm = np.where(ln > 1e-9, nrm / np.maximum(ln, 1e-9), fallback)
+    nrm = np.where((nrm * fallback).sum(axis=2, keepdims=True) < 0, -nrm, nrm)
+    girth = max(sum(math.dist(r[k], r[(k + 1) % len(r)]) for k in range(len(r))) for r in rings)
+    path = sum(math.dist(centres[i], centres[i + 1]) for i in range(len(rings) - 1))
+    n = len(rings[0])
+    faces = []
+    for r in range(len(rings) - 1):
+        shut = rl[r + 1].max() < 1e-9
+        for c in range(n):
+            faces.append([(r, c), (r, c + 1), (r + 1, c)] if shut else [(r, c), (r, c + 1), (r + 1, c + 1), (r + 1, c)])
+    return [_surface(part, rows, nrm, girth, path, "wall", faces=faces, wrap=True)]
+
+
 def surfaces(part):
-    return {"box": _box_surfaces, "lathe": _lathe_surfaces, "loft": _loft_surfaces, "skin": _skin_surfaces}[part["kind"]](part)
+    return {"box": _box_surfaces, "lathe": _lathe_surfaces, "loft": _loft_surfaces, "skin": _skin_surfaces,
+            "ribbon": _ribbon_surfaces}[part["kind"]](part)
 
 
 def _inside(poly, U, V):

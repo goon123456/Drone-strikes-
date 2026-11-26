@@ -19,18 +19,6 @@ def _bone(name, pivot, parts):
     return {"name": name, "parent": "root", "pivot": pivot, "cubes": parts}
 
 
-def _blades(mat, z, y, dia, count, chord, twist=1):
-    """Propeller blades round the axis at height y: aerofoil panels from the hub out to the tips."""
-    out = []
-    r = dia / 2
-    for i in range(count):
-        a = math.radians(360 * i / count)
-        s, c = math.sin(a), math.cos(a)
-        out.append(wing(mat, s * r * 0.08, y + c * r * 0.08, z + chord * 0.5, chord, chord * 0.22,
-                        s * r, y + c * r, z + chord * 0.3, chord * 0.55, chord * 0.08))
-    return out
-
-
 def _gear(name, pivot, foot, dia, rim=STEEL, twin=False, door=None):
     """A landing-gear leg from its pivot down to a wheel standing at `foot`: strut, oleo, scissor link, wheel(s)."""
     px, py, pz = pivot
@@ -80,7 +68,7 @@ def reaper():
                       (4.4, 0, 0.09, 0.95, 1.12), (3.8, 0, 0.11, 1.0, 1.2), (3.0, 0, 0.07, 1.0, 1.1), (2.0, 0, 0.02, 0.98, 0.98),
                       (-1.0, 0, 0, 0.95, 0.92), (-3.3, 0, 0, 0.9, 0.88), (-4.2, 0, 0.02, 0.78, 0.76), (-4.9, 0, 0.03, 0.6, 0.6), (-5.0, 0, 0.03, 0.44, 0.44)],
                   power=2.3),
-             lathe(STEEL_D, "z", 0, 0.03, [(-5.0, 0.22), (-5.12, 0.2), (-5.28, 0.12), (-5.36, 0.0)]),            # spinner
+             lathe(STEEL_D, "z", 0, 0.03, [(-5.0, 0.22), (-5.06, 0.2), (-5.06, 0.0)]),                           # propeller shaft housing
              skin(d, [(-2.2, 0, 0.5, 0.36, 0.2), (-2.4, 0, 0.56, 0.4, 0.26), (-3.4, 0, 0.5, 0.34, 0.16), (-3.9, 0, 0.44, 0.1, 0.04)]),   # engine air scoop
              B(BLACK, -0.15, 0.48, -2.19, 0.3, 0.16, 0.01, plain=True),
              skin(STEEL_D, [(-4.1, 0, -0.5, 0.2, 0.12), (-4.7, 0, -0.5, 0.24, 0.14)]),                             # exhaust
@@ -113,7 +101,7 @@ def reaper():
             cx = sx * x
             parts += [wing(d, cx, y, 0.2, 0.9, 0.08, cx, y - 0.3, 0.1, 0.8, 0.07), B(STEEL_D, cx - 0.2, y - 0.36, -0.75, 0.4, 0.06, 0.95, plain=True)]
             parts += _hellfire(cx - 0.13, y - 0.46, -0.3) + _hellfire(cx + 0.13, y - 0.46, -0.3)
-    bones = [_bone("prop", (0, 0.03, -5.16), _blades(STEEL_D, -5.2, 0.03, 2.7, 3, 0.2) + rod_z(STEEL_D, 0, 0.03, -5.26, 0.12, 0.3)),
+    bones = [_bone("prop", (0, 0.03, -5.16), propeller(STEEL_D, 0, 0.03, -5.16, 2.7, 3, 0.3, facing=-1, hub=STEEL_D)),
              _gear("gearN", (0, -0.42, 3.5), (0, -1.6, 3.55), 0.42, door=d),
              _gear("gearL", (0.45, -0.3, -0.9), (1.25, -1.6, -0.85), 0.5),
              _gear("gearR", (-0.45, -0.3, -0.9), (-1.25, -1.6, -0.85), 0.5)]
@@ -125,7 +113,7 @@ def tb2():
     g, d = TB2_GREY, TB2_DARK
     parts = [skin(g, [(3.25, 0, -0.05, 0, 0), (3.15, 0, -0.04, 0.2, 0.18), (2.8, 0, 0.0, 0.58, 0.46), (2.0, 0, 0.04, 0.82, 0.66), (1.2, 0, 0.05, 0.92, 0.72),
                       (-0.6, 0, 0.05, 0.95, 0.7), (-1.4, 0, 0.08, 0.76, 0.62), (-1.9, 0, 0.1, 0.56, 0.52), (-2.0, 0, 0.1, 0.46, 0.46)], power=2.6),
-             lathe(STEEL_D, "z", 0, 0.1, [(-2.0, 0.2), (-2.25, 0.19), (-2.3, 0.1), (-2.48, 0.05), (-2.5, 0.0)]),   # pusher engine
+             lathe(STEEL_D, "z", 0, 0.1, [(-2.0, 0.2), (-2.25, 0.19), (-2.3, 0.1), (-2.34, 0.06), (-2.34, 0.0)]),   # pusher engine
              B(STEEL_D, -0.32, 0.03, -2.22, 0.64, 0.14, 0.26, plain=True),                                          # its two cylinders
              B(g, 0.44, -0.12, 0.2, 0.006, 0.3, 1.2, plain=True, marks=[("left", "digits:T 253", 0.5, 0.5, 0)]),
              B(g, -0.446, -0.12, 0.2, 0.006, 0.3, 1.2, plain=True, marks=[("right", "digits:T 253", 0.5, 0.5, 0)])]
@@ -150,7 +138,7 @@ def tb2():
             for a in (45, 135, 225, 315):
                 s, c = math.sin(math.radians(a)), math.cos(math.radians(a))
                 parts.append(wing(d, cx + s * 0.07, y - 0.28 + c * 0.07, -0.3, 0.2, 0.015, cx + s * 0.17, y - 0.28 + c * 0.17, -0.36, 0.12, 0.01))
-    bones = [_bone("prop", (0, 0.1, -2.42), _blades(STEEL_D, -2.44, 0.1, 1.5, 2, 0.14)),
+    bones = [_bone("prop", (0, 0.1, -2.42), propeller(STEEL_D, 0, 0.1, -2.42, 1.5, 2, 0.2, facing=-1, hub=STEEL_D)),
              _gear("gearN", (0, -0.2, 2.2), (0, -1.1, 2.25), 0.3),
              _gear("gearL", (0.4, -0.15, -0.5), (0.8, -1.1, -0.45), 0.36),
              _gear("gearR", (-0.4, -0.15, -0.5), (-0.8, -1.1, -0.45), 0.36)]
@@ -199,7 +187,7 @@ def global_hawk():
 # ---------------------------------------------------------------- Orlan-10: 2 m long, 3.1 m span
 def orlan():
     g = ORLAN_GREY
-    parts = [lathe(STEEL_D, "z", 0, 0, [(0.8, 0.1), (0.9, 0.09), (0.98, 0.05), (1.0, 0.0)]),                       # engine nose
+    parts = [lathe(STEEL_D, "z", 0, 0, [(0.8, 0.1), (0.9, 0.09), (0.95, 0.05), (0.95, 0.0)]),                       # engine nose
              B(BLACK, -0.17, -0.04, 0.8, 0.34, 0.08, 0.1, plain=True),                                              # its two cylinders
              skin(g, [(0.8, 0, 0.0, 0.2, 0.22), (0.6, 0, -0.01, 0.26, 0.3), (0.2, 0, -0.01, 0.27, 0.32), (-0.15, 0, -0.01, 0.26, 0.3),
                       (-0.6, 0, 0.03, 0.14, 0.16), (-1.0, 0, 0.06, 0.08, 0.09), (-1.02, 0, 0.06, 0, 0)], power=2.6),
@@ -213,7 +201,7 @@ def orlan():
     parts += wings(RED, 1.4, 0.29, 0.31, 0.27, 0.035, 1.55, 0.31, 0.3, 0.24, 0.03)
     parts += [wing(g, 0, 0.08, -0.72, 0.3, 0.028, 0, 0.42, -0.86, 0.18, 0.02)]                                      # fin
     parts += wings(g, 0.0, 0.1, -0.74, 0.26, 0.024, 0.45, 0.1, -0.78, 0.18, 0.018)                                   # tailplane
-    return _model(parts, [_bone("prop", (0, 0, 1.0), _blades(BLACK, 1.0, 0, 0.55, 2, 0.06))])
+    return _model(parts, [_bone("prop", (0, 0, 0.99), propeller(BLACK, 0, 0, 0.99, 0.55, 2, 0.085, facing=1, hub=STEEL_D))])
 
 
 # ---------------------------------------------------------------- Shahed-136: 3.5 m long, 2.5 m span
@@ -221,7 +209,7 @@ def shahed():
     g, d = SHAHED_WHITE, SHAHED_DARK
     parts = [skin(g, [(1.75, 0, 0, 0, 0), (1.68, 0, 0, 0.14, 0.14), (1.45, 0, 0, 0.32, 0.32), (0.9, 0, 0, 0.46, 0.46), (-0.6, 0, 0, 0.46, 0.44),
                       (-1.2, 0, 0, 0.42, 0.4), (-1.25, 0, 0, 0.34, 0.34)]),
-             lathe(STEEL_D, "z", 0, 0, [(-1.25, 0.17), (-1.5, 0.16), (-1.56, 0.1), (-1.6, 0.0)]),                    # engine
+             lathe(STEEL_D, "z", 0, 0, [(-1.25, 0.17), (-1.5, 0.16), (-1.54, 0.08), (-1.54, 0.0)]),                    # engine
              B(STEEL_D, -0.3, -0.06, -1.5, 0.6, 0.12, 0.24, plain=True), B(BLACK, -0.32, -0.04, -1.46, 0.64, 0.08, 0.14, plain=True),   # flat-four cylinders
              bar(STEEL_D, (0, 0.2, 0.3), (0, 0.34, 0.28), 0.014),
              B(g, 0.232, -0.08, -0.4, 0.004, 0.16, 0.7, plain=True, marks=[("left", "digits:M 214", 0.5, 0.5, 0)]),
@@ -233,7 +221,7 @@ def shahed():
     for sx in (1, -1):
         parts += [wing(g, sx * 1.25, 0.0, -0.9, 0.5, 0.045, sx * 1.25, 0.5, -1.08, 0.28, 0.03),
                   wing(g, sx * 1.25, 0.0, -0.9, 0.5, 0.045, sx * 1.25, -0.34, -1.0, 0.36, 0.03)]
-    return _model(parts, [_bone("prop", (0, 0, -1.62), _blades(COPPER, -1.63, 0, 0.8, 2, 0.08))])
+    return _model(parts, [_bone("prop", (0, 0, -1.6), propeller(WOOD, 0, 0, -1.6, 0.8, 2, 0.12, facing=-1, hub=STEEL_D))])
 
 
 # ---------------------------------------------------------------- racing-style attack quadcopter
@@ -334,8 +322,9 @@ def export(model, width, height):
                         else:
                             p, n = s["grid"][a, b], s["normals"][a, b]
                             u, v = b / (C - 1), a / (R - 1)
-                        corners.append([round(float(p[0]), 4), round(float(p[1]), 4), round(float(p[2]), 4),
-                                        round(float(n[0]), 3), round(float(n[1]), 3), round(float(n[2]), 3),
+                        # mirrored left to right, which is how the texture painter expects to be seen
+                        corners.append([round(-float(p[0]), 4), round(float(p[1]), 4), round(float(p[2]), 4),
+                                        round(-float(n[0]), 3), round(float(n[1]), 3), round(float(n[2]), 3),
                                         round((r["x"] + 0.5 + u * (r["w"] - 1)) / width, 5), round((r["y"] + 0.5 + v * (r["h"] - 1)) / height, 5)])
                     if len(corners) == 3:
                         corners.append(corners[0])
@@ -347,7 +336,8 @@ def export(model, width, height):
         return out
     bones = [{"name": "root", "pivot": [0, 0, 0], "faces": faces(model["base"])}]
     for b in model["bones"]:
-        bones.append({"name": b["name"], "pivot": [round(v, 4) for v in b["pivot"]], "faces": faces(b["cubes"])})
+        px, py, pz = b["pivot"]
+        bones.append({"name": b["name"], "pivot": [round(-px, 4), round(py, 4), round(pz, 4)], "faces": faces(b["cubes"])})
     return {"bones": bones}
 
 
