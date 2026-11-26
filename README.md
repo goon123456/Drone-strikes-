@@ -319,6 +319,10 @@ python3 tools/gen_assets.py   # regenerate textures, models, recipes and languag
 - Hulls, turrets, cabs, trailers, shelters and cases are built from their real outlines (side profiles carried
   across the vehicle, plan outlines rising to a smaller roof) rather than from blocks, on all twelve vehicles:
   sloped glacis plates, faceted turret fronts, raked cab noses, gooseneck trailers, chamfered shelters.
+- Every vehicle carries small fittings from a shared library in the kit: lifting eyes, hand rails, ladders,
+  screw jacks, jerrycans, fire extinguishers, pioneer tools, sprung aerials, hatches, vision blocks, lamps in
+  bezels, beacons, bedrolls, spare wheels, shackles, wheel chocks, hoses, cable runs and diagonal struts.
+  Real artist-made models can still replace generated ones where a freely licensed one is available.
 - The hull sits on its own bone above the running gear: it squats when pulling away, dips under braking and
   rolls in turns, and rocks when the main gun fires. Gun barrels slide back on firing and run out again.
 - Not animated yet: per-wheel suspension travel, hatches and stabiliser jacks.
