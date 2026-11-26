@@ -21,7 +21,7 @@ import java.util.WeakHashMap;
  * aiming, hatches, jacks, chocks and aerials.
  */
 public class SrVehicleRenderer<T extends SrVehicle> extends EntityRenderer<T> {
-    private enum Part { BODY, TURRET, GUN, WHEEL, STEER_WHEEL, TRACK_L, TRACK_R, HATCH, SWAY, JACK, CHOCK, RECOIL_HEAVY, RECOIL_LIGHT, SPIN_RADAR, SCAN_DISH }
+    private enum Part { BODY, TURRET, GUN, WHEEL, STEER_WHEEL, TRACK_L, TRACK_R, DOOR_L, DOOR_R, PAYLOAD, HATCH, SWAY, JACK, CHOCK, RECOIL_HEAVY, RECOIL_LIGHT, SPIN_RADAR, SCAN_DISH }
 
     private record Bone(BoxModel.Group group, Part part, int index) {}
 
@@ -52,7 +52,8 @@ public class SrVehicleRenderer<T extends SrVehicle> extends EntityRenderer<T> {
                     : n.startsWith("move_hatch") ? Part.HATCH : n.startsWith("move_sway") ? Part.SWAY : n.startsWith("move_jack") ? Part.JACK
                     : n.startsWith("move_chock") ? Part.CHOCK : n.equals("move_recoilHeavy") ? Part.RECOIL_HEAVY
                     : n.equals("move_recoilLight") ? Part.RECOIL_LIGHT : n.equals("move_spinRadar") ? Part.SPIN_RADAR
-                    : n.equals("move_scanDish") ? Part.SCAN_DISH : null;
+                    : n.equals("move_scanDish") ? Part.SCAN_DISH : n.equals("move_doorL") ? Part.DOOR_L
+                    : n.equals("move_doorR") ? Part.DOOR_R : n.equals("move_payload") ? Part.PAYLOAD : null;
             if (part == Part.WHEEL || part == Part.STEER_WHEEL) {
                 bones.add(new Bone(g, part, n.charAt(5) == 'L' ? 0 : 1));      // which side it runs on
             } else if (part != null) {
@@ -113,6 +114,10 @@ public class SrVehicleRenderer<T extends SrVehicle> extends EntityRenderer<T> {
                     g.oz = sample(trackZ, at);
                     g.xRot = -sample(trackRot, at) * Mth.DEG_TO_RAD;
                 }
+                // the Iskander's roof doors swing open as the missile starts to rise
+                case DOOR_L -> g.zRot = Mth.clamp(Mth.lerp(pt, v.gunPitchO, v.gunPitch()) / 6f, 0f, 1f) * 1.3f;
+                case DOOR_R -> g.zRot = -Mth.clamp(Mth.lerp(pt, v.gunPitchO, v.gunPitch()) / 6f, 0f, 1f) * 1.3f;
+                case PAYLOAD -> g.visible = !(v instanceof com.steelrain.entity.vehicle.SrErector e) || e.armed();
                 case RECOIL_HEAVY -> g.oz = -back * 0.9f;
                 case RECOIL_LIGHT -> g.oz = -back * 0.1f;
                 case HATCH -> g.xRot = -hatch * 1.75f;

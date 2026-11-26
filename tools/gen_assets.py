@@ -417,6 +417,18 @@ def item_icons():
     d.line([(5, 12), (12, 2)], fill=c((80, 90, 60)), width=2)
     d.line([(10, 6), (8, 13)], fill=c((120, 120, 116))); d.line([(10, 6), (12, 13)], fill=c((120, 120, 116)))
     icons["mortar_120"] = outlined(img)
+    img, d = canvas()   # Tomahawk trailer: container tipped up on a low trailer
+    d.rectangle([1, 11, 14, 12], fill=c((70, 76, 52)))
+    d.polygon([(4, 11), (8, 2), (12, 4), (8, 11)], fill=c((150, 156, 120)))
+    d.rectangle([3, 13, 5, 14], fill=c((34, 34, 34))); d.rectangle([9, 13, 11, 14], fill=c((34, 34, 34)))
+    icons["tomahawk_launcher"] = outlined(img)
+    img, d = canvas()   # Iskander: long truck with the missile raised
+    d.rectangle([1, 9, 14, 11], fill=c((88, 104, 62)))
+    d.rectangle([11, 6, 14, 9], fill=c((96, 110, 70)))
+    d.line([(3, 9), (6, 1)], fill=c((220, 220, 214)), width=2)
+    for x in (2, 5, 10, 13):
+        d.point((x, 12), fill=c((34, 34, 34))); d.point((x, 13), fill=c((34, 34, 34)))
+    icons["iskander_launcher"] = outlined(img)
     for name, body, cap in (("jerrycan", (70, 84, 56), (60, 60, 60)), ("diesel_jerrycan", (180, 60, 40), (230, 190, 60))):
         img, d = canvas()
         d.rectangle([4, 4, 11, 14], fill=c(body)); d.line([(5, 9), (10, 9)], fill=c(tuple(v - 25 for v in body)))
@@ -546,6 +558,9 @@ def lang():
         "item.steelrain.himars": "M142 HIMARS",
         "item.steelrain.m109": "M109 Howitzer",
         "item.steelrain.mortar_120": "120 mm Mortar",
+        "item.steelrain.tomahawk_launcher": "Tomahawk Launcher",
+        "item.steelrain.iskander_launcher": "Iskander-M Launcher",
+        "message.steelrain.moving": "Stop the vehicle before launching",
         "key.steelrain.switch_seat": "Change seat in a vehicle",
         "key.steelrain.shell_type": "Gun: next shell type",
         "message.steelrain.seat_0": "Driver's seat",
@@ -985,29 +1000,9 @@ def sbw_vehicles():
 
     own_vehicle("m109")   # driven, laid and fired through Steel Rain itself
 
-    sbw_vehicle("tomahawk_launcher",
-        base=pair(TY, 0.85, 0, -3.7, 0.35, 1.0, 1.0) + pair(TY, 0.85, 0, -2.5, 0.35, 1.0, 1.0) + pair(SD, 0.8, 0, 3.1, 0.2, 0.9, 0.2)
-             + [(OD, -1.2, 0.9, -4.5, 2.4, 0.3, 9.0), (OL, -1.1, 1.2, 3.5, 2.2, 1.2, 0.95)],
-        turret=[],
-        barrel=[(OL, -1.1, 1.2, -3.9, 2.2, 1.9, 7.3), (OD, -1.14, 1.2, -2.0, 2.28, 1.94, 0.12), (OD, -1.14, 1.2, 0.5, 2.28, 1.94, 0.12)]
-               + [(ST, -0.95 + i * 1.0, 1.35 + j * 0.85, 3.4, 0.9, 0.75, 0.04) for i in range(2) for j in range(2)],
-        turret_pivot=(0, 1.2, -3.9), barrel_pivot=(0, 1.2, -3.9),
-        data={**LAID, "MaxHealth": 250, "Mass": 30, "EngineType": "Fixed", "Type": "Artillery",
-              "TurretTurnSpeed": [0.01, 1.5], "TurretYawRange": [0, 0], "TurretPitchRange": [0, 88], "Seats": [],
-              "ContainerIcon": "superbwarfare:textures/gui/vehicle/type/defense.png"})
+    own_vehicle("tomahawk_launcher")   # laid and fired through Steel Rain itself
 
-    sbw_vehicle("iskander_launcher",
-        base=[b for z in (-5.5, -3.9, 1.7, 3.3) for b in pair(TY, 1.0, 0, z, 0.5, 1.3, 1.2)]
-             + [(OL, -1.5, 0.8, -6.5, 3.0, 1.4, 13.0), (OL, -1.5, 2.2, 4.3, 3.0, 0.9, 2.2), (GL, -1.3, 2.4, 6.48, 2.6, 0.55, 0.05),
-                (OD, -1.5, 2.2, -6.5, 3.0, 0.9, 0.3)] + pair(GL, 1.48, 2.4, 4.8, 0.04, 0.5, 1.2) + pair(OD, 1.2, 2.2, -6.2, 0.3, 0.9, 10.2),
-        turret=[],
-        barrel=[(SD, -0.6, 2.2, -5.5, 1.2, 0.08, 5.0), (OLL, -0.46, 2.3, -5.5, 0.92, 0.92, 5.6),
-                (OLL, -0.36, 2.4, 0.1, 0.72, 0.72, 0.9), (WH, -0.22, 2.54, 1.0, 0.44, 0.44, 0.6)],
-        turret_pivot=(0, 2.25, -5.5), barrel_pivot=(0, 2.25, -5.5),
-        data={**WHEEL, **LAID, "MaxHealth": 350, "Mass": 30, "Type": "Artillery", "RotateOffsetHeight": 2.2,
-              "TerrainCompat": [[1.3, 0, 4.0], [-1.3, 0, 4.0], [1.3, 0, 2.3], [-1.3, 0, 2.3], [1.3, 0, -3.3], [-1.3, 0, -3.3], [1.3, 0, -4.9], [-1.3, 0, -4.9]],
-              "TurretTurnSpeed": [0.01, 1.2], "TurretYawRange": [0, 0], "TurretPitchRange": [0, 89], "Seats": driver(0.8, 2.3, 5.2),
-              "ContainerIcon": "superbwarfare:textures/gui/vehicle/type/land.png"})
+    own_vehicle("iskander_launcher")   # laid and fired through Steel Rain itself
 
     # ---- ground station, catapult and jammers ----
     STATIC = {"EngineType": "Fixed", "Weapons": {}, "Seats": [], "HudType": "@Empty", "Type": "Defense",
@@ -1049,8 +1044,8 @@ def sbw_vehicles():
     crate("zu_23_2", ["I I", "IMI", "NBN"], {"I": I, "M": "electric_motor", "N": N, "B": B})
     crate("gepard", ["UOU", "MCM", "BBB"], {"U": "ammo_35mm", "O": MC + "observer", "M": "electric_motor", "C": "circuit_board", "B": B})
     crate("pantsir", ["UOU", "MCM", "BBB"], {"U": "guidance_unit", "O": MC + "observer", "M": "electric_motor", "C": "circuit_board", "B": B})
-    crate("tomahawk_launcher", ["IHI", "BCB", "BBB"], {"I": I, "H": MC + "hopper", "B": B, "C": "circuit_board"})
-    crate("iskander_launcher", ["IPI", "BCB", "BMB"], {"I": I, "P": MC + "piston", "B": B, "C": "circuit_board", "M": "electric_motor"})
+    shaped("tomahawk_launcher", ["IHI", "BCB", "BBB"], {"I": I, "H": MC + "hopper", "B": B, "C": "circuit_board"})
+    shaped("iskander_launcher", ["IPI", "BCB", "BMB"], {"I": I, "P": MC + "piston", "B": B, "C": "circuit_board", "M": "electric_motor"})
     shaped("mortar_120", ["  I", " I ", "NBN"], {"I": I, "N": N, "B": B})
     shaped("himars", ["III", "MCM", "BBB"], {"I": I, "M": "electric_motor", "C": "circuit_board", "B": B})
     shaped("jerrycan", [" I ", "I I", "III"], {"I": I}, 2)

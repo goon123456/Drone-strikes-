@@ -629,10 +629,11 @@ def iskander_launcher():
     barrel = [B(STEEL_D, -0.6, 2.2, -5.5, 1.2, 0.1, 5.4),                          # erector cradle
               B(STEEL_D, -0.65, 2.2, -5.5, 0.1, 0.5, 5.4), B(STEEL_D, 0.55, 2.2, -5.5, 0.1, 0.5, 5.4),
               B(STEEL_D, -0.6, 2.25, -1.2, 1.2, 0.6, 0.12), B(STEEL_D, -0.6, 2.25, -3.6, 1.2, 0.6, 0.12)]
-    barrel += [lathe(RUS, "z", 0, 2.78, [(-5.62, 0.0), (-5.62, 0.33), (-5.5, 0.4), (-5.3, 0.46), (-0.6, 0.46), (0.6, 0.38), (1.6, 0.2),
-                                         (2.05, 0.07), (2.15, 0.0)])]                    # the missile
-    barrel += rod_z(RUS_D, 0, 2.78, -2.2, 0.1, 0.94) + rod_z(RUS_D, 0, 2.78, -0.62, 0.06, 0.93)
-    barrel += [B(RUS_D, -0.8, 2.75, -5.3, 1.6, 0.06, 0.6), B(RUS_D, -0.03, 2.0, -5.3, 0.06, 1.56, 0.6)]   # tail fins
+    # the missile is its own part, so it is gone from the cradle once it has been fired
+    payload = [lathe(RUS, "z", 0, 2.78, [(-5.62, 0.0), (-5.62, 0.33), (-5.5, 0.4), (-5.3, 0.46), (-0.6, 0.46), (0.6, 0.38), (1.6, 0.2),
+                                         (2.05, 0.07), (2.15, 0.0)])]
+    payload += rod_z(RUS_D, 0, 2.78, -2.2, 0.1, 0.94) + rod_z(RUS_D, 0, 2.78, -0.62, 0.06, 0.93)
+    payload += [B(RUS_D, -0.8, 2.75, -5.3, 1.6, 0.06, 0.6), B(RUS_D, -0.03, 2.0, -5.3, 0.06, 1.56, 0.6)]   # tail fins
     # ---- fittings
     base += round_hatch(0.8, 5.0, 3.17, 0.62, RUS_D) + round_hatch(-0.8, 5.0, 3.17, 0.62, RUS_D) + beacon(0.0, 3.17, 4.6)
     base += whip(1.3, 4.4, 3.12, 2.4) + whip(-1.3, 4.4, 3.12, 1.8)
@@ -668,6 +669,7 @@ def iskander_launcher():
         door = [B(RUS_D, x0, 3.26, -6.2, 1.48, 0.06, 9.6, marks=[("top", "panel", 0.5, 0.25, 1.2, 2.0), ("top", "panel", 0.5, 0.75, 1.2, 2.0)])]
         door += [B(RUS_D, x0 + 0.1, 3.32, z, 1.28, 0.03, 0.08, plain=True) for z in (-5.0, -2.6, -0.2, 2.2)]
         bones.append({"name": name, "parent": "move_body", "pivot": (sx * 1.5, 3.26, 0), "cubes": door})
+    bones.append({"name": "move_payload", "parent": "barrel", "pivot": (0, 2.25, -5.5), "cubes": payload})
     return dict(base=base, turret=[], barrel=barrel, bones=bones)
 
 
@@ -811,7 +813,7 @@ def krasukha():
     return dict(base=base, turret=[], barrel=[], bones=bones)
 
 
-PIVOTS = {"himars": ((0, 1.2, -1.5), (0, 1.7, -2.5)), "m109": ((0, 1.7, -0.9), (0, 2.3, 0.9)), "mortar_120": ((0, 0.1, -0.1), (0, 0.22, -0.1))}
+PIVOTS = {"himars": ((0, 1.2, -1.5), (0, 1.7, -2.5)), "m109": ((0, 1.7, -0.9), (0, 2.3, 0.9)), "mortar_120": ((0, 0.1, -0.1), (0, 0.22, -0.1)), "tomahawk_launcher": ((0, 1.2, -3.9), (0, 1.2, -3.9)), "iskander_launcher": ((0, 2.25, -5.5), (0, 2.25, -5.5))}
 
 MODELS = {"zu_23_2": zu_23_2, "gepard": gepard, "pantsir": pantsir, "patriot": patriot, "himars": himars,
           "mortar_120": mortar_120, "m109": m109, "tomahawk_launcher": tomahawk_launcher,

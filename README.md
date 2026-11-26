@@ -12,8 +12,8 @@ and tube artillery, and defend your base with air defence and jammers.
 The idea was inspired by the *Iron Drone* mod. All code, models and textures here are original.
 
 ## Built on Superb Warfare
-Steel Rain's ground vehicles (air defence, artillery, missile launchers, jammers) are real Superb Warfare
-vehicles. The drone and aircraft launch sites (UAV Ground Station, Orlan Catapult, Shahed Launch Rail) are placed
+The air defence vehicles and jammers are still Superb Warfare vehicles (the artillery and missile launchers have
+moved to Steel Rain's own system, below); the rules in this section apply to those. The drone and aircraft launch sites (UAV Ground Station, Orlan Catapult, Shahed Launch Rail) are placed
 full-size emplacements, and the drones and aircraft themselves are Steel Rain's own.
 
 - **Getting one**: each comes packed in an SBW **container** (craftable; also in the Steel Rain and SBW vehicle
@@ -21,13 +21,12 @@ full-size emplacements, and the drones and aircraft themselves are Steel Rain's 
 - **Energy**: everything runs on SBW energy (FE). Park next to an SBW Charging Station or use any FE source.
   There is no liquid fuel.
 - **Inventory**: sneak + right-click opens the vehicle's SBW inventory for ammunition, missiles and aircraft.
-- **Driving**: the Gepard and M109 (tracked) and the Pantsir, HIMARS, Iskander launcher and Krasukha (wheeled)
-  can be driven. The rest are static.
+- **Driving**: the Gepard (tracked) and the Pantsir and Krasukha (wheeled) can be driven. The rest are static.
 - **Damage and repair** follow SBW's rules.
 
 ### Steel Rain's own vehicles (moving off Superb Warfare)
 Linking to SBW caused too many problems, so the vehicles are being moved one at a time onto Steel Rain's own
-vehicle system. SBW stays required until the last one has moved. **Done so far: the M142 HIMARS, the M109 and the 120 mm mortar.**
+vehicle system. SBW stays required until the last one has moved. **Done so far: the HIMARS, M109, 120 mm mortar, Tomahawk launcher and Iskander-M launcher.**
 
 - **Getting one**: craft it (or take it from the creative tab) and right-click the ground to put it down,
   facing the way you look. The owner sneak-hits it to pack it back into the item; the item keeps its damage,
@@ -237,7 +236,11 @@ The **HIMARS** and **Iskander-M launcher** (wheeled) can be driven; the **Tomaha
   Iskander missile raise), then fires.
 - **HIMARS pod**: it fires from a pod of 6 GMLRS rockets or 1 ATACMS. When the pod is empty it takes 30 seconds
   to load the next one from the inventory; the laptop shows the countdown. The first pod also has to be loaded.
-- Energy per round: HIMARS 25k, Tomahawk 125k, Iskander 250k FE.
+- Energy per round: HIMARS 25k, Tomahawk 125k, Iskander 250k FE. The Tomahawk trailer and the Iskander carry a
+  diesel power unit that charges the battery by itself while there is fuel in the tank (refuel with a Jerrycan of
+  Diesel); any FE cable or charger works too.
+- The Tomahawk and Iskander refuse to fire while moving: stop first. The Iskander opens its roof doors and stands
+  the missile up; once fired it is gone from the cradle until another is loaded.
 
 ### Jammers (SBW vehicles)
 - **EW Jammer**, **Trench Jammer** (static) and **Krasukha-4** (drivable): sneak + right-click with an empty hand

@@ -132,6 +132,9 @@ public abstract class SrVehicle extends Entity implements OwnableEntity {
     /** Static weapons have no engine and nobody drives them. */
     public boolean drivable() { return true; }
 
+    /** A diesel power unit that runs by itself to charge the battery while there is fuel and room in it. */
+    protected boolean hasPowerUnit() { return false; }
+
     /** How far back the third-person camera sits while riding. */
     public float cameraDistance() { return 10f; }
 
@@ -436,7 +439,7 @@ public abstract class SrVehicle extends Entity implements OwnableEntity {
         if (lastPos == null) lastPos = position();
         double moved = Math.sqrt(Mth.square(getX() - lastPos.x) + Mth.square(getZ() - lastPos.z));
         lastPos = position();
-        if (engineRunning()) {
+        if (engineRunning() || (hasPowerUnit() && fuel() > 0 && energy() < batteryFe())) {
             distanceSinceFuel += moved;
             float burn = (float) (litresPerIdleTick() + distanceSinceFuel * litresPerBlock());
             distanceSinceFuel = 0;

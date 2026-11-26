@@ -173,6 +173,10 @@ public final class ModRegistry {
             () -> new com.steelrain.item.VehicleItem(new Item.Properties().stacksTo(1), () -> ModRegistry.HIMARS.get()));
     public static final DeferredItem<Item> MORTAR_ITEM = ITEMS.register("mortar_120",
             () -> new com.steelrain.item.VehicleItem(new Item.Properties().stacksTo(1), () -> ModRegistry.MORTAR.get()));
+    public static final DeferredItem<Item> TOMAHAWK_LAUNCHER_ITEM = ITEMS.register("tomahawk_launcher",
+            () -> new com.steelrain.item.VehicleItem(new Item.Properties().stacksTo(1), () -> ModRegistry.TOMAHAWK_LAUNCHER.get()));
+    public static final DeferredItem<Item> ISKANDER_LAUNCHER_ITEM = ITEMS.register("iskander_launcher",
+            () -> new com.steelrain.item.VehicleItem(new Item.Properties().stacksTo(1), () -> ModRegistry.ISKANDER_LAUNCHER.get()));
     public static final DeferredItem<Item> M109_ITEM = ITEMS.register("m109",
             () -> new com.steelrain.item.VehicleItem(new Item.Properties().stacksTo(1), () -> ModRegistry.M109.get()));
 
@@ -281,13 +285,6 @@ public final class ModRegistry {
                 .setTrackingRange(512).setUpdateInterval(1).fireImmune().sized(width, height).build(name)));
     }
 
-    // ---- artillery and missile launchers: Superb Warfare vehicles fired from the Field Laptop ----
-    public static final Map<String, DeferredHolder<EntityType<?>, EntityType<com.steelrain.entity.StrikeVehicle>>> STRIKE = new java.util.LinkedHashMap<>();
-    static {
-        strike("tomahawk_launcher", 2.6f, 3.2f);
-        strike("iskander_launcher", 3.1f, 3.3f);
-    }
-
     /** Steel Rain's own vehicles (moving off Superb Warfare one at a time). */
     public static final DeferredHolder<EntityType<?>, EntityType<com.steelrain.entity.vehicle.Himars>> HIMARS = ENTITIES.register("himars",
             () -> EntityType.Builder.<com.steelrain.entity.vehicle.Himars>of(com.steelrain.entity.vehicle.Himars::new, MobCategory.MISC)
@@ -295,15 +292,15 @@ public final class ModRegistry {
     public static final DeferredHolder<EntityType<?>, EntityType<com.steelrain.entity.vehicle.Mortar>> MORTAR = ENTITIES.register("mortar_120",
             () -> EntityType.Builder.<com.steelrain.entity.vehicle.Mortar>of(com.steelrain.entity.vehicle.Mortar::new, MobCategory.MISC)
                     .setTrackingRange(256).setUpdateInterval(1).sized(1.0f, 1.0f).build("mortar_120"));
+    public static final DeferredHolder<EntityType<?>, EntityType<com.steelrain.entity.vehicle.TomahawkLauncher>> TOMAHAWK_LAUNCHER = ENTITIES.register("tomahawk_launcher",
+            () -> EntityType.Builder.<com.steelrain.entity.vehicle.TomahawkLauncher>of(com.steelrain.entity.vehicle.TomahawkLauncher::new, MobCategory.MISC)
+                    .setTrackingRange(512).setUpdateInterval(1).fireImmune().sized(2.6f, 3.2f).build("tomahawk_launcher"));
+    public static final DeferredHolder<EntityType<?>, EntityType<com.steelrain.entity.vehicle.IskanderLauncher>> ISKANDER_LAUNCHER = ENTITIES.register("iskander_launcher",
+            () -> EntityType.Builder.<com.steelrain.entity.vehicle.IskanderLauncher>of(com.steelrain.entity.vehicle.IskanderLauncher::new, MobCategory.MISC)
+                    .setTrackingRange(512).setUpdateInterval(1).fireImmune().sized(3.0f, 3.3f).build("iskander_launcher"));
     public static final DeferredHolder<EntityType<?>, EntityType<com.steelrain.entity.vehicle.M109>> M109 = ENTITIES.register("m109",
             () -> EntityType.Builder.<com.steelrain.entity.vehicle.M109>of(com.steelrain.entity.vehicle.M109::new, MobCategory.MISC)
                     .setTrackingRange(512).setUpdateInterval(1).fireImmune().sized(3.1f, 3.0f).build("m109"));
-
-    private static void strike(String name, float width, float height) {
-        STRIKE.put(name, ENTITIES.register(name, () -> EntityType.Builder
-                .<com.steelrain.entity.StrikeVehicle>of(com.steelrain.entity.StrikeVehicle::new, MobCategory.MISC)
-                .setTrackingRange(512).setUpdateInterval(1).fireImmune().sized(width, height).build(name)));
-    }
 
     // ---- ground station, catapult and jammers ----
     public static final Map<String, DeferredHolder<EntityType<?>, EntityType<com.steelrain.entity.SupportVehicle>>> SUPPORT = new java.util.LinkedHashMap<>();
@@ -323,7 +320,6 @@ public final class ModRegistry {
     public static java.util.List<EntityType<?>> vehicles() {
         java.util.List<EntityType<?>> all = new java.util.ArrayList<>();
         AIR_DEFENCE.values().forEach(v -> all.add(v.get()));
-        STRIKE.values().forEach(v -> all.add(v.get()));
         SUPPORT.values().forEach(v -> all.add(v.get()));
         return all;
     }

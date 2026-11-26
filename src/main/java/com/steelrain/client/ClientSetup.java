@@ -51,7 +51,8 @@ public final class ClientSetup {
         e.registerEntityRenderer(ModRegistry.HIMARS.get(), c -> new SrVehicleRenderer<>(c, "himars"));
         e.registerEntityRenderer(ModRegistry.M109.get(), c -> new SrVehicleRenderer<>(c, "m109"));
         e.registerEntityRenderer(ModRegistry.MORTAR.get(), c -> new SrVehicleRenderer<>(c, "mortar_120"));
-        ModRegistry.STRIKE.forEach((name, v) -> e.registerEntityRenderer(v.get(), c -> new SteelVehicleRenderer(c, name)));
+        e.registerEntityRenderer(ModRegistry.TOMAHAWK_LAUNCHER.get(), c -> new SrVehicleRenderer<>(c, "tomahawk_launcher"));
+        e.registerEntityRenderer(ModRegistry.ISKANDER_LAUNCHER.get(), c -> new SrVehicleRenderer<>(c, "iskander_launcher"));
         ModRegistry.SUPPORT.forEach((name, v) -> e.registerEntityRenderer(v.get(), c -> new SteelVehicleRenderer(c, name)));
         e.registerEntityRenderer(ModRegistry.OPERATOR_BODY.get(), OperatorBodyRenderer::new);
         e.registerBlockEntityRenderer(ModRegistry.WEAPON_BE.get(), c -> new WeaponRenderer());
