@@ -31,6 +31,40 @@ import java.util.Locale;
 public class LaptopScreen extends Screen {
     private static final ResourceLocation MAP_TEXTURE = ResourceLocation.fromNamespaceAndPath(ModRegistry.MODID, "laptop_map");
     private static final int[] SCALES = {1, 2, 4, 8, 16, 32, 64};
+    /** Printed field-manual palette: warm off-white ink, olive drab rules, one amber accent, muted alarms. */
+    private static final int P_BG = 0xFF0C0F0D, P_PLATE = 0xFF141916, P_RULE = 0xFF3A4439, P_TEXT = 0xFFD8D3BE,
+            P_DIM = 0xFF8E9283, P_FAINT = 0xFF555C52, P_AMBER = 0xFFD9A441, P_GO = 0xFF9BB56A, P_RED = 0xFFC0584A,
+            P_CYAN = 0xFF8FB3BF;
+
+    /** A plain plate: thin rule round a flat fill. No highlights, no corner marks. */
+    private void plate(GuiGraphics g, int x, int y, int w, int h) {
+        g.fill(x, y, x + w, y + h, P_RULE);
+        g.fill(x + 1, y + 1, x + w - 1, y + h - 1, P_PLATE);
+    }
+
+    /** A section title in caps with a rule under it and an optional count on the right. */
+    private void header(GuiGraphics g, net.minecraft.client.gui.Font font, int x, int y, int w, Component title, Component right) {
+        g.drawString(font, Ui.upper(title), x + 4, y + 2, P_TEXT, false);
+        if (right != null) g.drawString(font, right, x + w - 4 - font.width(right), y + 2, P_DIM, false);
+        g.fill(x + 2, y + 12, x + w - 2, y + 13, P_RULE);
+    }
+
+    /** A readout: label, dotted leader, value. */
+    private void field(GuiGraphics g, net.minecraft.client.gui.Font font, int x, int y, int w, Component label, Component value, int colour) {
+        String l = Ui.upper(label).getString();
+        g.drawString(font, l, x, y, P_DIM, false);
+        int vx = x + w - font.width(value);
+        for (int dx = font.width(l) + 4; dx < vx - 4; dx += 4) g.fill(x + dx, y + 6, x + dx + 1, y + 7, P_FAINT);
+        g.drawString(font, value, vx, y, colour, false);
+    }
+
+    /** A status word as plain coloured text with a small square, no box. */
+    private int chip(GuiGraphics g, net.minecraft.client.gui.Font font, int x, int y, Component text, int colour) {
+        g.fill(x, y + 2, x + 4, y + 6, colour);
+        g.drawString(font, Ui.upper(text), x + 7, y, colour, false);
+        return 7 + font.width(Ui.upper(text));
+    }
+
     private static final int UNKNOWN = 0xFF181410;
     private static final int LIST_W = 120, SIDE_W = 132, GAP = 5, CARD_H = 28, TOP_BAR = 14, FOOT = 27;
 
@@ -148,7 +182,7 @@ public class LaptopScreen extends Screen {
         zBox = new EditBox(font, sx + 74, sy + 4, 46, 10, Component.literal("Z"));
         for (EditBox box : new EditBox[]{xBox, zBox}) {
             box.setBordered(false);
-            box.setTextColor(Ui.TEXT);
+            box.setTextColor(P_TEXT);
             box.setMaxLength(9);
             box.setFilter(s -> s.matches("-?\\d*"));
             box.setResponder(s -> boxesChanged());
@@ -387,14 +421,14 @@ public class LaptopScreen extends Screen {
         // scale bar, bottom left
         int bar = step / scale(), bx = mapLeft + 5, by = mapTop + map - 7;
         g.fill(bx - 2, by - 10, bx + bar + 2 + font.width(step + " m") + 4, by + 4, 0xA0000000);
-        g.fill(bx, by, bx + bar, by + 2, Ui.TEXT);
-        g.fill(bx, by - 3, bx + 1, by + 2, Ui.TEXT); g.fill(bx + bar - 1, by - 3, bx + bar, by + 2, Ui.TEXT);
-        g.drawString(font, step + " m", bx + bar + 4, by - 6, Ui.TEXT, false);
+        g.fill(bx, by, bx + bar, by + 2, P_TEXT);
+        g.fill(bx, by - 3, bx + 1, by + 2, P_TEXT); g.fill(bx + bar - 1, by - 3, bx + bar, by + 2, P_TEXT);
+        g.drawString(font, step + " m", bx + bar + 4, by - 6, P_TEXT, false);
         // north arrow, top right
         int nx = mapLeft + map - 10, ny = mapTop + 6;
         g.fill(nx - 6, ny - 3, nx + 7, ny + 17, 0xA0000000);
-        Ui.icon(g, nx - 3, ny, new String[]{"   #   ", "  ###  ", " ##### ", "#######", "   #   ", "   #   "}, Ui.AMBER);
-        g.drawString(font, "N", nx - 2, ny + 8, Ui.TEXT, false);
+        Ui.icon(g, nx - 3, ny, new String[]{"   #   ", "  ###  ", " ##### ", "#######", "   #   ", "   #   "}, P_AMBER);
+        g.drawString(font, "N", nx - 2, ny + 8, P_TEXT, false);
     }
 
     // ------------------------------------------------------------------ input
@@ -476,10 +510,10 @@ public class LaptopScreen extends Screen {
     }
 
     private static int statusColour(Payloads.Entry e) {
-        if (!known(e) || !e.reachable()) return Ui.RED;
-        if (e.aircraft() >= 0) return Ui.CYAN;
-        if (e.busy() > 0 || (e.ammo() <= 0 && !e.manual())) return Ui.AMBER;
-        return Ui.GREEN;
+        if (!known(e) || !e.reachable()) return P_RED;
+        if (e.aircraft() >= 0) return P_CYAN;
+        if (e.busy() > 0 || (e.ammo() <= 0 && !e.manual())) return P_AMBER;
+        return P_GO;
     }
 
     @Override
@@ -519,29 +553,33 @@ public class LaptopScreen extends Screen {
     }
 
     private void drawTopBar(GuiGraphics g) {
-        g.fill(left, top, left + w, top + TOP_BAR, 0xFF0D1214);
-        g.fill(left, top + TOP_BAR - 1, left + w, top + TOP_BAR, Ui.OLIVE);
-        Ui.icon(g, left + 5, top + 3, Ui.ICON_SIGNAL, Ui.GREEN);
-        g.drawString(font, Ui.upper(Component.translatable("gui.steelrain.laptop_title")), left + 16, top + 3, Ui.TEXT, false);
-        g.drawString(font, "STEEL RAIN C2", left + 16 + font.width(Ui.upper(Component.translatable("gui.steelrain.laptop_title"))) + 8, top + 3, Ui.FAINT, false);
+        g.fill(left, top, left + w, top + TOP_BAR, P_BG);
+        g.fill(left, top + TOP_BAR - 1, left + w, top + TOP_BAR, P_RULE);
+        g.drawString(font, Ui.upper(Component.translatable("gui.steelrain.laptop_title")), left + 6, top + 3, P_TEXT, false);
+        g.drawString(font, "STEEL RAIN C2", left + 6 + font.width(Ui.upper(Component.translatable("gui.steelrain.laptop_title"))) + 8, top + 3, P_FAINT, false);
         String mode = Ui.upper(t(heightMode ? "layer_height" : "layer_topo")).getString() + " " + (scale() == 1 ? "1:1" : "1:" + scale());
-        g.drawString(font, mode, left + w / 2 - font.width(mode) / 2, top + 3, Ui.DIM, false);
+        g.drawString(font, mode, left + w / 2 - font.width(mode) / 2, top + 3, P_DIM, false);
         if (minecraft.player != null && minecraft.level != null) {
             long t = (minecraft.level.getDayTime() + 6000) % 24000;
             String clock = String.format("%02d:%02d", t / 1000, (t % 1000) * 60 / 1000);
             String own = "GRID " + Mth.floor(minecraft.player.getX()) + " " + Mth.floor(minecraft.player.getZ());
-            g.drawString(font, clock, left + w - 6 - font.width(clock), top + 3, Ui.AMBER, false);
-            g.drawString(font, own, left + w - 14 - font.width(clock) - font.width(own), top + 3, Ui.DIM, false);
+            g.drawString(font, clock, left + w - 6 - font.width(clock), top + 3, P_AMBER, false);
+            g.drawString(font, own, left + w - 14 - font.width(clock) - font.width(own), top + 3, P_DIM, false);
         }
     }
 
     private void drawUnits(GuiGraphics g) {
         int x = left + GAP, y = mapTop;
-        Ui.panel(g, x, y - 1, LIST_W, map + 2);
-        Ui.header(g, font, x + 1, y, LIST_W - 2, Component.translatable("gui.steelrain.units"), Component.literal(Integer.toString(entries.size())));
+        plate(g, x, y - 1, LIST_W, map + 2);
+        header(g, font, x + 1, y, LIST_W - 2, Component.translatable("gui.steelrain.units"), Component.literal(Integer.toString(entries.size())));
         int ly = y + 14;
         if (entries.isEmpty()) {
-            g.drawWordWrap(font, Component.translatable("gui.steelrain.no_links"), x + 5, ly + 4, LIST_W - 10, Ui.DIM);
+            for (int i = 0; i < 3; i++) {
+                int sy = ly + 6 + i * 26;
+                g.drawString(font, Integer.toString(i + 1), x + 6, sy, P_AMBER, false);
+                g.drawWordWrap(font, Component.translatable("gui.steelrain.step_" + (i + 1)), x + 18, sy, LIST_W - 26, P_DIM);
+                if (i < 2) g.fill(x + 6, sy + 22, x + LIST_W - 6, sy + 23, P_RULE);
+            }
             return;
         }
         int shown = visibleCards();
@@ -550,34 +588,37 @@ public class LaptopScreen extends Screen {
             int cy = ly + (i - listScroll) * CARD_H;
             boolean sel = i == selected;
             g.fill(x + 3, cy + 1, x + LIST_W - 3, cy + CARD_H - 1, sel ? Ui.PANEL_3 : Ui.PANEL_2);
-            if (sel) g.fill(x + 3, cy + 1, x + 5, cy + CARD_H - 1, Ui.AMBER);
+            if (sel) g.fill(x + 3, cy + 1, x + 5, cy + CARD_H - 1, P_AMBER);
             int colour = statusColour(e);
-            Ui.icon(g, x + 8, cy + 4, iconFor(e), sel ? Ui.AMBER : Ui.TEXT);
+            Ui.icon(g, x + 8, cy + 4, iconFor(e), sel ? P_AMBER : P_TEXT);
             Component name = known(e) ? Component.translatable(e.name()) : Component.translatable("gui.steelrain.offline");
-            g.drawString(font, font.plainSubstrByWidth(name.getString(), LIST_W - 28), x + 18, cy + 4, sel ? Ui.TEXT : 0xFFC8D2D8, false);
+            g.drawString(font, font.plainSubstrByWidth(name.getString(), LIST_W - 28), x + 18, cy + 4, sel ? P_TEXT : 0xFFC8D2D8, false);
             // second line: status dot + text, then rounds and energy gauges
             g.fill(x + 8, cy + 16, x + 12, cy + 20, colour);
             String st = status(e).getString();
             g.drawString(font, font.plainSubstrByWidth(st, 50), x + 15, cy + 14, colour, false);
             if (known(e)) {
                 String rounds = e.ammo() + (e.second() ? "+" + e.ammo2() : "");
-                g.drawString(font, rounds, x + LIST_W - 8 - font.width(rounds), cy + 14, Ui.DIM, false);
+                g.drawString(font, rounds, x + LIST_W - 8 - font.width(rounds), cy + 14, P_DIM, false);
                 double energy = e.fuel() <= 0 ? 0 : Math.min(1, e.fuel() / 1000.0);
-                Ui.gauge(g, x + 8, cy + CARD_H - 5, LIST_W - 19, 2, energy, Ui.CYAN, 20);
+                Ui.gauge(g, x + 8, cy + CARD_H - 5, LIST_W - 19, 2, energy, P_CYAN, 20);
             }
         }
         if (entries.size() > shown) {
             int track = map - 16, knob = Math.max(8, track * shown / entries.size());
             int ky = ly + (track - knob) * listScroll / Math.max(1, entries.size() - shown);
             g.fill(x + LIST_W - 3, ly, x + LIST_W - 2, ly + track, 0xFF2A353C);
-            g.fill(x + LIST_W - 3, ky, x + LIST_W - 2, ky + knob, Ui.AMBER);
+            g.fill(x + LIST_W - 3, ky, x + LIST_W - 2, ky + knob, P_AMBER);
         }
     }
 
     private void drawMap(GuiGraphics g, int mouseX, int mouseY) {
         int mx = mapLeft, my = mapTop;
         Ui.well(g, mx, my, map, map);
+        // the terrain is printed in muted tones, so the coloured markers stand out from it
+        com.mojang.blaze3d.systems.RenderSystem.setShaderColor(0.66f, 0.70f, 0.60f, 1f);
         g.blit(MAP_TEXTURE, mx, my, 0, 0f, 0f, map, map, map, map);
+        com.mojang.blaze3d.systems.RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
         g.enableScissor(mx, my, mx + map, my + map);
         grid(g);
         Payloads.Entry cur = current();
@@ -604,13 +645,13 @@ public class LaptopScreen extends Screen {
                 };
                 dot(g, d[i] + 0.5, d[i + 1] + 0.5, colour, d[i + 2] >= 4 ? 2 : 1);
             }
-            dot(g, mk.x() + 0.5, mk.z() + 0.5, Ui.CYAN, 1);
+            dot(g, mk.x() + 0.5, mk.z() + 0.5, P_CYAN, 1);
         }
         for (int i = 0; i < entries.size(); i++) {
             Payloads.Entry e = entries.get(i);
             if (!known(e)) continue;
-            unitIcon(g, e, e.pos().getX() + 0.5, e.pos().getZ() + 0.5, i == selected ? Ui.AMBER : e.reachable() ? Ui.GREEN : Ui.RED);
-            if (e.aircraft() >= 0) unitIcon(g, e, e.ax() + 0.5, e.az() + 0.5, Ui.CYAN);
+            unitIcon(g, e, e.pos().getX() + 0.5, e.pos().getZ() + 0.5, i == selected ? P_AMBER : e.reachable() ? P_GO : P_RED);
+            if (e.aircraft() >= 0) unitIcon(g, e, e.ax() + 0.5, e.az() + 0.5, P_CYAN);
         }
         if (minecraft.player != null) {
             int[] p = onMap(minecraft.player.getX(), minecraft.player.getZ(), 3);
@@ -626,9 +667,9 @@ public class LaptopScreen extends Screen {
             int[] p = onMap(targetX + 0.5, targetZ + 0.5, 0);
             if (p != null) {
                 boolean blink = Ui.blink();
-                Ui.brackets(g, p[0] - 6, p[1] - 6, 13, 13, 4, Ui.RED);
-                g.fill(p[0] - 1, p[1], p[0] + 2, p[1] + 1, blink ? Ui.RED : 0xFFFFFFFF);
-                g.fill(p[0], p[1] - 1, p[0] + 1, p[1] + 2, blink ? Ui.RED : 0xFFFFFFFF);
+                Ui.brackets(g, p[0] - 6, p[1] - 6, 13, 13, 4, P_RED);
+                g.fill(p[0] - 1, p[1], p[0] + 2, p[1] + 1, blink ? P_RED : 0xFFFFFFFF);
+                g.fill(p[0], p[1] - 1, p[0] + 1, p[1] + 2, blink ? P_RED : 0xFFFFFFFF);
             }
         }
         if (overMap(mouseX, mouseY)) {
@@ -640,13 +681,14 @@ public class LaptopScreen extends Screen {
             String c = hx + " " + hz + (hy != NO_HEIGHT ? "  Y " + hy : "");
             int tx = Math.min(mouseX + 6, mx + map - font.width(c) - 4), ty = Math.max(mouseY - 12, my + 2);
             g.fill(tx - 2, ty - 2, tx + font.width(c) + 2, ty + 9, 0xD0000000);
-            g.drawString(font, c, tx, ty, Ui.TEXT, false);
+            g.drawString(font, c, tx, ty, P_TEXT, false);
         }
         g.disableScissor();
-        Ui.brackets(g, mx - 2, my - 2, map + 4, map + 4, 8, Ui.OLIVE_LIGHT);
+        g.fill(mx - 1, my - 1, mx + map + 1, my, P_RULE);
+        g.fill(mx - 1, my + map, mx + map + 1, my + map + 1, P_RULE);
         if (heightMode && heightMin <= heightMax && map >= 150) heightLegend(g, mx + map - 74, my + map - 16);
         String zoom = "1:" + scale();
-        g.drawString(font, zoom, mx + map + 3, mapTop + map - 60, Ui.DIM, false);
+        g.drawString(font, zoom, mx + map + 3, mapTop + map - 60, P_DIM, false);
     }
 
     /** A colour ramp with the lowest and highest ground in view. */
@@ -660,40 +702,40 @@ public class LaptopScreen extends Screen {
             int cr = c & 0xFF, cg = (c >> 8) & 0xFF, cb = (c >> 16) & 0xFF;
             g.fill(x + i, y, x + i + 1, y + 5, 0xFF000000 | cr << 16 | cg << 8 | cb);
         }
-        g.drawString(font, Integer.toString(lo), x, y + 5, Ui.DIM, false);
+        g.drawString(font, Integer.toString(lo), x, y + 5, P_DIM, false);
         String top = Integer.toString(hi);
-        g.drawString(font, top, x + 40 - font.width(top), y + 5, Ui.DIM, false);
-        g.drawString(font, "Y", x + 46, y + 1, Ui.FAINT, false);
-        g.drawString(font, "8/32", x + 54, y + 5, Ui.FAINT, false);
+        g.drawString(font, top, x + 40 - font.width(top), y + 5, P_DIM, false);
+        g.drawString(font, "Y", x + 46, y + 1, P_FAINT, false);
+        g.drawString(font, "8/32", x + 54, y + 5, P_FAINT, false);
     }
 
     private void drawMission(GuiGraphics g) {
         int x = sideLeft, y = mapTop;
-        Ui.panel(g, x, y - 1, SIDE_W, h - TOP_BAR - FOOT - GAP * 2);
+        plate(g, x, y - 1, SIDE_W, h - TOP_BAR - FOOT - GAP * 2);
         Payloads.Entry cur = current();
         boolean ok = cur != null && known(cur);
-        Ui.header(g, font, x + 1, y, SIDE_W - 2, Component.translatable("gui.steelrain.mission"), null);
+        header(g, font, x + 1, y, SIDE_W - 2, Component.translatable("gui.steelrain.mission"), null);
         int ix = x + 6, iw = SIDE_W - 12;
         if (!ok) {
-            g.drawWordWrap(font, Component.translatable("gui.steelrain.select_unit"), ix, y + 18, iw, Ui.DIM);
+            g.drawWordWrap(font, Component.translatable("gui.steelrain.select_unit"), ix, y + 18, iw, P_DIM);
             return;
         }
         // the unit: name, state, what it carries and where it is
-        g.drawString(font, font.plainSubstrByWidth(Component.translatable(cur.name()).getString(), iw), ix, y + 16, Ui.TEXT, false);
-        Ui.chip(g, font, ix, y + 27, status(cur), statusColour(cur));
-        Ui.field(g, font, ix, y + 41, iw, t("f_range"), Component.literal(cur.minRange() + "-" + cur.maxRange() + " m"), Ui.TEXT);
+        g.drawString(font, font.plainSubstrByWidth(Component.translatable(cur.name()).getString(), iw), ix, y + 16, P_TEXT, false);
+        chip(g, font, ix, y + 27, status(cur), statusColour(cur));
+        field(g, font, ix, y + 41, iw, t("f_range"), Component.literal(cur.minRange() + "-" + cur.maxRange() + " m"), P_TEXT);
         String rounds = cur.ammo() + (cur.second() ? " + " + cur.ammo2() : "");
-        Ui.field(g, font, ix, y + 52, iw, Component.translatable("gui.steelrain.f_rounds"), Component.literal(rounds),
-                cur.ammo() > 0 || cur.manual() ? Ui.TEXT : Ui.RED);
+        field(g, font, ix, y + 52, iw, Component.translatable("gui.steelrain.f_rounds"), Component.literal(rounds),
+                cur.ammo() > 0 || cur.manual() ? P_TEXT : P_RED);
         int ux = cur.aircraft() >= 0 ? cur.ax() : cur.pos().getX(), uz = cur.aircraft() >= 0 ? cur.az() : cur.pos().getZ();
         int uy = groundAt(ux, uz);
         String from = minecraft.player == null ? "" : " \u00B7 " + (int) Math.sqrt(minecraft.player.distanceToSqr(ux + 0.5, minecraft.player.getY(), uz + 0.5)) + " m";
-        Ui.field(g, font, ix, y + 63, iw, t("f_grid"), Component.literal(ux + ", " + uz), Ui.TEXT);
-        Ui.field(g, font, ix, y + 73, iw, t("f_height"), Component.literal((uy == NO_HEIGHT ? "--" : "Y " + uy) + from), Ui.TEXT);
-        Ui.field(g, font, ix, y + 84, iw, t("f_energy"), Component.literal(cur.fuel() + " k"), cur.fuel() > 200 ? Ui.TEXT : Ui.AMBER);
-        Ui.gauge(g, ix, y + 95, iw, 3, Math.min(1, cur.fuel() / 1000.0), cur.fuel() > 200 ? Ui.CYAN : Ui.AMBER, 24);
-        if (cur.busy() > 0) Ui.field(g, font, ix, y + 103, iw, t("f_reload"), Component.literal(String.format(Locale.ROOT, "%.1f s", cur.busy() / 20.0)), Ui.AMBER);
-        else Ui.field(g, font, ix, y + 103, iw, t("f_reload"), t("f_ready"), Ui.GREEN);
+        field(g, font, ix, y + 63, iw, t("f_grid"), Component.literal(ux + ", " + uz), P_TEXT);
+        field(g, font, ix, y + 73, iw, t("f_height"), Component.literal((uy == NO_HEIGHT ? "--" : "Y " + uy) + from), P_TEXT);
+        field(g, font, ix, y + 84, iw, t("f_energy"), Component.literal(cur.fuel() + " k"), cur.fuel() > 200 ? P_TEXT : P_AMBER);
+        Ui.gauge(g, ix, y + 95, iw, 3, Math.min(1, cur.fuel() / 1000.0), cur.fuel() > 200 ? P_CYAN : P_AMBER, 24);
+        if (cur.busy() > 0) field(g, font, ix, y + 103, iw, t("f_reload"), Component.literal(String.format(Locale.ROOT, "%.1f s", cur.busy() / 20.0)), P_AMBER);
+        else field(g, font, ix, y + 103, iw, t("f_reload"), t("f_ready"), P_GO);
 
         // engagement envelope: the band the unit can hit, with the target marked on it when one is set
         int dist = -1;
@@ -701,14 +743,14 @@ public class LaptopScreen extends Screen {
             double ddx = targetX + 0.5 - (cur.pos().getX() + 0.5), ddz = targetZ + 0.5 - (cur.pos().getZ() + 0.5);
             dist = (int) Math.sqrt(ddx * ddx + ddz * ddz);
         }
-        g.drawString(font, Ui.upper(t("f_envelope")), ix, y + 116, Ui.DIM, false);
+        g.drawString(font, Ui.upper(t("f_envelope")), ix, y + 116, P_DIM, false);
         envelope(g, ix, y + 127, iw, cur, dist);
 
         // target entry
         int ty = y + 146;
-        g.drawString(font, "X", ix, ty + 5, Ui.DIM, false);
+        g.drawString(font, "X", ix, ty + 5, P_DIM, false);
         Ui.well(g, ix + 10, ty + 2, 50, 12);
-        g.drawString(font, "Z", ix + 64, ty + 5, Ui.DIM, false);
+        g.drawString(font, "Z", ix + 64, ty + 5, P_DIM, false);
         Ui.well(g, ix + 72, ty + 2, 50, 12);
         int floorY = top + h - FOOT - GAP - 1 - 44;   // the buttons start here
         if (hasTarget) {
@@ -717,38 +759,38 @@ public class LaptopScreen extends Screen {
             boolean inRange = dist >= cur.minRange() && dist <= cur.maxRange();
             MissileProfile prof = profileFor(cur);
             int row = ty + 18;
-            Ui.field(g, font, ix, row, iw, t("f_distance"), Component.literal(dist + " m"), inRange ? Ui.TEXT : Ui.RED); row += 10;
-            Ui.field(g, font, ix, row, iw, t("f_bearing"), Component.literal(String.format("%03d\u00B0 %s", bearing, compassPoint(bearing))), Ui.TEXT); row += 10;
+            field(g, font, ix, row, iw, t("f_distance"), Component.literal(dist + " m"), inRange ? P_TEXT : P_RED); row += 10;
+            field(g, font, ix, row, iw, t("f_bearing"), Component.literal(String.format("%03d\u00B0 %s", bearing, compassPoint(bearing))), P_TEXT); row += 10;
             if (prof != null) {
                 int ticks = Math.max(20, (int) (dist / prof.speed()));
-                Ui.field(g, font, ix, row, iw, t("f_flight"), Component.literal(String.format(Locale.ROOT, "%d:%02d", ticks / 1200, ticks / 20 % 60)), Ui.TEXT); row += 10;
+                field(g, font, ix, row, iw, t("f_flight"), Component.literal(String.format(Locale.ROOT, "%d:%02d", ticks / 1200, ticks / 20 % 60)), P_TEXT); row += 10;
             }
             int groundY = groundAt(targetX, targetZ), ownY = groundAt(cur.pos().getX(), cur.pos().getZ());
             if (groundY != NO_HEIGHT) {
                 String d = ownY != NO_HEIGHT ? String.format(" (%+d)", groundY - ownY) : "";
-                Ui.field(g, font, ix, row, iw, t("f_elev"), Component.literal("Y " + groundY + d), Ui.TEXT); row += 10;
+                field(g, font, ix, row, iw, t("f_elev"), Component.literal("Y " + groundY + d), P_TEXT); row += 10;
             } else {
-                Ui.field(g, font, ix, row, iw, t("f_elev"), Component.literal("--"), Ui.FAINT); row += 10;
+                field(g, font, ix, row, iw, t("f_elev"), Component.literal("--"), P_FAINT); row += 10;
             }
             if (prof != null && prof.blastPower() > 0) {
-                Ui.field(g, font, ix, row, iw, t("f_blast"), Component.literal((int) prof.damageRadius() + " m"), Ui.TEXT); row += 10;
+                field(g, font, ix, row, iw, t("f_blast"), Component.literal((int) prof.damageRadius() + " m"), P_TEXT); row += 10;
             }
             if (prof != null && prof.spread() > 0 && row + 10 < floorY - 30) {
-                Ui.field(g, font, ix, row, iw, t("f_error"), Component.literal("\u00B1" + String.format(Locale.ROOT, "%.1f m", prof.spread())), Ui.TEXT); row += 10;
+                field(g, font, ix, row, iw, t("f_error"), Component.literal("\u00B1" + String.format(Locale.ROOT, "%.1f m", prof.spread())), P_TEXT); row += 10;
             }
-            Ui.chip(g, font, ix, row + 1, Component.translatable(inRange ? "gui.steelrain.in_range" : dist < cur.minRange() ? "gui.steelrain.too_close_short" : "gui.steelrain.out_of_range"),
-                    inRange ? Ui.GREEN : Ui.RED);
+            chip(g, font, ix, row + 1, Component.translatable(inRange ? "gui.steelrain.in_range" : dist < cur.minRange() ? "gui.steelrain.too_close_short" : "gui.steelrain.out_of_range"),
+                    inRange ? P_GO : P_RED);
             row += 14;
             if (floorY - row >= 26) profile(g, ix, row, iw, floorY - row - 2, cur, prof, dist);
         } else {
-            g.drawWordWrap(font, Component.translatable("gui.steelrain.pick_target"), ix, ty + 20, iw, Ui.AMBER);
+            g.drawWordWrap(font, Component.translatable("gui.steelrain.pick_target"), ix, ty + 20, iw, P_AMBER);
         }
         if (!cur.station() && !cur.manual()) {
             int by = top + h - FOOT - GAP - 1 - 40;
-            g.drawString(font, Ui.upper(Component.translatable("gui.steelrain.rounds")), ix, by + 3, Ui.DIM, false);
+            g.drawString(font, Ui.upper(Component.translatable("gui.steelrain.rounds")), ix, by + 3, P_DIM, false);
             String n = Integer.toString(count);
             int cx = (ix + 52 + 14 + ix + iw - 26) / 2;
-            g.drawString(font, n, cx - font.width(n) / 2, by + 3, Ui.AMBER, false);
+            g.drawString(font, n, cx - font.width(n) / 2, by + 3, P_AMBER, false);
         }
     }
 
@@ -757,16 +799,16 @@ public class LaptopScreen extends Screen {
         int max = Math.max(1, cur.maxRange());
         Ui.well(g, x, y, w, 6);
         int x1 = x + (int) Math.round(w * Math.min(1.0, cur.minRange() / (double) max));
-        g.fill(x1, y, x + w, y + 6, Ui.fade(Ui.CYAN, 0.45f));
-        g.fill(x1, y - 2, x1 + 1, y + 8, Ui.AMBER);
+        g.fill(x1, y, x + w, y + 6, Ui.fade(P_CYAN, 0.45f));
+        g.fill(x1, y - 2, x1 + 1, y + 8, P_AMBER);
         if (dist >= 0) {
             int mx = x + (int) Math.round(w * Math.min(dist, max) / (double) max);
             boolean in = dist >= cur.minRange() && dist <= cur.maxRange();
-            g.fill(mx - 1, y - 3, mx + 2, y + 9, in ? Ui.GREEN : Ui.RED);
+            g.fill(mx - 1, y - 3, mx + 2, y + 9, in ? P_GO : P_RED);
         }
-        g.drawString(font, "0", x, y + 9, Ui.FAINT, false);
+        g.drawString(font, "0", x, y + 9, P_FAINT, false);
         String top = max + " m";
-        g.drawString(font, top, x + w - font.width(top), y + 9, Ui.FAINT, false);
+        g.drawString(font, top, x + w - font.width(top), y + 9, P_FAINT, false);
     }
 
     private static String compassPoint(int deg) {
@@ -831,20 +873,20 @@ public class LaptopScreen extends Screen {
                 }
                 if (i % 3 == 2) continue;
                 int py = y + hgt - 2 - (int) ((alt - bottom) * sy);
-                g.fill(x + i, py, x + i + 1, py + 1, Ui.AMBER);
+                g.fill(x + i, py, x + i + 1, py + 1, P_AMBER);
             }
         }
         // launcher and target markers
-        g.fill(x, y + 1, x + 1, y + hgt - 1, Ui.GREEN);
-        g.fill(x + w - 1, y + 1, x + w, y + hgt - 1, Ui.RED);
+        g.fill(x, y + 1, x + 1, y + hgt - 1, P_GO);
+        g.fill(x + w - 1, y + 1, x + w, y + hgt - 1, P_RED);
         g.disableScissor();
-        g.drawString(font, Ui.upper(t("profile")), x + 4, y + 2, Ui.FAINT, false);
+        g.drawString(font, Ui.upper(t("profile")), x + 4, y + 2, P_FAINT, false);
     }
 
     private void drawFooter(GuiGraphics g) {
         int y = top + h - FOOT;
-        g.fill(left, y, left + w, top + h, 0xFF0D1214);
-        g.fill(left, y, left + w, y + 1, Ui.EDGE);
+        g.fill(left, y, left + w, top + h, P_BG);
+        g.fill(left, y, left + w, y + 1, P_RULE);
         // status chips, right to left
         int rx = left + w - 5;
         int reachable = 0, known = 0, rounds = 0;
@@ -862,16 +904,20 @@ public class LaptopScreen extends Screen {
         }
         String[] labels = {"LINK", "RDS", "WX", day ? "DAY" : "NIGHT", "PING"};
         String[] values = {reachable + "/" + entries.size(), Integer.toString(rounds), wx, "", ping + " ms"};
-        int[] cols = {entries.isEmpty() || reachable == entries.size() ? Ui.GREEN : reachable == 0 ? Ui.RED : Ui.AMBER,
-                rounds > 0 ? Ui.TEXT : Ui.RED, wx.equals("CLEAR") ? Ui.TEXT : Ui.AMBER, day ? Ui.AMBER : Ui.CYAN, ping < 100 ? Ui.TEXT : ping < 250 ? Ui.AMBER : Ui.RED};
+        int[] cols = {entries.isEmpty() || reachable == entries.size() ? P_GO : reachable == 0 ? P_RED : P_AMBER,
+                rounds > 0 ? P_TEXT : P_RED, wx.equals("CLEAR") ? P_TEXT : P_AMBER, day ? P_AMBER : P_CYAN, ping < 100 ? P_TEXT : ping < 250 ? P_AMBER : P_RED};
         for (int i = labels.length - 1; i >= 0; i--) {
             String text = values[i].isEmpty() ? labels[i] : labels[i] + " " + values[i];
-            int cw = font.width(text) + 8;
-            rx -= cw;
-            g.fill(rx, y + 3, rx + cw - 3, y + 13, 0xFF182025);
-            g.fill(rx, y + 3, rx + 1, y + 13, cols[i]);
-            g.drawString(font, text, rx + 4, y + 4, cols[i], false);
-            rx -= 0;
+            String value = values[i];
+            if (value.isEmpty()) {
+                rx -= font.width(labels[i]) + 10;
+                g.drawString(font, labels[i], rx, y + 4, cols[i], false);
+            } else {
+                rx -= font.width(labels[i]) + 3 + font.width(value) + 10;
+                g.drawString(font, labels[i], rx, y + 4, P_DIM, false);
+                g.drawString(font, value, rx + font.width(labels[i]) + 3, y + 4, cols[i], false);
+            }
+            g.fill(rx - 5, y + 4, rx - 4, y + 12, P_RULE);
         }
         // event log, two lines at the left; a fresh message shows brighter
         int lx = left + 6, lw = rx - lx - 8;
@@ -881,10 +927,10 @@ public class LaptopScreen extends Screen {
             int ly = y + 15 - i * 10 + (i == 0 ? 0 : -3);
             if (idx < 0) break;
             boolean fresh = i == 0 && messageTicks > 0;
-            if (fresh) Ui.icon(g, lx, ly, Ui.ICON_WARN, Ui.AMBER);
-            g.drawString(font, font.plainSubstrByWidth(last[idx], lw - (fresh ? 10 : 0)), lx + (fresh ? 10 : 0), ly, fresh ? Ui.AMBER : i == 0 ? Ui.DIM : Ui.FAINT, false);
+            if (fresh) Ui.icon(g, lx, ly, Ui.ICON_WARN, P_AMBER);
+            g.drawString(font, font.plainSubstrByWidth(last[idx], lw - (fresh ? 10 : 0)), lx + (fresh ? 10 : 0), ly, fresh ? P_AMBER : i == 0 ? P_DIM : P_FAINT, false);
         }
-        if (last.length == 0) g.drawString(font, font.plainSubstrByWidth(t("map_hint").getString(), lw), lx, y + 9, Ui.FAINT, false);
+        if (last.length == 0) g.drawString(font, font.plainSubstrByWidth(t("map_hint").getString(), lw), lx, y + 9, P_FAINT, false);
     }
 
     @Override
