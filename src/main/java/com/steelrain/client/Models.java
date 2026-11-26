@@ -44,6 +44,14 @@ public final class Models {
             .box(OLIVE_D, -0.05, -0.76, -3.65, 0.1, 1.52, 0.8)
             .box(BLACK, -0.3, -0.3, -3.75, 0.6, 0.6, 0.1);
 
+    public static final BoxModel ATACMS = new BoxModel()
+            .box(OLIVE, -0.3, -0.3, -2.0, 0.6, 0.6, 3.3)
+            .box(OLIVE, -0.22, -0.22, 1.3, 0.44, 0.44, 0.4)
+            .box(BLACK, -0.12, -0.12, 1.7, 0.24, 0.24, 0.3)
+            .box(OLIVE_D, -0.65, -0.03, -2.0, 1.3, 0.06, 0.5)
+            .box(OLIVE_D, -0.03, -0.65, -2.0, 0.06, 1.3, 0.5)
+            .box(BLACK, -0.2, -0.2, -2.08, 0.4, 0.4, 0.08);
+
     public static final BoxModel GMLRS = new BoxModel()
             .box(OLIVE, -0.125, -0.125, -1.97, 0.25, 0.25, 3.6)
             .box(BLACK, -0.08, -0.08, 1.63, 0.16, 0.16, 0.34)

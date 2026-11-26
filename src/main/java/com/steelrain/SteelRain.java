@@ -1,5 +1,6 @@
 package com.steelrain;
 
+import com.steelrain.block.WeaponBlockEntity;
 import com.steelrain.command.SteelRainCommand;
 import com.steelrain.entity.OperatorBodyEntity;
 import com.steelrain.net.Payloads;
@@ -49,5 +50,19 @@ public class SteelRain {
     private static void capabilities(RegisterCapabilitiesEvent event) {
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModRegistry.WEAPON_BE.get(), (be, side) -> be.items);
         event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, ModRegistry.WEAPON_BE.get(), (be, side) -> be.fuelPort);
+        event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, ModRegistry.WEAPON_BE.get(), (be, side) -> be.energyPort);
+        // Hoppers, pipes and cables can connect to any block of the vehicle, not just its core.
+        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModRegistry.WEAPON_PART_BE.get(), (part, side) -> {
+            WeaponBlockEntity core = part.coreEntity();
+            return core == null ? null : core.items;
+        });
+        event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, ModRegistry.WEAPON_PART_BE.get(), (part, side) -> {
+            WeaponBlockEntity core = part.coreEntity();
+            return core == null ? null : core.fuelPort;
+        });
+        event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, ModRegistry.WEAPON_PART_BE.get(), (part, side) -> {
+            WeaponBlockEntity core = part.coreEntity();
+            return core == null ? null : core.energyPort;
+        });
     }
 }

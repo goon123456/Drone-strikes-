@@ -478,9 +478,25 @@ def item_icons():
             d.rectangle([x, 4, x + 1, 10], fill=c(shell))
             d.point([(x, 3), (x + 1, 3)], fill=c(tip))
         return outlined(img)
-    icons["ammo_30mm"] = belt((196, 166, 76), (200, 60, 50), 4)
-    icons["ammo_35mm"] = belt((196, 166, 76), (60, 90, 190), 3)
-    icons["ammo_23mm"] = belt((184, 112, 64), (40, 40, 40), 5)
+    # High explosive rounds have a yellow tip, armour-piercing a black one.
+    icons["ammo_30mm"] = belt((196, 166, 76), (240, 210, 50), 4)
+    icons["ammo_35mm"] = belt((196, 166, 76), (240, 210, 50), 3)
+    icons["ammo_23mm"] = belt((184, 112, 64), (240, 210, 50), 5)
+    icons["ammo_30mm_ap"] = belt((196, 166, 76), (30, 30, 34), 4)
+    icons["ammo_35mm_ap"] = belt((196, 166, 76), (30, 30, 34), 3)
+    icons["ammo_23mm_ap"] = belt((184, 112, 64), (30, 30, 34), 5)
+
+    def shell(band):
+        img, d = canvas()
+        d.rectangle([6, 6, 9, 13], fill=c((84, 96, 58)))
+        d.polygon([(6, 6), (9, 6), (8, 2), (7, 2)], fill=c((196, 166, 76)))
+        d.line([(6, 11), (9, 11)], fill=c((184, 112, 64)))
+        d.rectangle([6, 7, 9, 8], fill=c(band))
+        return outlined(img)
+    icons["shell_cluster"] = shell((230, 230, 224))
+    icons["shell_smoke"] = shell((120, 190, 230))
+    icons["shell_incendiary"] = shell((230, 80, 40))
+    icons["atacms_missile"] = missile_icon((92, 104, 62), (30, 30, 34), (52, 60, 40), 3, a=(4, 12), b=(12, 4))
 
     for name, img in icons.items():
         save(img, f"{A}/textures/item/{name}.png")
@@ -553,6 +569,13 @@ def recipes():
     shaped("ammo_30mm", ["NNN", "PPP", "CCC"], {"N": N, "P": P, "C": C}, 2)
     shaped("ammo_35mm", ["NNN", "PPP", "CIC"], {"N": N, "P": P, "C": C, "I": I}, 2)
     shaped("ammo_23mm", ["NNN", "PPP", " C "], {"N": N, "P": P, "C": C}, 2)
+    shaped("shell_cluster", [" I ", "GGG", "CPC"], {"I": I, "G": "drone_grenade", "C": C, "P": P}, 2)
+    shaped("shell_smoke", [" I ", "IWI", "CPC"], {"I": I, "W": MC + "white_wool", "C": C, "P": P}, 4)
+    shaped("shell_incendiary", [" I ", "IZI", "CPC"], {"I": I, "Z": MC + "blaze_powder", "C": C, "P": P}, 4)
+    shaped("atacms_missile", ["WWW", "IUI", "EIE"], {"W": "warhead", "I": B, "U": "guidance_unit", "E": "rocket_engine"})
+    shaped("ammo_30mm_ap", ["III", "PPP", "CCC"], {"I": I, "P": P, "C": C}, 2)
+    shaped("ammo_35mm_ap", ["III", "PPP", "CIC"], {"I": I, "P": P, "C": C}, 2)
+    shaped("ammo_23mm_ap", ["III", "PPP", " C "], {"I": I, "P": P, "C": C}, 2)
     write(f"{D}/recipe/fiber_fpv_drone.json", {
         "type": "minecraft:crafting_shapeless", "category": "misc",
         "ingredients": [{"item": f"{MOD}:fpv_drone"}, {"item": f"{MOD}:fiber_spool"}],
@@ -609,7 +632,7 @@ def lang():
         "item.steelrain.tomahawk_missile": "Tomahawk Cruise Missile",
         "item.steelrain.iskander_missile": "Iskander-M Ballistic Missile",
         "item.steelrain.gmlrs_rocket": "M31 GMLRS Rocket",
-        "item.steelrain.shell_155mm": "155 mm Shell",
+        "item.steelrain.shell_155mm": "155 mm HE Shell",
         "item.steelrain.pantsir_missile": "57E6 Interceptor Missile",
         "block.steelrain.tomahawk_launcher": "Tomahawk Launcher",
         "block.steelrain.iskander_launcher": "Iskander-M Launcher",
@@ -630,9 +653,25 @@ def lang():
         "item.steelrain.jammer_backpack": "Jammer Backpack",
         "item.steelrain.anti_drone_gun": "Anti-Drone Gun",
         "item.steelrain.jammer_dome": "Jammer Dome",
-        "item.steelrain.ammo_30mm": "30 mm Ammo Belt",
-        "item.steelrain.ammo_35mm": "35 mm Ammo Belt",
-        "item.steelrain.ammo_23mm": "23 mm Ammo Box",
+        "item.steelrain.ammo_30mm": "30 mm HE Belt",
+        "item.steelrain.ammo_35mm": "35 mm HE Belt",
+        "item.steelrain.ammo_23mm": "23 mm HE Box",
+        "item.steelrain.ammo_30mm_ap": "30 mm AP Belt",
+        "item.steelrain.ammo_35mm_ap": "35 mm AP Belt",
+        "item.steelrain.ammo_23mm_ap": "23 mm AP Box",
+        "item.steelrain.shell_cluster": "155 mm Cluster Shell",
+        "item.steelrain.shell_smoke": "155 mm Smoke Shell",
+        "item.steelrain.shell_incendiary": "155 mm Incendiary Shell",
+        "item.steelrain.atacms_missile": "MGM-140 ATACMS",
+        "entity.steelrain.shell_cluster": "Cluster Shell",
+        "entity.steelrain.shell_smoke": "Smoke Shell",
+        "entity.steelrain.shell_incendiary": "Incendiary Shell",
+        "entity.steelrain.atacms": "ATACMS",
+        "entity.steelrain.bomblet": "Bomblet",
+        "entity.steelrain.smoke_cloud": "Smoke Screen",
+        "message.steelrain.loaded": "Loaded %s: %s / %s",
+        "message.steelrain.load_full": "Full or wrong type: %s %s / %s",
+        "message.steelrain.fuel_level": "Fuel: %s / %s mB",
         "entity.steelrain.fiber_fpv_drone": "Fiber-Optic FPV Drone",
         "entity.steelrain.bullet": "Cannon Round",
         "entity.steelrain.seat": "Gunner Seat",
@@ -753,7 +792,7 @@ def lang():
         "gui.steelrain.ready": "READY",
         "gui.steelrain.busy": "BUSY %ss",
         "gui.steelrain.hint_launcher": "Fire it from a Field Laptop",
-        "gui.steelrain.hint_air_defence": "Engages hostile aircraft itself",
+        "gui.steelrain.hint_air_defence": "Needs fuel for radar and turret",
         "gui.steelrain.hint_jammer": "Jams hostile links (needs fuel)",
         "gui.steelrain.laptop_title": "FIRE CONTROL",
         "gui.steelrain.no_links": "No launchers linked. Right-click a launcher with the laptop.",

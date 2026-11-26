@@ -305,7 +305,7 @@ public final class Payloads {
                 boolean loaded = player.level().isLoaded(pos);
                 if (loaded && player.level().getBlockEntity(pos) instanceof WeaponBlockEntity be) {
                     AircraftEntity air = be.airborne();
-                    int maxRange = be.type().maxRange();
+                    int maxRange = be.type().maxRangeFor(be.items.getStackInSlot(WeaponBlockEntity.SLOT_PRIMARY));
                     if (be.type().launchesAircraft()) {
                         AircraftType parked = AircraftType.of(be.items.getStackInSlot(WeaponBlockEntity.SLOT_PRIMARY));
                         maxRange = air != null ? air.type().maxRange() : parked != null ? parked.maxRange() : 0;

@@ -139,6 +139,7 @@ public final class Recon {
             if (data.size() >= MAX_MARKERS * 3) break;
             double dx = e.getX() - x, dz = e.getZ() - z;
             if (dx * dx + dz * dz > radius * radius || !underOpenSky(level, e.getX(), e.getY() + e.getBbHeight(), e.getZ())) continue;
+            if (com.steelrain.entity.SmokeCloudEntity.hides(level, e.getX(), e.getZ())) continue;
             int kind;
             if (e instanceof Player || e instanceof OperatorBodyEntity) {
                 UUID id = e instanceof OperatorBodyEntity body ? body.operator().orElse(null) : e.getUUID();
@@ -161,6 +162,7 @@ public final class Recon {
             if (dx * dx + dz * dz > radius * radius) continue;
             if (Teams.friendly(level, drone.ownerId(), drone.ownerName(), be.owner(), be.ownerName())) continue;
             if (!underOpenSky(level, p.getX(), p.getY() + be.type().height, p.getZ())) continue;
+            if (com.steelrain.entity.SmokeCloudEntity.hides(level, p.getX(), p.getZ())) continue;
             data.add(p.getX());
             data.add(p.getZ());
             data.add(ENEMY_WEAPON);

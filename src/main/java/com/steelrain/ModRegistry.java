@@ -121,6 +121,13 @@ public final class ModRegistry {
     public static final DeferredItem<Item> BAYRAKTAR_TB2 = simple("bayraktar_tb2", 1);
     public static final DeferredItem<Item> GLOBAL_HAWK = simple("global_hawk", 1);
     public static final DeferredItem<Item> DRONE_GRENADE = simple("drone_grenade", 16);
+    public static final DeferredItem<Item> SHELL_CLUSTER = simple("shell_cluster", 32);
+    public static final DeferredItem<Item> SHELL_SMOKE = simple("shell_smoke", 32);
+    public static final DeferredItem<Item> SHELL_INCENDIARY = simple("shell_incendiary", 32);
+    public static final DeferredItem<Item> ATACMS_MISSILE = simple("atacms_missile", 1);
+    public static final DeferredItem<Item> AMMO_30MM_AP = simple("ammo_30mm_ap", 16);
+    public static final DeferredItem<Item> AMMO_35MM_AP = simple("ammo_35mm_ap", 16);
+    public static final DeferredItem<Item> AMMO_23MM_AP = simple("ammo_23mm_ap", 16);
     public static final DeferredItem<Item> AMMO_30MM = simple("ammo_30mm", 16);
     public static final DeferredItem<Item> AMMO_35MM = simple("ammo_35mm", 16);
     public static final DeferredItem<Item> AMMO_23MM = simple("ammo_23mm", 16);
@@ -177,6 +184,7 @@ public final class ModRegistry {
 
     // ---- entities ----
     private static final Map<String, MissileProfile> PROFILE_BY_NAME = new HashMap<>();
+    private static final Map<String, DeferredHolder<EntityType<?>, EntityType<MissileEntity>>> TYPE_BY_NAME = new HashMap<>();
 
     public static final DeferredHolder<EntityType<?>, EntityType<MissileEntity>> SHAHED = missile(MissileProfile.SHAHED, 1.2f, 0.6f);
     public static final DeferredHolder<EntityType<?>, EntityType<MissileEntity>> TOMAHAWK = missile(MissileProfile.TOMAHAWK, 0.8f, 0.8f);
@@ -186,6 +194,15 @@ public final class ModRegistry {
     public static final DeferredHolder<EntityType<?>, EntityType<MissileEntity>> HELLFIRE = missile(MissileProfile.HELLFIRE, 0.4f, 0.4f);
 
     public static final DeferredHolder<EntityType<?>, EntityType<MissileEntity>> GRENADE = missile(MissileProfile.GRENADE, 0.25f, 0.25f);
+    public static final DeferredHolder<EntityType<?>, EntityType<MissileEntity>> SHELL_CLUSTER_ENTITY = missile(MissileProfile.SHELL_CLUSTER, 0.4f, 0.4f);
+    public static final DeferredHolder<EntityType<?>, EntityType<MissileEntity>> SHELL_SMOKE_ENTITY = missile(MissileProfile.SHELL_SMOKE, 0.4f, 0.4f);
+    public static final DeferredHolder<EntityType<?>, EntityType<MissileEntity>> SHELL_INCENDIARY_ENTITY = missile(MissileProfile.SHELL_INCENDIARY, 0.4f, 0.4f);
+    public static final DeferredHolder<EntityType<?>, EntityType<MissileEntity>> ATACMS = missile(MissileProfile.ATACMS, 0.8f, 0.8f);
+    public static final DeferredHolder<EntityType<?>, EntityType<MissileEntity>> BOMBLET = missile(MissileProfile.BOMBLET, 0.25f, 0.25f);
+    /** Smoke screen left by a smoke shell. */
+    public static final DeferredHolder<EntityType<?>, EntityType<com.steelrain.entity.SmokeCloudEntity>> SMOKE = ENTITIES.register("smoke_cloud",
+            () -> EntityType.Builder.<com.steelrain.entity.SmokeCloudEntity>of(com.steelrain.entity.SmokeCloudEntity::new, MobCategory.MISC)
+                    .sized(1f, 1f).clientTrackingRange(4).build("smoke_cloud"));
 
     public static final Map<AircraftType, DeferredHolder<EntityType<?>, EntityType<AircraftEntity>>> AIRCRAFT = new EnumMap<>(AircraftType.class);
     static {
@@ -237,8 +254,11 @@ public final class ModRegistry {
 
     private static DeferredHolder<EntityType<?>, EntityType<MissileEntity>> missile(MissileProfile profile, float w, float h) {
         PROFILE_BY_NAME.put(profile.id(), profile);
-        return ENTITIES.register(profile.id(), () -> EntityType.Builder.<MissileEntity>of(MissileEntity::new, MobCategory.MISC)
-                .sized(w, h).clientTrackingRange(20).updateInterval(1).build(profile.id()));
+        DeferredHolder<EntityType<?>, EntityType<MissileEntity>> holder = ENTITIES.register(profile.id(),
+                () -> EntityType.Builder.<MissileEntity>of(MissileEntity::new, MobCategory.MISC)
+                        .sized(w, h).clientTrackingRange(20).updateInterval(1).build(profile.id()));
+        TYPE_BY_NAME.put(profile.id(), holder);
+        return holder;
     }
 
     public static MissileProfile profileOf(EntityType<?> type) {
@@ -247,13 +267,20 @@ public final class ModRegistry {
     }
 
     public static EntityType<MissileEntity> typeOf(MissileProfile profile) {
-        if (profile == MissileProfile.SHAHED) return SHAHED.get();
-        if (profile == MissileProfile.TOMAHAWK) return TOMAHAWK.get();
-        if (profile == MissileProfile.ISKANDER) return ISKANDER.get();
-        if (profile == MissileProfile.GMLRS) return GMLRS.get();
-        if (profile == MissileProfile.HELLFIRE) return HELLFIRE.get();
-        if (profile == MissileProfile.GRENADE) return GRENADE.get();
-        return SHELL.get();
+        return TYPE_BY_NAME.getOrDefault(profile.id(), SHELL).get();
+    }
+
+    /** What a loaded ammunition item turns into when it is fired. */
+    public static MissileProfile profileOfAmmo(ItemStack stack, MissileProfile fallback) {
+        if (stack.is(SHELL_CLUSTER.get())) return MissileProfile.SHELL_CLUSTER;
+        if (stack.is(SHELL_SMOKE.get())) return MissileProfile.SHELL_SMOKE;
+        if (stack.is(SHELL_INCENDIARY.get())) return MissileProfile.SHELL_INCENDIARY;
+        if (stack.is(ATACMS_MISSILE.get())) return MissileProfile.ATACMS;
+        return fallback;
+    }
+
+    public static boolean armourPiercing(ItemStack belt) {
+        return belt.is(AMMO_30MM_AP.get()) || belt.is(AMMO_35MM_AP.get()) || belt.is(AMMO_23MM_AP.get());
     }
 
     public static void register(IEventBus bus) {

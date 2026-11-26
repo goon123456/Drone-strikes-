@@ -19,10 +19,10 @@ public enum WeaponType {
     ISKANDER_LAUNCHER("iskander_launcher", Kind.LAUNCHER, 150, 8000, 1000, 100, 2, 0, 3, 3, 13, 0f, 1.2f, 0f, 88f),
     HIMARS("himars", Kind.LAUNCHER, 60, 1200, 100, 12, 6, 0, 3, 3, 7, 3f, 2f, 0f, 50f),
     M109("m109", Kind.LAUNCHER, 40, 600, 50, 40, 32, 0, 3, 3, 7, 2.5f, 1.5f, 3f, 45f),
-    SHAHED_LAUNCHER("shahed_launcher", Kind.LAUNCHER, 100, 4000, 250, 60, 5, 0, 3, 2, 5, 0f, 0f, 0f, 0f),
+    SHAHED_LAUNCHER("shahed_launcher", Kind.LAUNCHER, 100, 4000, 0, 60, 5, 0, 3, 2, 5, 0f, 0f, 0f, 0f),
     GROUND_STATION("ground_station", Kind.LAUNCHER, 50, 10000, 0, 100, 1, 4, 3, 3, 6, 0f, 0f, 0f, 0f),
     ORLAN_CATAPULT("orlan_catapult", Kind.LAUNCHER, 50, 1500, 0, 100, 1, 0, 1, 1, 4, 0f, 0f, 0f, 0f),
-    PANTSIR("pantsir", Kind.AIR_DEFENCE, 0, 0, 0, 30, 12, 16, 3, 4, 10, 12f, 8f, 0f, 0f),
+    PANTSIR("pantsir", Kind.AIR_DEFENCE, 0, 0, 20, 30, 12, 16, 3, 4, 10, 12f, 8f, 0f, 0f),
     GEPARD("gepard", Kind.AIR_DEFENCE, 0, 0, 0, 0, 16, 0, 3, 4, 8, 14f, 10f, 0f, 0f),
     ZU23("zu_23_2", Kind.AIR_DEFENCE, 0, 0, 0, 0, 16, 0, 3, 2, 3, 16f, 12f, 0f, 0f),
     PATRIOT("patriot", Kind.AIR_DEFENCE, 0, 0, 100, 60, 4, 0, 3, 4, 9, 5f, 3f, 0f, 38f),
@@ -75,8 +75,18 @@ public enum WeaponType {
 
     public boolean launchesAircraft() { return this == GROUND_STATION || this == ORLAN_CATAPULT; }
 
+    /** Everything with an engine, radar or powered turret has a tank. Bare launch rails are worked by hand. */
     public boolean usesFuel() {
-        return fuelPerShot > 0 || kind == Kind.JAMMER || launchesAircraft();
+        return this != SHAHED_LAUNCHER && this != ORLAN_CATAPULT;
+    }
+
+    /** mB burned every second by a radar that is searching (doubled while it tracks a target). */
+    public int idleFuel() { return kind == Kind.AIR_DEFENCE ? 1 : 0; }
+
+    /** Furthest this launcher can throw the given munition. */
+    public int maxRangeFor(ItemStack ammo) {
+        if (this == HIMARS && ammo.is(ModRegistry.ATACMS_MISSILE.get())) return (int) Math.round(3000 * Config.RANGE_MULTIPLIER.get());
+        return maxRange();
     }
 
     public Supplier<? extends Item> primaryAmmo() {
@@ -105,11 +115,21 @@ public enum WeaponType {
             AircraftType a = AircraftType.of(stack);
             return a != null && a.runway > 0;
         }
-        Supplier<? extends Item> s = primaryAmmo();
-        return s != null && stack.is(s.get());
+        return switch (this) {
+            case M109 -> stack.is(ModRegistry.SHELL_155MM.get()) || stack.is(ModRegistry.SHELL_CLUSTER.get())
+                    || stack.is(ModRegistry.SHELL_SMOKE.get()) || stack.is(ModRegistry.SHELL_INCENDIARY.get());
+            case HIMARS -> stack.is(ModRegistry.GMLRS_ROCKET.get()) || stack.is(ModRegistry.ATACMS_MISSILE.get());
+            case GEPARD -> stack.is(ModRegistry.AMMO_35MM.get()) || stack.is(ModRegistry.AMMO_35MM_AP.get());
+            case ZU23 -> stack.is(ModRegistry.AMMO_23MM.get()) || stack.is(ModRegistry.AMMO_23MM_AP.get());
+            default -> {
+                Supplier<? extends Item> s = primaryAmmo();
+                yield s != null && stack.is(s.get());
+            }
+        };
     }
 
     public boolean acceptsSecondary(ItemStack stack) {
+        if (this == PANTSIR) return stack.is(ModRegistry.AMMO_30MM.get()) || stack.is(ModRegistry.AMMO_30MM_AP.get());
         Supplier<? extends Item> s = secondaryAmmo();
         return s != null && stack.is(s.get());
     }

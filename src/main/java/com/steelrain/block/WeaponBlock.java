@@ -128,6 +128,8 @@ public class WeaponBlock extends Block implements EntityBlock {
             } else {
                 player.displayClientMessage(Component.translatable("message.steelrain.dome_refused"), true);
             }
+        } else if (be.handLoad(player, stack)) {
+            // ammunition or fuel went straight in
         } else if (type.seat() != null && stack.isEmpty() && !player.isShiftKeyDown()) {
             // Empty hand climbs on to the gun; sneak + empty hand opens the ammunition box instead.
             be.mount(player);

@@ -23,6 +23,12 @@ public class WeaponPartBlockEntity extends BlockEntity {
 
     @Nullable public BlockPos core() { return core; }
 
+    /** The vehicle this block is part of, if it is still there. */
+    @Nullable
+    public WeaponBlockEntity coreEntity() {
+        return core != null && level != null && level.getBlockEntity(core) instanceof WeaponBlockEntity be ? be : null;
+    }
+
     public void setCore(BlockPos core) {
         this.core = core.immutable();
         setChanged();

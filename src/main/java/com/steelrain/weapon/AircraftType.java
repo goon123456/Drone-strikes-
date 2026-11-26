@@ -13,7 +13,7 @@ public enum AircraftType {
     REAPER("mq9_reaper", 1.3, 70, 20, 11, 40, 48, 20 * 45, 16f, 1.6, 1000, 3000, 50),
     TB2("bayraktar_tb2", 1.0, 90, 12, 6.5, 30, 80, 20 * 60 * 8, 12f, 1.1, 1500, 4000, 45),
     GLOBAL_HAWK("global_hawk", 2.2, 120, 40, 14.5, 60, 128, 20 * 60 * 15, 30f, 1.7, 4000, 10000, 70),
-    ORLAN("orlan_10", 0.9, 50, 3, 2, 0, 48, 20 * 60 * 4, 4f, 0.25, 250, 1500, 30);
+    ORLAN("orlan_10", 0.9, 50, 3, 2, 0, 48, 20 * 60 * 4, 4f, 0.25, 0, 1500, 30);
 
     public final String id;
     public final double speed;

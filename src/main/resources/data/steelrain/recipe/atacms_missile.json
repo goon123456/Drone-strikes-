@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "WWW",
+    "IUI",
+    "EIE"
+  ],
+  "key": {
+    "W": {
+      "item": "steelrain:warhead"
+    },
+    "I": {
+      "item": "minecraft:iron_block"
+    },
+    "U": {
+      "item": "steelrain:guidance_unit"
+    },
+    "E": {
+      "item": "steelrain:rocket_engine"
+    }
+  },
+  "result": {
+    "id": "steelrain:atacms_missile",
+    "count": 1
+  }
+}

@@ -43,8 +43,12 @@ public class BulletEntity extends Entity {
         this.setNoGravity(true);
     }
 
-    public static BulletEntity fire(ServerLevel level, Vec3 from, Vec3 velocity, float damage, @Nullable UUID owner) {
+    private boolean explosive;
+
+    /** @param explosive high-explosive shell: bursts on impact and hurts everything close by */
+    public static BulletEntity fire(ServerLevel level, Vec3 from, Vec3 velocity, float damage, boolean explosive, @Nullable UUID owner) {
         BulletEntity b = new BulletEntity(ModRegistry.BULLET.get(), level);
+        b.explosive = explosive;
         b.velocity = velocity;
         b.damage = damage;
         b.ownerId = owner;
@@ -109,20 +113,33 @@ public class BulletEntity extends Entity {
                 end = at.get();
             }
         }
+        Player owner = ownerId == null ? null : level.getPlayerByUUID(ownerId);
         if (victim != null) {
-            Player owner = ownerId == null ? null : level.getPlayerByUUID(ownerId);
             victim.hurt(level.damageSources().mobProjectile(this, owner), damage);
             level.sendParticles(ParticleTypes.CRIT, end.x, end.y, end.z, 6, 0.2, 0.2, 0.2, 0.1);
+            if (explosive) burst(level, end, victim, owner);
             discard();
             return;
         }
         if (hitBlock) {
             level.sendParticles(ParticleTypes.SMOKE, end.x, end.y, end.z, 3, 0.05, 0.05, 0.05, 0.01);
+            if (explosive) burst(level, end, null, owner);
             discard();
             return;
         }
         setPos(to);
         aim(velocity);
+    }
+
+    /** Small shell burst: splinters reach a couple of blocks, blocks are left alone. */
+    private void burst(ServerLevel level, Vec3 at, @Nullable Entity direct, @Nullable Player owner) {
+        level.sendParticles(ParticleTypes.EXPLOSION, at.x, at.y, at.z, 1, 0, 0, 0, 0);
+        level.playSound(null, at.x, at.y, at.z, net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE.value(),
+                net.minecraft.sounds.SoundSource.NEUTRAL, 0.8f, 1.8f);
+        for (Entity e : level.getEntities(this, new AABB(at, at).inflate(2.5), BulletEntity::canHit)) {
+            if (e == direct || e.getUUID().equals(ownerId)) continue;
+            e.hurt(level.damageSources().explosion(this, owner), damage * 0.5f);
+        }
     }
 
     private static boolean canHit(Entity e) {

@@ -29,7 +29,8 @@ public final class SteelRainCommand {
     private static final Map<String, MissileProfile> WEAPONS = new LinkedHashMap<>();
     static {
         for (MissileProfile p : new MissileProfile[]{MissileProfile.SHAHED, MissileProfile.TOMAHAWK, MissileProfile.ISKANDER,
-                MissileProfile.GMLRS, MissileProfile.SHELL, MissileProfile.HELLFIRE}) {
+                MissileProfile.GMLRS, MissileProfile.SHELL, MissileProfile.HELLFIRE, MissileProfile.SHELL_CLUSTER,
+                MissileProfile.SHELL_SMOKE, MissileProfile.SHELL_INCENDIARY, MissileProfile.ATACMS}) {
             WEAPONS.put(p.id(), p);
         }
     }

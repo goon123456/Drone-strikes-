@@ -155,15 +155,41 @@ remote camera. If the copy is hit you are thrown out of the drone and take the d
   pick it up (it keeps its charge), and craft it together with a Drone Battery to recharge. If you let go of it in
   the air it settles to the ground by itself. Battery 360 s.
 
-### Fuel
-Launchers hold 8000 mB of fuel and burn some for every launch (aircraft take the most: 1000 for a Reaper,
-4000 for a Global Hawk); the jammer burns it continuously.
+### Fuel, power and loading
+Every vehicle has an 8000 mB tank and does nothing without fuel. Only hand-worked gear is exempt: the Shahed
+launch rail, the Orlan catapult, and a ZU-23-2 while you are sitting on it.
 
-- **Fuel Canister** (crafted from blaze powder and coal): put it in the fuel slot, 1000 mB each.
-- **Diesel and friends from other mods**: buckets in the fuel slot, or pump it in with pipes.
-  Any fluid in the `steelrain:launcher_fuel` tag works. Out of the box that covers diesel, gasoline and
-  biodiesel from **Create: Diesel Generators**, plus the equivalents from TFMG, PneumaticCraft and
-  Immersive Engineering. Add more with a datapack.
+| What | Fuel used |
+| --- | --- |
+| Air defence radar searching | 1 mB a second (2 while tracking a target) |
+| Pantsir / Patriot missile | 20 / 100 mB a shot |
+| M109 / HIMARS / Tomahawk / Iskander | 50 / 100 / 500 / 1000 mB a round |
+| Aircraft from the Ground Station | Bayraktar 1500, Reaper 1000, Global Hawk 4000 |
+| Jammers | EW and Trench about 2 mB a second, Krasukha about 10 |
+| Jammer Dome | A trickle from the vehicle it is fitted to |
+
+Ways to fill the tank:
+- **Fuel Canister** (blaze powder and coal): 1000 mB each. **Drone Battery**: 500 mB each.
+- **Diesel and friends from other mods**, by bucket or pipe. Any fluid in the `steelrain:launcher_fuel` tag
+  works: diesel, gasoline and biodiesel from **Create: Diesel Generators**, plus TFMG, PneumaticCraft and
+  Immersive Engineering equivalents. Add more with a datapack.
+- **Forge Energy**: plug in any mod's power cable. 40 FE becomes 1 mB (configurable).
+
+**Loading by hand**: right-click any part of a vehicle while holding its ammunition, a Fuel Canister, a Drone
+Battery or a bucket of fuel and it goes straight in, with a message showing how full it is. The inventory
+screen works too, and hoppers, pipes and cables can connect to any block of the vehicle.
+
+### Ammunition
+Everything a vehicle fires has to be crafted and loaded. A slot holds one kind at a time; empty it to switch.
+
+| Weapon | Ammunition |
+| --- | --- |
+| M109 | **HE shell** (crater), **Cluster shell** (bursts overhead into 12 bomblets), **Smoke shell** (a minute-long screen that hides whatever is under it from recon drones), **Incendiary shell** (sets the area alight) |
+| HIMARS | 6 **GMLRS** rockets (range 1200), or 1 **ATACMS** (range 3000, big warhead, cannot be jammed, worth a Patriot) |
+| Gepard, Pantsir cannons, ZU-23-2 | **HE** belts (each shell bursts and hurts things within 2.5 blocks) or **AP** belts (no burst, 80% more damage on a direct hit) |
+| Pantsir / Patriot | 57E6 / PAC-2 interceptor missiles |
+| Tomahawk, Iskander, Shahed launchers | Their missile or drone |
+| Ground Station | The aircraft, plus Hellfires for the Reaper |
 
 ### Teams
 Every weapon remembers who placed or launched it. Air defence and jammers ignore things owned by
@@ -201,6 +227,7 @@ Both need permission level 2.
 | `spottedSpreadMultiplier` | 0.2 | Accuracy bonus under a friendly recon drone |
 | `jammerRange` | 64 | EW Jammer bubble |
 | `requireFuel` | true | Turn fuel use off entirely |
+| `fePerMb` | 40 | Forge Energy per mB of fuel |
 
 Every impact is written to the server log with its owner and coordinates.
 

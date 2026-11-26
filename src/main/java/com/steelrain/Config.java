@@ -75,6 +75,10 @@ public final class Config {
             .comment("If false, launchers and the jammer work without fuel.")
             .define("requireFuel", true);
 
+    public static final ModConfigSpec.IntValue FE_PER_MB = B
+            .comment("Forge Energy needed to make 1 mB of vehicle fuel when a vehicle is charged from a power cable.")
+            .defineInRange("fePerMb", 40, 1, 100000);
+
     public static final ModConfigSpec SPEC = B.build();
 
     private Config() {}

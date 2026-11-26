@@ -31,6 +31,12 @@ public final class ClientSetup {
         e.registerEntityRenderer(ModRegistry.ISKANDER.get(), c -> new EntityModelRenderer<>(c, Models.ISKANDER, 0.5f, 1f));
         e.registerEntityRenderer(ModRegistry.GMLRS.get(), c -> new EntityModelRenderer<>(c, Models.GMLRS, 0.25f, 1f));
         e.registerEntityRenderer(ModRegistry.SHELL.get(), c -> new EntityModelRenderer<>(c, Models.SHELL, 0.2f, 1f));
+        e.registerEntityRenderer(ModRegistry.SHELL_CLUSTER_ENTITY.get(), c -> new EntityModelRenderer<>(c, Models.SHELL, 0.2f, 1f));
+        e.registerEntityRenderer(ModRegistry.SHELL_SMOKE_ENTITY.get(), c -> new EntityModelRenderer<>(c, Models.SHELL, 0.2f, 1f));
+        e.registerEntityRenderer(ModRegistry.SHELL_INCENDIARY_ENTITY.get(), c -> new EntityModelRenderer<>(c, Models.SHELL, 0.2f, 1f));
+        e.registerEntityRenderer(ModRegistry.ATACMS.get(), c -> new EntityModelRenderer<>(c, Models.ATACMS, 0.4f, 1f));
+        e.registerEntityRenderer(ModRegistry.BOMBLET.get(), c -> new EntityModelRenderer<>(c, Models.GRENADE, 0.12f, 1f));
+        e.registerEntityRenderer(ModRegistry.SMOKE.get(), net.minecraft.client.renderer.entity.NoopRenderer::new);
         e.registerEntityRenderer(ModRegistry.HELLFIRE.get(), c -> new EntityModelRenderer<>(c, Models.HELLFIRE, 0.2f, 1f));
         e.registerEntityRenderer(ModRegistry.GRENADE.get(), c -> new EntityModelRenderer<>(c, Models.GRENADE, 0.12f, 1f));
         e.registerEntityRenderer(ModRegistry.INTERCEPTOR.get(), c -> new EntityModelRenderer<>(c, Models.PANTSIR_MISSILE, 0.2f, 1f));

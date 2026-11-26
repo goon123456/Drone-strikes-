@@ -125,6 +125,10 @@ public class MissileEntity extends FlyingWeaponEntity {
         }
         age++;
         if (jam > 0) drift();
+        if (profile == MissileProfile.SHELL_CLUSTER && age >= flightTicks - 9) {
+            burst(level);
+            return;
+        }
         Vec3 pos = position();
         Vec3 next = switch (profile.mode()) {
             case BALLISTIC -> ballisticStep(pos);
@@ -218,9 +222,55 @@ public class MissileEntity extends FlyingWeaponEntity {
         return new Vec3(targetX, targetY - 0.5, targetZ);
     }
 
+    /** Cluster shell opening above the target: a dozen bomblets fan out and fall. */
+    private void burst(ServerLevel level) {
+        Vec3 at = position();
+        Vec3 forward = new Vec3(dir.x, 0, dir.z);
+        forward = forward.lengthSqr() < 1e-6 ? Vec3.ZERO : forward.normalize().scale(0.25);
+        discard();
+        Blast.airburst(level, at);
+        for (int i = 0; i < 12; i++) {
+            Vec3 v = forward.add(random.nextGaussian() * 0.22, -0.3 - random.nextDouble() * 0.2, random.nextGaussian() * 0.22);
+            drop(level, MissileProfile.BOMBLET, at, v, ownerId, ownerName);
+        }
+    }
+
+    private void smoke(ServerLevel level, Vec3 at) {
+        com.steelrain.entity.SmokeCloudEntity cloud = new com.steelrain.entity.SmokeCloudEntity(ModRegistry.SMOKE.get(), level);
+        cloud.setPos(at.x, at.y + 0.5, at.z);
+        level.addFreshEntity(cloud);
+        level.playSound(null, net.minecraft.core.BlockPos.containing(at), net.minecraft.sounds.SoundEvents.FIRE_EXTINGUISH,
+                net.minecraft.sounds.SoundSource.BLOCKS, 3f, 0.6f);
+    }
+
+    /** Spreads fire over the ground around the impact and sets everything nearby alight. */
+    private void ignite(ServerLevel level, Vec3 at) {
+        for (net.minecraft.world.entity.LivingEntity e : level.getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class,
+                new net.minecraft.world.phys.AABB(at, at).inflate(6))) {
+            e.igniteForSeconds(8);
+        }
+        if (!Config.BLOCK_DAMAGE.get()) return;
+        net.minecraft.core.BlockPos.MutableBlockPos m = new net.minecraft.core.BlockPos.MutableBlockPos();
+        for (int i = 0; i < 40; i++) {
+            int x = Mth.floor(at.x + random.nextGaussian() * 3), z = Mth.floor(at.z + random.nextGaussian() * 3);
+            for (int dy = 3; dy >= -3; dy--) {
+                m.set(x, Mth.floor(at.y) + dy, z);
+                if (level.getBlockState(m).isAir() && level.getBlockState(m.below()).isSolidRender(level, m.below())) {
+                    level.setBlockAndUpdate(m, net.minecraft.world.level.block.BaseFireBlock.getState(level, m));
+                    break;
+                }
+            }
+        }
+    }
+
     private void detonate(ServerLevel level, Vec3 at) {
         Player owner = ownerPlayer();
         discard();
+        if (profile == MissileProfile.SHELL_SMOKE) {
+            smoke(level, at);
+            return;
+        }
+        if (profile == MissileProfile.SHELL_INCENDIARY) ignite(level, at);
         LOGGER.info("{} (owner {}) hit {} {} {} in {}", profile.id(), ownerName == null ? "none" : ownerName,
                 Mth.floor(at.x), Mth.floor(at.y), Mth.floor(at.z), level.dimension().location());
         Blast.detonate(level, at, profile.blastPower(), profile.craterRadius(), profile.damage(),
