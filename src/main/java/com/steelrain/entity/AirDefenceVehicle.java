@@ -19,6 +19,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
+import com.atsuishio.superbwarfare.entity.projectile.SmallCannonShellEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
@@ -146,10 +147,11 @@ public class AirDefenceVehicle extends AutoAimableEntity {
         Vec3 pointing = kind.guns ? getShootVec("Main", 1f) : desired;
         double off = Math.toDegrees(Math.acos(Math.max(-1, Math.min(1, pointing.normalize().dot(desired)))));
 
+        proximityFuse(level, target, targetPos, targetMove);
         if (useGuns) {
             if (target instanceof FlyingWeaponEntity f) f.engagedUntil = Math.max(f.engagedUntil, now + 10);
             // The shells leave along the barrels as they point right now, so a slow turret or a jinking target means misses.
-            if (off <= 2.5 && tickCount % 2 == 0) vehicleShoot(ownerEntity, "Main", aim);
+            if (off <= 2.5) vehicleShoot(ownerEntity, "Main", aim);   // Superb Warfare paces it to the gun's rate of fire
             return;
         }
         if (cooldown > 0 || off > 14 || getEnergy() < kind.missileEnergy) return;
@@ -174,7 +176,34 @@ com.steelrain.util.Sfx.gunfire(level, muzzle, "missile_start", "igla_9k38_far", 
     }
 
     @Nullable
-    private Entity findTarget(ServerLevel level, Vec3 centre, double range, boolean gunsOnly, long now) {
+/**
+     * Anti-aircraft shells carry proximity fuses: one that passes close to the target being tracked bursts there
+     * and peppers it with fragments, instead of having to strike a drone the size of a door square on. The
+     * radar-laid guns burst a little further out than the hand-me-down ZU-23-2.
+     */
+    private void proximityFuse(ServerLevel level, Entity target, Vec3 targetPos, Vec3 targetMove) {
+        if (!kind.guns || !(target instanceof FlyingWeaponEntity)) return;
+        double reach = kind == Kind.ZU23 ? 0.8 : 1.0;
+        for (Entity shell : level.getEntities(this, new AABB(targetPos, targetPos).inflate(14), e -> e instanceof SmallCannonShellEntity)) {
+            // where the shell and the target come closest during the coming tick
+            Vec3 rel = shell.position().subtract(targetPos), relMove = shell.getDeltaMovement().subtract(targetMove);
+            double t = Math.max(0, Math.min(1, -rel.dot(relMove) / Math.max(1e-9, relMove.lengthSqr())));
+            Vec3 miss = rel.add(relMove.scale(t));
+            if (miss.lengthSqr() > reach * reach) continue;
+            Vec3 at = targetPos.add(miss);
+            level.sendParticles(net.minecraft.core.particles.ParticleTypes.EXPLOSION, at.x, at.y, at.z, 1, 0, 0, 0, 0);
+            level.sendParticles(net.minecraft.core.particles.ParticleTypes.SMOKE, at.x, at.y, at.z, 6, 0.3, 0.3, 0.3, 0.02);
+            if (level.random.nextInt(3) == 0) com.steelrain.util.Sfx.play(level, at, "explosion_air", 3f, 1.3f);
+            target.hurt(level.damageSources().explosion(shell, getOwner()), FRAGMENT_DAMAGE);
+            shell.discard();
+            if (!target.isAlive()) return;
+        }
+    }
+
+    /** Damage from one proximity burst. A Shahed has 9 health, an FPV drone 5. */
+    private static final float FRAGMENT_DAMAGE = 0.75f;
+
+        private Entity findTarget(ServerLevel level, Vec3 centre, double range, boolean gunsOnly, long now) {
         Entity best = null;
         double bestDist = range * range;
         for (Entity e : level.getEntities(this, new AABB(centre, centre).inflate(range), this::isThreat)) {

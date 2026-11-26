@@ -790,7 +790,7 @@ def cannon(name, belt, rounds, rpm, damage, muzzles, lead):
                       {"Ammo": f"{rounds} {MOD}:{belt}_ap",
                        "Override": {"Damage": round(damage * 1.8, 1), "ExplosionDamage": 0, "ExplosionRadius": 0}}],
          "RPM": rpm, "Velocity": 12, "Gravity": 0.03, "ProjectileLife": 30,
-         "Damage": damage, "ExplosionDamage": 4, "ExplosionRadius": 2.5, "ExplosionDestroy": False, "Spread": 0.5,
+         "Damage": damage, "ExplosionDamage": 4, "ExplosionRadius": 2.5, "ExplosionDestroy": False, "Spread": 0.3,
          "HeatPerShoot": 0.8, "NaturalCooldown": 0.6, "DefaultZoom": 2,
          "RecoilTime": 8, "RecoilForce": 0.12, "ShootAnimationTime": 2,
          "Crosshair": "@VehicleDynamicCross", "Name": f"weapon.{MOD}.{name}",
