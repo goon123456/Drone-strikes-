@@ -258,11 +258,11 @@ public class LaptopScreen extends Screen {
                 () -> order(Payloads.AircraftOrder.RECALL)));
         minusButton = addRenderableWidget(new Ui.TabletButton(sx + 52, by - 40, 14, 14, Component.literal("-"), false, () -> count = Math.max(1, count - 1)));
         plusButton = addRenderableWidget(new Ui.TabletButton(sx + SIDE_W - 26, by - 40, 14, 14, Component.literal("+"), false, () -> count = Math.min(32, count + 1)));
-        layerButton = addRenderableWidget(new Ui.TabletButton(mapLeft + map / 2 - 26, mapTop + map - 15, 52, 12, t("layer_topo"), false, this::toggleLayer));
-        int zy = mapTop + map - 14;
-        addRenderableWidget(new Ui.TabletButton(mapLeft + map + 3, zy - 32, 13, 13, Component.literal("+"), false, () -> zoom(-1)));
-        addRenderableWidget(new Ui.TabletButton(mapLeft + map + 3, zy - 17, 13, 13, Component.literal("-"), false, () -> zoom(1)));
-        addRenderableWidget(new Ui.TabletButton(mapLeft + map + 3, zy - 2, 13, 13, Component.literal("◎"), false, () -> {
+        layerButton = addRenderableWidget(new Ui.TabletButton(left + w / 2 - 44, top + 1, 88, 12, t("layer_topo"), false, this::toggleLayer));
+        int zx = mapLeft + map - 15, zy = mapTop + map - 15;
+        addRenderableWidget(new Ui.TabletButton(zx, zy - 32, 13, 13, Component.literal("+"), false, () -> zoom(-1)));
+        addRenderableWidget(new Ui.TabletButton(zx, zy - 17, 13, 13, Component.literal("-"), false, () -> zoom(1)));
+        addRenderableWidget(new Ui.TabletButton(zx, zy, 13, 13, Component.literal("◎"), false, () -> {
             if (minecraft.player != null) {
                 centreX = minecraft.player.getX();
                 centreZ = minecraft.player.getZ();
@@ -314,7 +314,7 @@ public class LaptopScreen extends Screen {
         if (age % 40 == 0) mapDirty = true;
         Payloads.Entry e = current();
         boolean ok = e != null && known(e);
-        layerButton.setMessage(t(heightMode ? "layer_height" : "layer_topo"));
+        layerButton.setMessage(Component.literal(Ui.upper(t(heightMode ? "layer_height" : "layer_topo")).getString() + "  1:" + scale()));
         launchButton.active = ok && hasTarget && e.reachable();
         boolean airborne = e != null && e.aircraft() >= 0 && e.reachable();
         launchButton.setMessage(Component.translatable(airborne ? "gui.steelrain.retask" : ok && e.manual() ? "gui.steelrain.solution" : "gui.steelrain.launch"));
@@ -485,11 +485,6 @@ public class LaptopScreen extends Screen {
         g.fill(bx, by, bx + bar, by + 2, P_TEXT);
         g.fill(bx, by - 3, bx + 1, by + 2, P_TEXT); g.fill(bx + bar - 1, by - 3, bx + bar, by + 2, P_TEXT);
         g.drawString(font, step + " m", bx + bar + 4, by - 6, P_TEXT, false);
-        // north arrow, top right
-        int nx = mapLeft + map - 10, ny = mapTop + 6;
-        g.fill(nx - 6, ny - 3, nx + 7, ny + 17, 0xA0000000);
-        Ui.icon(g, nx - 3, ny, new String[]{"   #   ", "  ###  ", " ##### ", "#######", "   #   ", "   #   "}, P_AMBER);
-        g.drawString(font, "N", nx - 2, ny + 8, P_TEXT, false);
     }
 
     // ------------------------------------------------------------------ input
@@ -607,8 +602,6 @@ public class LaptopScreen extends Screen {
         drawMission(g);
         drawFooter(g);
         drawLights(g);
-        // faint scan lines across the glass, as on a real display
-        for (int sy = top; sy < top + h; sy += 2) g.fill(left, sy, left + w, sy + 1, 0x1A000000);
         for (var r : renderables) r.render(g, mouseX, mouseY, partialTick);
         if (anim) {
             g.fill(left, top, left + w, top + h, ((int) ((1 - ease) * 200) << 24) | 0x0A0E10);
@@ -621,14 +614,14 @@ public class LaptopScreen extends Screen {
         g.fill(left, top + TOP_BAR - 1, left + w, top + TOP_BAR, P_RULE);
         g.drawString(font, Ui.upper(Component.translatable("gui.steelrain.laptop_title")), left + 6, top + 3, P_TEXT, false);
         g.drawString(font, "STEEL RAIN C2", left + 6 + font.width(Ui.upper(Component.translatable("gui.steelrain.laptop_title"))) + 8, top + 3, P_FAINT, false);
-        String mode = Ui.upper(t(heightMode ? "layer_height" : "layer_topo")).getString() + " " + (scale() == 1 ? "1:1" : "1:" + scale());
-        g.drawString(font, mode, left + w / 2 - font.width(mode) / 2, top + 3, P_DIM, false);
         if (minecraft.player != null && minecraft.level != null) {
             long t = (minecraft.level.getDayTime() + 6000) % 24000;
             String clock = String.format("%02d:%02d", t / 1000, (t % 1000) * 60 / 1000);
             String own = "GRID " + Mth.floor(minecraft.player.getX()) + " " + Mth.floor(minecraft.player.getZ());
             g.drawString(font, clock, left + w - 6 - font.width(clock), top + 3, P_AMBER, false);
             g.drawString(font, own, left + w - 14 - font.width(clock) - font.width(own), top + 3, P_DIM, false);
+            String ct = "CT " + contactCount;
+            g.drawString(font, ct, left + w - 14 - font.width(clock) - font.width(own) - 12 - font.width(ct), top + 3, contactCount > 0 ? P_AMBER : P_DIM, false);
         }
     }
 
@@ -670,6 +663,8 @@ public class LaptopScreen extends Screen {
             g.fill(x + LIST_W - 3, ky, x + LIST_W - 2, ky + knob, P_AMBER);
         }
     }
+
+    private int contactCount;
 
     private void drawMap(GuiGraphics g, int mouseX, int mouseY) {
         int mx = mapLeft, my = mapTop;
@@ -762,9 +757,7 @@ public class LaptopScreen extends Screen {
         }
         g.disableScissor();
         // the scope's readout, top left
-        String scope = (curType ? "UNIT" : "SELF") + "  CT " + contacts;
-        g.fill(mx + 3, my + 3, mx + 5 + font.width(scope), my + 12, 0xB0000000);
-        g.drawString(font, scope, mx + 4, my + 4, contacts > 0 ? P_AMBER : P_DIM, false);
+        contactCount = contacts;
         g.fill(mx - 1, my - 1, mx + map + 1, my, P_RULE);
         g.fill(mx - 1, my + map, mx + map + 1, my + map + 1, P_RULE);
         if (heightMode && heightMin <= heightMax && map >= 150) heightLegend(g, mx + map - 74, my + map - 16);
