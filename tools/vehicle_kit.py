@@ -423,18 +423,32 @@ def tools(y, z0, x, mat=STEEL_D):
 
 
 def whip(x, z, y, height, mat=BLACK):
-    """A radio aerial on a sprung base."""
+    """A radio aerial on a sprung base. It gets its own bone so it can whip about as the vehicle moves."""
     return [lathe(mat, "y", x, z, [(y, 0.0), (y, 0.05), (y + 0.05, 0.05), (y + 0.06, 0.03), (y + 0.16, 0.03), (y + 0.18, 0.014),
-                                   (y + height * 0.7, 0.009), (y + height, 0.005), (y + height, 0.0)])]
+                                   (y + height * 0.7, 0.009), (y + height, 0.005), (y + height, 0.0)], bone=("sway", (x, y + 0.06, z)))]
+
+
+def jack(x, z, top, mat=STEEL_D):
+    """A screw jack: dished foot, threaded leg, collar and a cranked handle. On vehicles that drive, the jacks
+    lift clear of the ground when it moves off and wind back down when it parks."""
+    tag = dict(bone=("jack", (x, top, z)))
+    c = [lathe(mat, "y", x, z, [(0.0, 0.0), (0.0, 0.2), (0.03, 0.2), (0.07, 0.07), (0.1, 0.05), (0.1, 0.0)], **tag)]
+    c += rod_y(STEEL, x, z, 0.08, top - 0.08, 0.06, **tag) + rod_x(STEEL, x - 0.14, 0.28, top - 0.03, z, 0.025, **tag)
+    c += rod_y(mat, x, z, top - 0.14, 0.14, 0.12)                                  # the collar stays on the vehicle
+    return c
 
 
 def round_hatch(x, z, y, dia, mat, handle=True):
-    """A circular hatch on a deck: raised coaming, domed lid, hinge and handle."""
+    """A circular hatch on a deck: raised coaming, and a domed lid on a hinge at the back that swings open when
+    there is a crew aboard and the vehicle is standing."""
     r = dia / 2
-    c = [lathe(mat, "y", x, z, [(y, 0.0), (y, r), (y + 0.05, r), (y + 0.05, r * 0.92), (y + 0.09, r * 0.86), (y + 0.11, r * 0.5), (y + 0.11, 0.0)])]
+    tag = dict(bone=("hatch", (x, y + 0.05, z - r)))
+    c = [lathe(mat, "y", x, z, [(y, r), (y + 0.05, r), (y + 0.05, r * 0.9), (y, r * 0.9)]),
+         lathe(BLACK, "y", x, z, [(y + 0.012, r * 0.9), (y + 0.012, 0.0)], plain=True)]          # the dark opening
+    c += [lathe(mat, "y", x, z, [(y + 0.05, 0.0), (y + 0.05, r * 0.96), (y + 0.09, r * 0.88), (y + 0.11, r * 0.5), (y + 0.11, 0.0)], **tag)]
     c += [B(STEEL_D, x - 0.08, y + 0.04, z - r - 0.05, 0.16, 0.06, 0.08, plain=True)]
     if handle:
-        c += [B(STEEL_D, x - 0.07, y + 0.11, z + r * 0.4, 0.14, 0.03, 0.025, plain=True)]
+        c += [B(STEEL_D, x - 0.07, y + 0.11, z + r * 0.4, 0.14, 0.03, 0.025, plain=True, **tag)]
     return c
 
 
@@ -486,7 +500,8 @@ def shackle(x, y, z, mat=STEEL_D):
 
 def chock(x, z, mat=BLACK):
     """A wheel chock on the ground."""
-    return [hull(mat, x - 0.12, x + 0.12, [(z, 0.0), (z + 0.05, 0.18), (z + 0.12, 0.18), (z + 0.3, 0.0)], plain=True)]
+    # chocks are only out while the vehicle is parked
+    return [hull(mat, x - 0.12, x + 0.12, [(z, 0.0), (z + 0.05, 0.18), (z + 0.12, 0.18), (z + 0.3, 0.0)], plain=True, bone=("chock", (x, 0.0, z)))]
 
 
 def mudguards(mat, x, width, zs, dia):
@@ -970,6 +985,30 @@ def paint(surf, wp, hp, seed):
     return img
 
 
+def finish(model):
+    """Moves every part tagged for a moving bone (aerials, jacks, hatch lids) out of the fixed lists into bones
+    of its own, named move_sway1.., move_jack1.., move_hatch1.., hung from whichever part of the vehicle it was built on."""
+    if model.get("finished"):
+        return model
+    counts, made = {}, {}
+    for where, parent in (("base", "move_body"), ("turret", "turret"), ("barrel", "barrel")):
+        keep = []
+        for part in model[where]:
+            tag = part["opt"].get("bone")
+            if not tag:
+                keep.append(part)
+                continue
+            key = (tag[0], tuple(round(v, 4) for v in tag[1]), parent)
+            if key not in made:
+                counts[tag[0]] = counts.get(tag[0], 0) + 1
+                made[key] = {"name": f"move_{tag[0]}{counts[tag[0]]}", "parent": parent, "pivot": tag[1], "cubes": []}
+                model["bones"].append(made[key])
+            made[key]["cubes"].append(part)
+        model[where] = keep
+    model["finished"] = True
+    return model
+
+
 # ---------------------------------------------------------------- baking a whole vehicle
 def _all_parts(model):
     return model["base"] + model["turret"] + model["barrel"] + [c for b in model["bones"] for c in b["cubes"]]
@@ -978,6 +1017,7 @@ def _all_parts(model):
 def bake(model, name, px=None):
     """Turns every part into surfaces, lays them out on one texture and paints it. Returns (image, width, height)."""
     px = px or PX
+    finish(model)
     seed = sum(ord(ch) for ch in name)
     surfs, shared = [], {}
     seen = set()

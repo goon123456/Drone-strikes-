@@ -323,9 +323,15 @@ python3 tools/gen_assets.py   # regenerate textures, models, recipes and languag
   screw jacks, jerrycans, fire extinguishers, pioneer tools, sprung aerials, hatches, vision blocks, lamps in
   bezels, beacons, bedrolls, spare wheels, shackles, wheel chocks, hoses, cable runs and diagonal struts.
   Real artist-made models can still replace generated ones where a freely licensed one is available.
-- The hull sits on its own bone above the running gear: it squats when pulling away, dips under braking and
-  rolls in turns, and rocks when the main gun fires. Gun barrels slide back on firing and run out again.
-- Not animated yet: per-wheel suspension travel, hatches and stabiliser jacks.
+- Animation, driven by `VehicleAnim` on top of Superb Warfare's renderer:
+  the hull sits on its own bone above the running gear and squats when pulling away, dips under braking and
+  rolls in turns; gun barrels slide back on firing and run out again; search radars turn and the Krasukha's
+  dishes sweep; stabiliser jacks wind up to drive and back down to park, and wheel chocks are stowed; hatch lids
+  open when the vehicle stands with a crew aboard; aerials whip as it moves; the Iskander's roof doors swing open
+  as the missile rises; on wheeled vehicles each wheel rides up and down over uneven ground on its own.
+- Superb Warfare freezes every bone into the model unless its name is on its list of moving ones, so all of
+  Steel Rain's own animated bones are named `move_...` (the prefix it reserves for renderer-driven bones).
+- A file named `steelrain_animtest` in the game folder holds doors and hatches open, for checking models.
 - A loaded Iskander is not drawn on its launcher.
 - The Pantsir's missiles only fire in automatic mode.
 - A fitted Jammer Dome is not drawn.

@@ -748,11 +748,13 @@ def sbw_vehicle(name, base, turret, barrel, turret_pivot, barrel_pivot, data):
     save(Image.fromarray(tex).convert("RGB"), f"{A}/textures/bedrock/vehicle/{name}.png")
     mesh = lambda parts: {"poly_mesh": VK.to_mesh(parts, tw, th)} if parts else {}
     # base carries the running gear and stays level; body (hull, cab, load) leans on it under braking and in turns
+    # Superb Warfare freezes every bone into the model unless its name is on its list of moving ones; "move_" is
+    # the prefix it reserves for bones moved by a renderer, so all of ours carry it.
     bones = [{"name": "root", "pivot": [0, 0, 0]},
              {"name": "base", "parent": "root", "pivot": [0, 0, 0]},
-             {"name": "body", "parent": "base", "pivot": [0, 9.6, 0], **mesh(m["base"])}]
+             {"name": "move_body", "parent": "base", "pivot": [0, 9.6, 0], **mesh(m["base"])}]
     if turret_pivot is not None:
-        bones += [{"name": "turret", "parent": "body", "pivot": piv(turret_pivot), **mesh(m["turret"])},
+        bones += [{"name": "turret", "parent": "move_body", "pivot": piv(turret_pivot), **mesh(m["turret"])},
                   {"name": "barrel", "parent": "turret", "pivot": piv(barrel_pivot), **mesh(m["barrel"])}]
     for extra in m["bones"]:
         bones.append({"name": extra["name"], "parent": extra["parent"], "pivot": piv(extra["pivot"]), **mesh(extra["cubes"])})
