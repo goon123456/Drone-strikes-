@@ -340,7 +340,9 @@ python3 tools/gen_assets.py   # regenerate textures, models, recipes and languag
 - Air-defence turrets turn and elevate on screen as they track: the server syncs what each one is tracking and
   every player's game works out the same aim, the way Superb Warfare's own turrets do.
 - Anti-aircraft shells have proximity fuses: one that passes close to the tracked target bursts there and does
-  light fragment damage. The balance between the three guns is still being tuned.
+  light fragment damage (eight bursts down a Shahed). Each gun's fuse is tuned separately: against a Shahed
+  crossing overhead the Gepard downs nearly all around the closest point of the pass, the Pantsir's guns about
+  six in ten, and the ZU-23-2 about one in ten.
 - Animation, driven by `VehicleAnim` on top of Superb Warfare's renderer:
   the hull sits on its own bone above the running gear and squats when pulling away, dips under braking and
   rolls in turns; gun barrels slide back on firing and run out again; search radars turn and the Krasukha's

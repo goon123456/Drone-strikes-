@@ -219,13 +219,17 @@ com.steelrain.util.Sfx.gunfire(level, muzzle, "missile_start", "igla_9k38_far", 
      */
     private void proximityFuse(ServerLevel level, Entity target, Vec3 targetPos, Vec3 targetMove) {
         if (!kind.guns || !(target instanceof FlyingWeaponEntity)) return;
-        double reach = kind == Kind.ZU23 ? 0.8 : 1.0;
+        // How close a shell must pass to burst, and how often the fuse works. Measured against a Shahed crossing
+        // overhead: the Gepard downs nearly all of them around the closest point of the pass, the Pantsir's guns
+        // roughly six in ten, the ZU-23-2 about one in ten (but it usually leaves the drone damaged).
+        double reach = kind == Kind.ZU23 ? 1.2 : 1.5;
+        double chance = kind == Kind.GEPARD ? 0.08 : kind == Kind.PANTSIR ? 0.20 : 0.09;
         for (Entity shell : level.getEntities(this, new AABB(targetPos, targetPos).inflate(14), e -> e instanceof SmallCannonShellEntity)) {
             // where the shell and the target come closest during the coming tick
             Vec3 rel = shell.position().subtract(targetPos), relMove = shell.getDeltaMovement().subtract(targetMove);
             double t = Math.max(0, Math.min(1, -rel.dot(relMove) / Math.max(1e-9, relMove.lengthSqr())));
             Vec3 miss = rel.add(relMove.scale(t));
-            if (miss.lengthSqr() > reach * reach) continue;
+            if (miss.lengthSqr() > reach * reach || level.random.nextDouble() > chance) continue;
             Vec3 at = targetPos.add(miss);
             level.sendParticles(net.minecraft.core.particles.ParticleTypes.EXPLOSION, at.x, at.y, at.z, 1, 0, 0, 0, 0);
             level.sendParticles(net.minecraft.core.particles.ParticleTypes.SMOKE, at.x, at.y, at.z, 6, 0.3, 0.3, 0.3, 0.02);
@@ -236,7 +240,7 @@ com.steelrain.util.Sfx.gunfire(level, muzzle, "missile_start", "igla_9k38_far", 
         }
     }
 
-    /** Damage from one proximity burst. A Shahed has 9 health, an FPV drone 5. */
+    /** Damage from one proximity burst. A Shahed has 6 health, so it takes eight. */
     private static final float FRAGMENT_DAMAGE = 0.75f;
 
         private Entity findTarget(ServerLevel level, Vec3 centre, double range, boolean gunsOnly, long now) {
