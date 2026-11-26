@@ -1011,16 +1011,6 @@ public class LaptopScreen extends Screen {
             if (fresh) Ui.icon(g, lx, ly, Ui.ICON_WARN, P_AMBER);
             g.drawString(font, font.plainSubstrByWidth(last[idx], lw - (fresh ? 10 : 0)), lx + (fresh ? 10 : 0), ly, fresh ? P_AMBER : i == 0 ? P_DIM : P_FAINT, false);
         }
-        if (last.length == 0) {
-            // the hint on two lines, so each piece fits whole instead of being cut mid-word
-            String[] hint = t("map_hint").getString().trim().split("\\s{2,}");
-            if (hint.length >= 3) {
-                g.drawString(font, font.plainSubstrByWidth(hint[0] + "   " + hint[1], lw), lx, y + 5, P_FAINT, false);
-                g.drawString(font, font.plainSubstrByWidth(String.join("   ", java.util.Arrays.copyOfRange(hint, 2, hint.length)), lw), lx, y + 15, P_FAINT, false);
-            } else {
-                g.drawString(font, font.plainSubstrByWidth(t("map_hint").getString(), lw), lx, y + 9, P_FAINT, false);
-            }
-        }
     }
 
     @Override

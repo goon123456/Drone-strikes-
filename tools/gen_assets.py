@@ -891,7 +891,6 @@ def lang():
         "gui.steelrain.pick_target": "No target",
         "gui.steelrain.no_signal": "NO SIGNAL",
         "gui.steelrain.rounds": "Rounds",
-        "gui.steelrain.map_hint": "L-CLICK target  R-DRAG pan  SCROLL zoom",
         "gui.steelrain.layer_topo": "TOPO",
         "gui.steelrain.layer_height": "HEIGHT",
         "gui.steelrain.f_flight": "Flight time",
