@@ -49,19 +49,8 @@ public final class Models {
     public static final BoxModel DOME = BoxModel.load("jammer_dome");
 
     /** Worn on the back. Origin at the middle of the wearer's back, +Z away from them. */
-    public static final BoxModel FIBER_PACK = new BoxModel()
-            .box(OLIVE_D, -0.2, -0.28, 0, 0.4, 0.56, 0.16)
-            .box(WHITE, -0.16, -0.16, 0.16, 0.32, 0.32, 0.14)
-            .box(STEEL_D, -0.05, -0.05, 0.3, 0.1, 0.1, 0.04)
-            .box(CYAN, -0.17, -0.02, 0.18, 0.34, 0.04, 0.1);
-
-    public static final BoxModel JAMMER_PACK = new BoxModel()
-            .box(OLIVE, -0.2, -0.28, 0, 0.4, 0.56, 0.2)
-            .box(OLIVE_D, -0.16, -0.2, 0.2, 0.32, 0.3, 0.05)
-            .box(STEEL_D, -0.17, 0.28, 0.05, 0.03, 0.55, 0.03)
-            .box(STEEL_D, 0.14, 0.28, 0.05, 0.03, 0.4, 0.03)
-            .box(STEEL_D, -0.015, 0.28, 0.12, 0.03, 0.7, 0.03)
-            .box(RED, -0.03, 0.1, 0.25, 0.06, 0.06, 0.02);
+    public static final BoxModel FIBER_PACK = BoxModel.load("fiber_pack");
+    public static final BoxModel JAMMER_PACK = BoxModel.load("jammer_pack");
 
     public static final BoxModel MAVIC = BoxModel.load("mavic");
 

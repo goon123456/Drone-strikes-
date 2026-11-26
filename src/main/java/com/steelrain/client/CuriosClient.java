@@ -29,7 +29,7 @@ public final class CuriosClient {
             // Player model space has Y pointing down and the back towards +Z.
             pose.translate(0, slotContext.entity().isCrouching() ? 0.55 : 0.35, slotContext.entity().isCrouching() ? 0.28 : 0.13);
             pose.mulPose(Axis.ZP.rotationDegrees(180));
-            model.render(pose, buffers.getBuffer(RenderType.entityCutoutNoCull(Models.PAINT)), light);
+            model.render(pose, buffers.getBuffer(RenderType.entityCutoutNoCull(model.texture())), light);
             pose.popPose();
         }
     }

@@ -314,7 +314,11 @@ python3 tools/gen_assets.py   # regenerate textures, models, recipes and languag
   Shahed Launch Rail is a skid frame carrying twin inclined rails with a blast plate and firing box.
 - A fitted Jammer Dome is drawn on the vehicle's roof (the top middle of its hit box): a mushroom radome on a
   mast over a ring of stub aerials, with a control box and lead. The server tells each player which vehicles
-  carry one. The worn backpacks and tracer rounds are still simple flat-coloured shapes.
+  carry one.
+- The two backpacks worn in the Curios back slot are textured meshes with a full harness (shoulder straps over
+  the shoulders and down the chest, chest strap, waist belt): the fibre pack carries a big cable reel with a
+  guide arm, the jammer pack an electronics case with a control panel, battery and five aerials.
+  Tracer rounds are the only thing still drawn as a simple flat-coloured shape, which suits a streak of light.
 - Ground vehicles are true meshes (Superb Warfare's `poly_mesh` format), not boxes: turned wheels with dished
   rims, round barrels, masts and dishes, and bevelled plate edges. Shapes are in `tools/gen_vehicles.py`; the kit
   of parts, the mesh builder and the texture painter are in `tools/vehicle_kit.py`.

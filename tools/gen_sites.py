@@ -186,9 +186,94 @@ def jammer_dome():
     return _model(p)
 
 
+# ---------------------------------------------------------------- worn backpacks
+# Origin at the middle of the wearer's back, +z away from them, +y up. The wearer's body is 0.5 wide, 0.75 tall
+# and 0.25 deep, so the straps run forward over the shoulders and down the chest.
+def _harness(mat=BLACK):
+    """Padded shoulder straps over the shoulders and down the chest, a chest strap, a waist belt and buckles."""
+    p = []
+    for sx in (1, -1):
+        x = sx * 0.15
+        path = [(x, 0.26, 0.02), (x, 0.39, -0.03), (x, 0.4, -0.13), (x, 0.38, -0.24), (x * 1.05, 0.2, -0.275), (x * 1.15, -0.02, -0.275),
+                (sx * 0.22, -0.16, -0.2), (sx * 0.26, -0.24, -0.05), (sx * 0.2, -0.26, 0.02)]
+        for a, b in zip(path, path[1:]):
+            p.append(loft(mat, "y" if abs(b[1] - a[1]) > abs(b[2] - a[2]) else "z",
+                          a[1] if abs(b[1] - a[1]) > abs(b[2] - a[2]) else a[2],
+                          _strap(a, abs(b[1] - a[1]) > abs(b[2] - a[2])),
+                          b[1] if abs(b[1] - a[1]) > abs(b[2] - a[2]) else b[2],
+                          _strap(b, abs(b[1] - a[1]) > abs(b[2] - a[2])), plain=True))
+        p.append(B(STEEL, x - 0.03, 0.02, -0.295, 0.06, 0.035, 0.02, plain=True))                          # adjuster buckle
+    p += [B(mat, -0.16, 0.14, -0.29, 0.32, 0.03, 0.015, plain=True), B(STEEL_D, -0.03, 0.13, -0.3, 0.06, 0.05, 0.02, plain=True)]   # chest strap
+    for sx in (1, -1):                                                                                   # waist belt round the hips
+        p += [bar(mat, (sx * 0.2, -0.3, 0.02), (sx * 0.27, -0.3, -0.12), 0.045), bar(mat, (sx * 0.27, -0.3, -0.12), (sx * 0.12, -0.3, -0.275), 0.045)]
+    p += [bar(mat, (0.12, -0.3, -0.275), (-0.12, -0.3, -0.275), 0.045), B(STEEL_D, -0.04, -0.33, -0.3, 0.08, 0.06, 0.025, plain=True)]
+    return p
+
+
+def _strap(pt, upright):
+    """Cross-section of a flat strap at a point: 5 cm wide and 1.5 cm thick."""
+    x, y, z = pt
+    if upright:
+        return [(x - 0.028, z - 0.008), (x + 0.028, z - 0.008), (x + 0.028, z + 0.008), (x - 0.028, z + 0.008)]
+    return [(x - 0.028, y - 0.008), (x + 0.028, y - 0.008), (x + 0.028, y + 0.008), (x - 0.028, y + 0.008)]
+
+
+def fiber_pack():
+    """Fibre-optic spool backpack: a frame carrying a big reel of cable that pays out behind, with a guide arm."""
+    d = OLIVE_D
+    p = _harness()
+    p += [loft(d, "z", 0.0, [(-0.2, -0.3), (0.2, -0.3), (0.21, -0.24), (0.21, 0.24), (0.17, 0.3), (-0.17, 0.3), (-0.21, 0.24), (-0.21, -0.24)], 0.07,
+               None, marks=[("cap1", "panel", 0.5, 0.5, 0.3, 0.44)])]                                     # padded back plate
+    p += [bar(STEEL_D, (0.19, -0.3, 0.05), (0.19, 0.3, 0.05), 0.03), bar(STEEL_D, (-0.19, -0.3, 0.05), (-0.19, 0.3, 0.05), 0.03),
+          bar(STEEL_D, (0.19, 0.3, 0.05), (-0.19, 0.3, 0.05), 0.03), bar(STEEL_D, (0.19, -0.3, 0.05), (-0.19, -0.3, 0.05), 0.03)]   # tube frame
+    # the reel on its axle across the pack: two flanges with lightening holes painted on, wound white cable between
+    p += [lathe(SPOOL, "x", 0.0, 0.23, [(-0.13, 0.0), (-0.13, 0.15), (-0.06, 0.158), (0.06, 0.158), (0.13, 0.15), (0.13, 0.0)], seg=20)]
+    for sx in (1, -1):
+        x0, x1 = (0.13, 0.145) if sx > 0 else (-0.145, -0.13)
+        p += [lathe(STEEL_D, "x", 0.0, 0.23, [(x0, 0.0), (x0, 0.185), (x1, 0.185), (x1, 0.0)], seg=20, wheel=(0.0, 0.23, 0.185, STEEL_D, 0.92))]
+        p += [bar(STEEL_D, (sx * 0.16, -0.26, 0.06), (sx * 0.16, 0.0, 0.23), 0.025), bar(STEEL_D, (sx * 0.16, 0.26, 0.06), (sx * 0.16, 0.0, 0.23), 0.025)]   # reel brackets
+        p += rod_x(STEEL, sx * 0.145 if sx > 0 else -0.175, 0.03, 0.0, 0.23, 0.04)
+    # guide arm that leads the fibre off the back, with a ceramic eye, and the fibre trailing from it
+    p += [bar(STEEL_D, (0.0, 0.26, 0.07), (0.0, 0.28, 0.4), 0.02), bar(STEEL_D, (0.0, 0.28, 0.4), (0.0, 0.18, 0.44), 0.02)]
+    p += [lathe(WHITE, "z", 0.0, 0.16, [(0.43, 0.012), (0.43, 0.026), (0.45, 0.026), (0.45, 0.012)], plain=True)]
+    p += run(SPOOL, [(0.0, 0.155, 0.3), (0.0, 0.16, 0.44), (0.0, 0.1, 0.56)], 0.006)
+    # brake lever, a spare-connector pouch, and the length label
+    p += [bar(ORANGE, (0.175, 0.05, 0.2), (0.24, 0.2, 0.16), 0.02), B(d, -0.15, -0.28, 0.07, 0.3, 0.12, 0.05, marks=[("front", "panel", 0.5, 0.5, 0.26, 0.09)])]
+    p += [B(CYAN, -0.1, 0.2, 0.07, 0.2, 0.05, 0.004, plain=True, marks=[("front", "digits:10 KM", 0.5, 0.5, 0)])]
+    return _model(p)
+
+
+def jammer_pack():
+    """Man-portable drone jammer: a rugged electronics pack with a cooling grille, control panel, battery and a
+    fan of aerials of different lengths standing out of the top."""
+    d, t = OLIVE_D, OLIVE
+    p = _harness()
+    p += [loft(t, "z", 0.0, [(-0.2, -0.3), (0.2, -0.3), (0.21, -0.26), (0.21, 0.26), (0.18, 0.3), (-0.18, 0.3), (-0.21, 0.26), (-0.21, -0.26)], 0.2,
+               None, marks=[("cap1", "panel", 0.5, 0.36, 0.3, 0.22)])]                                    # the case
+    for y in (-0.22, -0.02, 0.18):                                                                        # stiffening ribs round it
+        p += [B(d, -0.215, y, 0.02, 0.43, 0.03, 0.185, plain=True)]
+    p += [B(GRILLE, -0.14, -0.22, 0.2, 0.28, 0.2, 0.006), B(d, -0.16, -0.24, 0.2, 0.32, 0.02, 0.012, plain=True), B(d, -0.16, -0.02, 0.2, 0.32, 0.02, 0.012, plain=True)]
+    # control panel: status lamps, band switches, a power knob
+    p += [B(BLACK, -0.15, 0.04, 0.2, 0.3, 0.18, 0.008, plain=True)]
+    for i, col in enumerate((RED, AMBER, WHITE, WHITE, WHITE)):
+        p += rod_z(col, -0.11 + i * 0.055, 0.18, 0.208, 0.008, 0.018)
+        p += [B(STEEL, -0.117 + i * 0.055, 0.1, 0.208, 0.014, 0.035, 0.012, plain=True)]
+    p += rod_z(STEEL_D, 0.1, 0.07, 0.208, 0.02, 0.04)
+    # battery clipped on the bottom, with its latch and lead
+    p += [B(BLACK, -0.17, -0.38, 0.03, 0.34, 0.08, 0.15, marks=[("front", "digits:24V", 0.5, 0.5, 0)]), B(STEEL, -0.03, -0.31, 0.18, 0.06, 0.03, 0.012, plain=True)]
+    p += run(BLACK, [(0.15, -0.36, 0.18), (0.2, -0.3, 0.21), (0.19, -0.2, 0.2)], 0.016)
+    # carry handle and five aerials on sprung bases, one per band, fanned slightly outwards
+    p += [bar(BLACK, (-0.08, 0.3, 0.1), (-0.08, 0.34, 0.1), 0.018), bar(BLACK, (0.08, 0.3, 0.1), (0.08, 0.34, 0.1), 0.018), bar(BLACK, (-0.08, 0.34, 0.1), (0.08, 0.34, 0.1), 0.022)]
+    for x, z, h, lean in ((-0.16, 0.05, 0.55, -8), (-0.09, 0.15, 0.36, -4), (0.0, 0.05, 0.75, 0), (0.09, 0.15, 0.42, 4), (0.16, 0.05, 0.48, 8)):
+        p += [lathe(BLACK, "y", x, z, [(0.3, 0.0), (0.3, 0.022), (0.33, 0.022), (0.34, 0.014), (0.38, 0.014), (0.39, 0.009), (0.3 + h * 0.7, 0.007),
+                                       (0.3 + h, 0.004), (0.3 + h, 0.0)], seg=8, roll=-lean, pivot=(x, 0.3, z))]
+    p += [B(WHITE, -0.08, -0.28, 0.2, 0.16, 0.035, 0.004, plain=True, marks=[("front", "digits:EW-25", 0.5, 0.5, 0)])]
+    return _model(p)
+
+
 #          model               builder          texels per metre
 MODELS = {"ground_station": (ground_station, 64), "orlan_catapult": (orlan_catapult, 160), "shahed_launcher": (shahed_launcher, 96),
-          "jammer_dome": (jammer_dome, 512)}
+          "jammer_dome": (jammer_dome, 512), "fiber_pack": (fiber_pack, 512), "jammer_pack": (jammer_pack, 512)}
 
 
 if __name__ == "__main__":
