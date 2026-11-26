@@ -467,16 +467,18 @@ MODELS = {"zu_23_2": zu_23_2, "gepard": gepard, "pantsir": pantsir, "patriot": p
 
 
 if __name__ == "__main__":
-    import sys
+    import sys, time
     from PIL import Image
     names = sys.argv[2:] or list(MODELS)
     for name in names:
+        t0 = time.time()
         model = MODELS[name]()
         tex, w, h = bake(model, name)
-        Image.fromarray(tex).save(f"{sys.argv[1]}/{name}_texture.png")
-        views = [render(model, tex, math.radians(a), math.radians(b), 760) for a, b in ((35, 18), (215, 22), (90, 2), (0, 60))]
-        sheet = Image.new("RGB", (1520, 1520))
+        Image.fromarray(tex).convert("RGB").save(f"{sys.argv[1]}/{name}_texture.png")
+        views = [render(model, tex, math.radians(a), math.radians(b), 900) for a, b in ((35, 18), (215, 22), (90, 2), (0, 60))]
+        sheet = Image.new("RGB", (1800, 1800))
         for i, v in enumerate(views):
-            sheet.paste(v, ((i % 2) * 760, (i // 2) * 760))
+            sheet.paste(v, ((i % 2) * 900, (i // 2) * 900))
         sheet.save(f"{sys.argv[1]}/{name}.png")
-        print(name, len([c for c in model["base"] + model["turret"] + model["barrel"]]) + sum(len(b["cubes"]) for b in model["bones"]), "cubes", w, h)
+        parts = model["base"] + model["turret"] + model["barrel"] + [c for b in model["bones"] for c in b["cubes"]]
+        print(name, len(parts), "parts", sum(len(sf["faces"]) for p in parts for sf in p["surfaces"]), "faces", w, h, round(time.time() - t0, 1), "s")

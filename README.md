@@ -306,12 +306,15 @@ python3 tools/gen_assets.py   # regenerate textures, models, recipes and languag
   and vehicle wheels turn when driving. Tracks, radar dishes and steering are not animated, and every vehicle
   still has one plain hit box. The three launch sites (Ground Station, Orlan Catapult, Shahed Launch Rail)
   still have simple shapes.
-- Vehicle shapes are in `tools/gen_vehicles.py`; the kit of parts and the texture painter are in
-  `tools/vehicle_kit.py`. Every face of every part gets its own patch of a per-vehicle texture, painted from its
-  real position: camouflage flows across parts, dirt gathers low down, wheels have round rims, panels have edges,
-  seams and rivets. `python3 tools/gen_vehicles.py <dir> [vehicle]` renders textured previews without the game.
-- The Gepard is modelled to the full new level of detail (about 540 parts); the other vehicles have the new
-  painted textures, wheels and tracks but still have simpler shapes.
+- Ground vehicles are true meshes (Superb Warfare's `poly_mesh` format), not boxes: turned wheels with dished
+  rims, round barrels, masts and dishes, and bevelled plate edges. Shapes are in `tools/gen_vehicles.py`; the kit
+  of parts, the mesh builder and the texture painter are in `tools/vehicle_kit.py`.
+- Textures are 64 pixels per block (up to 2048 px per vehicle). Every surface has its own patch, painted from its
+  real position: soft-edged camouflage that flows across parts, faded paint, plate seams and bolt rows, rain
+  streaks, grime, chips, road dust, tyre tread and track links.
+  `python3 tools/gen_vehicles.py <dir> [vehicle]` renders textured previews without the game.
+- The Gepard has the most modelled detail; the other vehicles use the same mesh and paint system but have fewer
+  parts so far. Real artist-made models can replace generated ones where a freely licensed one is available.
 - A loaded Iskander is not drawn on its launcher.
 - The Pantsir's missiles only fire in automatic mode.
 - A fitted Jammer Dome is not drawn.

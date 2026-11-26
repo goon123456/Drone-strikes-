@@ -743,19 +743,22 @@ def sbw_vehicle(name, base, turret, barrel, turret_pivot, barrel_pivot, data):
     # The shapes come from gen_vehicles.py; the box lists passed in here are only the old placeholder models.
     m = GV.MODELS[name]()
     tex, tw, th = VK.bake(m, name)
-    save(Image.fromarray(tex), f"{A}/textures/bedrock/vehicle/{name}.png")
-    cubes = lambda lst: [VK.to_bedrock(c) for c in lst]
+    save(Image.fromarray(tex).convert("RGB"), f"{A}/textures/bedrock/vehicle/{name}.png")
+    mesh = lambda parts: {"poly_mesh": VK.to_mesh(parts, tw, th)} if parts else {}
     bones = [{"name": "root", "pivot": [0, 0, 0]},
-             {"name": "base", "parent": "root", "pivot": [0, 0, 0], "cubes": cubes(m["base"])}]
+             {"name": "base", "parent": "root", "pivot": [0, 0, 0], **mesh(m["base"])}]
     for extra in m["bones"]:
-        bones.append({"name": extra["name"], "parent": extra["parent"], "pivot": piv(extra["pivot"]), "cubes": cubes(extra["cubes"])})
+        bones.append({"name": extra["name"], "parent": extra["parent"], "pivot": piv(extra["pivot"]), **mesh(extra["cubes"])})
     if turret_pivot is not None:
-        bones += [{"name": "turret", "parent": "root", "pivot": piv(turret_pivot), "cubes": cubes(m["turret"])},
-                  {"name": "barrel", "parent": "turret", "pivot": piv(barrel_pivot), "cubes": cubes(m["barrel"])}]
-    write(f"{A}/models/bedrock/vehicle/{name}.geo.json", {"format_version": "1.12.0", "minecraft:geometry": [{
-        "description": {"identifier": f"geometry.{name}", "texture_width": tw, "texture_height": th,
-                        "visible_bounds_width": 16, "visible_bounds_height": 8, "visible_bounds_offset": [0, 3, 0]},
-        "bones": bones}]})
+        bones += [{"name": "turret", "parent": "root", "pivot": piv(turret_pivot), **mesh(m["turret"])},
+                  {"name": "barrel", "parent": "turret", "pivot": piv(barrel_pivot), **mesh(m["barrel"])}]
+    path = f"{A}/models/bedrock/vehicle/{name}.geo.json"
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w") as f:   # compact: these files hold tens of thousands of points
+        json.dump({"format_version": "1.12.0", "minecraft:geometry": [{
+            "description": {"identifier": f"geometry.{name}", "texture_width": tw, "texture_height": th,
+                            "visible_bounds_width": 16, "visible_bounds_height": 8, "visible_bounds_offset": [0, 3, 0]},
+            "bones": bones}]}, f, separators=(",", ":"))
     write(f"{A}/sbw/vehicles/{name}.json", {"Models": [{
         "Model": f"{MOD}:models/bedrock/vehicle/{name}.geo.json",
         "Texture": f"{MOD}:textures/bedrock/vehicle/{name}.png"}]})
