@@ -37,6 +37,7 @@ NATO = _mat("nato", (70, 86, 58), armour=True, camo=NATO_CAMO)  # NATO three-ton
 NATO_D = _mat("nato_d", (50, 62, 42), armour=True)
 TYRE = _mat("tyre", (30, 30, 32), "rubber")
 TRACK = _mat("track", (52, 48, 44), "track")
+LINK = _mat("link", (60, 56, 52), "steel")
 STEEL = _mat("steel", (138, 142, 148), "steel")
 STEEL_D = _mat("steel_d", (62, 66, 70), "steel")
 BLACK = _mat("black", (22, 22, 24), "flat")
@@ -129,12 +130,15 @@ def wheel_bone(name, x0, width, cy, cz, dia, rim=STEEL_D, parent="base", tyre=0.
     return {"name": name, "parent": parent, "pivot": (x0 + width / 2, cy, cz), "cubes": wheel(x0, width, cy, cz, dia, rim, tyre)}
 
 
-def truck_wheels(zs, x, width, dia, rim=STEEL_D):
-    """Wheel bones for both sides at each axle position; x is the inner face of the tyre."""
+def truck_wheels(zs, x, width, dia, rim=STEEL_D, steer=1):
+    """Wheel bones for both sides at each axle position; x is the inner face of the tyre. The front `steer`
+    axles are named so that Superb Warfare turns them with the steering as well as spinning them."""
     bones = []
+    steering = sorted(zs, reverse=True)[:steer]
     for i, z in enumerate(zs, start=1):
-        bones.append(wheel_bone(f"wheelL{i}", x, width, dia / 2, z, dia, rim))
-        bones.append(wheel_bone(f"wheelR{i}", -x - width, width, dia / 2, z, dia, rim))
+        suffix = "Turn" if z in steering else ""
+        bones.append(wheel_bone(f"wheelL{i}{suffix}", x, width, dia / 2, z, dia, rim))
+        bones.append(wheel_bone(f"wheelR{i}{suffix}", -x - width, width, dia / 2, z, dia, rim))
     return bones
 
 
@@ -148,40 +152,108 @@ def axles(zs, x, dia, mat=STEEL_D):
     return c
 
 
+def belt(circles, samples=400):
+    """The path of a track wrapped anticlockwise (seen from the left) round a list of (z, y, radius) wheels,
+    starting where it leaves the first one. Returns evenly spaced (z, y, turn in degrees) and its length."""
+    n = len(circles)
+    angles = []
+    for i in range(n):                                       # the angle at which the track leaves each wheel for the next
+        (z1, y1, r1), (z2, y2, r2) = circles[i], circles[(i + 1) % n]
+        dz, dy = z2 - z1, y2 - y1
+        dist = math.hypot(dz, dy); alpha = math.atan2(dy, dz); off = math.acos((r1 - r2) / dist)
+        th = alpha - off
+        if -math.sin(th) * dz + math.cos(th) * dy < 0:
+            th = alpha + off
+        angles.append(th)
+    pts = []
+    turn = angles[0]
+    for i in range(n):
+        j = (i + 1) % n
+        zc, yc, r = circles[j]
+        arrive, leave = angles[i], angles[j]
+        while leave < arrive - 1e-9:
+            leave += 2 * math.pi
+        z1, y1, r1 = circles[i]
+        pts.append((z1 + r1 * math.cos(arrive), y1 + r1 * math.sin(arrive), arrive))      # straight run to the next wheel
+        steps = max(2, int((leave - arrive) / math.radians(4)))
+        for k in range(steps + 1):                                                        # then round it
+            th = arrive + (leave - arrive) * k / steps
+            pts.append((zc + r * math.cos(th), yc + r * math.sin(th), th))
+    pts.append(pts[0][:2] + (pts[0][2] + 2 * math.pi,))
+    # unwrap the turning angle so it only ever grows, then resample at even spacing
+    out, acc = [pts[0]], pts[0][2]
+    for p in pts[1:]:
+        d = (p[2] - acc + math.pi) % (2 * math.pi) - math.pi
+        acc += max(0.0, d) if abs(d) > 1e-9 else 0.0
+        out.append((p[0], p[1], acc))
+    dists = [0.0]
+    for a, b2 in zip(out, out[1:]):
+        dists.append(dists[-1] + math.hypot(b2[0] - a[0], b2[1] - a[1]))
+    total = dists[-1]
+    res, k = [], 0
+    for i in range(samples + 1):
+        d = total * i / samples
+        while k < len(dists) - 2 and dists[k + 1] < d:
+            k += 1
+        f = (d - dists[k]) / max(1e-9, dists[k + 1] - dists[k])
+        a, b2 = out[k], out[k + 1]
+        res.append((a[0] + (b2[0] - a[0]) * f, a[1] + (b2[1] - a[1]) * f, math.degrees(a[2] + (b2[2] - a[2]) * f - out[0][2])))
+    return res, total
+
+
 def running_gear(x, width, z0, z1, count, dia, body, rollers=3):
-    """Tracks for both sides: road wheels (which turn), sprocket, idler, return rollers and the track itself
-    with raised links."""
+    """Running gear for both sides: road wheels, sprocket, idler and return rollers that all turn, and a track
+    made of separate links that travel round them. Returns (fixed parts, bones, track path for the renderer)."""
     cubes, bones = [], []
     top = dia + 0.26
-    for sx in (x, -x - width):
-        cubes += [B(TRACK, sx, 0, z0 + 0.5, width, 0.09, z1 - z0 - 1.0),                     # run on the ground
-                  B(TRACK, sx, top - 0.09, z0 + 0.15, width, 0.09, z1 - z0 - 0.3),           # return run
-                  slope(TRACK, sx, width, z1 - 0.55, 0.09, z1 - 0.02, top - 0.5, 0.09),
-                  slope(TRACK, sx, width, z0 + 0.02, top - 0.5, z0 + 0.55, 0.09, 0.09),
-                  B(TRACK, sx, top - 0.5, z1 - 0.09, width, 0.42, 0.09),
-                  B(TRACK, sx, top - 0.5, z0, width, 0.42, 0.09)]
-        # raised link edges along both runs, and guide horns down the middle of the return run
-        n = int((z1 - z0 - 1.0) / 0.3)
-        for i in range(n + 1):
-            z = z0 + 0.5 + i * (z1 - z0 - 1.06) / n
-            cubes += [B(TRACK, sx - 0.01, -0.02, z, width + 0.02, 0.03, 0.07, plain=True),
-                      B(TRACK, sx - 0.01, top - 0.01, z, width + 0.02, 0.03, 0.07, plain=True)]
-        for end, zc in ((1, z1 - 0.32), (-1, z0 + 0.32)):                                     # sprocket and idler
-            cubes += disc_x(STEEL_D, sx + 0.06, width - 0.12, top - 0.42, zc, 0.66, wheel=(top - 0.42, zc, 0.33, body, 0.86))
-            cubes += disc_x(body, sx + (width - 0.04 if sx >= 0 else -0.02), 0.06, top - 0.42, zc, 0.24)
-        for i in range(rollers):                                                              # return rollers
-            zc = z0 + 1.2 + i * (z1 - z0 - 2.4) / max(1, rollers - 1)
-            cubes += disc_x(STEEL_D, sx + 0.1, width - 0.2, top - 0.2, zc, 0.2)
+    half = 0.045                                               # half the thickness of a link
+    cy, ys = dia / 2 + 2 * half, top - 0.42
+    front, rear = z1 - 0.32, z0 + 0.32
+    path, length = belt([(front, ys, 0.33 + half), (rear, ys, 0.33 + half), (z0 + 0.8, cy, dia / 2 + half), (z1 - 0.8, cy, dia / 2 + half)])
+    links = int(round(length / 0.15))
+    pitch = length / links
+    pz, py = path[0][0], path[0][1]                            # every link is modelled here and moved along the path
     span = (z1 - z0 - 1.6) / (count - 1)
-    for i in range(count):
-        z = z0 + 0.8 + span * i
-        for side, sx in (("L", x), ("R", -x - width)):
-            cy = dia / 2 + 0.09
-            c = wheel(sx + 0.04, width - 0.08, cy, z, dia, body, 0.84)
-            bones.append({"name": f"wheel{side}{i + 1}", "parent": "base", "pivot": (sx + width / 2, cy, z), "cubes": c})
-            # suspension arm behind each wheel
-            cubes.append(B(STEEL_D, sx + (0.0 if sx >= 0 else width - 0.06), cy - 0.05, z - 0.42, 0.06, 0.1, 0.45, plain=True))
-    return cubes, bones
+    for side, sx in (("L", x), ("R", -x - width)):
+        outer = sx + width if sx >= 0 else sx
+        inner = sx if sx >= 0 else sx + width
+        s = 1 if sx >= 0 else -1
+        n = 0
+        def spinning(parts, yc, zc):
+            nonlocal n
+            n += 1
+            bones.append({"name": f"wheel{side}{n}", "parent": "base", "pivot": (sx + width / 2, yc, zc), "cubes": parts})
+        for i in range(count):                                 # road wheels on swing arms
+            z = z0 + 0.8 + span * i
+            spinning(wheel(sx + 0.04, width - 0.08, cy, z, dia, body, 0.84), cy, z)
+            cubes.append(B(STEEL_D, inner - (0.07 if s > 0 else 0), cy - 0.05, z - 0.42, 0.07, 0.1, 0.45, plain=True))
+            cubes += rod_x(STEEL_D, inner - (0.2 if s > 0 else 0), 0.2, cy, z, 0.12)
+        for zc in (front, rear):                               # toothed sprocket at the front, idler at the back
+            parts = disc_x(STEEL_D, sx + 0.08, width - 0.16, ys, zc, 0.5, wheel=(ys, zc, 0.25, body, 0.9))
+            for xr in (sx + 0.03, sx + width - 0.08):
+                parts += disc_x(STEEL_D, xr, 0.05, ys, zc, 0.66, wheel=(ys, zc, 0.33, body, 0.9))
+                if zc == front:
+                    parts += [B(STEEL, xr, ys - 0.03, zc - 0.36, 0.05, 0.06, 0.72, pitch=a, pivot=(0, ys, zc), plain=True) for a in range(0, 180, 20)]
+            parts += disc_x(body, outer - (0.0 if s > 0 else 0.05), 0.05, ys, zc, 0.26)
+            spinning(parts, ys, zc)
+        for i in range(rollers):                               # return rollers under the top run
+            zc = z0 + 1.2 + i * (z1 - z0 - 2.4) / max(1, rollers - 1)
+            spinning(disc_x(STEEL_D, sx + 0.1, width - 0.2, top - 2 * half - 0.1, zc, 0.2), top - 2 * half - 0.1, zc)
+            cubes.append(B(STEEL_D, inner - (0.1 if s > 0 else 0), top - 2 * half - 0.14, zc - 0.04, 0.1, 0.08, 0.08, plain=True))
+        # one link, shared by every link bone on this side: shoe, rubber pad, end connectors, guide horn
+        link = [B(LINK, sx, py - half, pz - pitch * 0.47, width, 2 * half * 0.7, pitch * 0.94, plain=True),
+                B(BLACK, sx + width * 0.14, py + half * 0.4, pz - pitch * 0.33, width * 0.72, half * 0.6, pitch * 0.66, plain=True),
+                B(STEEL_D, sx - 0.012, py - half * 0.9, pz - pitch * 0.5, 0.05, half * 1.5, pitch * 0.45, plain=True),
+                B(STEEL_D, sx + width - 0.038, py - half * 0.9, pz - pitch * 0.5, 0.05, half * 1.5, pitch * 0.45, plain=True),
+                B(STEEL_D, sx + width * 0.5 - 0.025, py - half - 0.06, pz - 0.03, 0.05, 0.06, 0.06, plain=True)]
+        link += rod_x(STEEL, sx - 0.02, width + 0.04, py - half * 0.3, pz + pitch * 0.47, 0.022)        # link pin
+        for i in range(links):
+            bones.append({"name": f"trackMov{side}{i}", "parent": "base", "pivot": (sx + width / 2, py, pz), "cubes": []})
+            bones.append({"name": f"trackRot{side}{i}", "parent": f"trackMov{side}{i}", "pivot": (sx + width / 2, py, pz), "cubes": link})
+    track = {"links": links, "length": round(length, 4),
+             "y": [round((p[1] - py) * 16, 3) for p in path], "z": [round(-(p[0] - pz) * 16, 3) for p in path],
+             "rot": [round(-p[2], 3) for p in path]}
+    return cubes, bones, track
 
 
 # ---------------------------------------------------------------- shared truck parts
@@ -616,7 +688,11 @@ def bake(model, name, px=None):
     px = px or PX
     seed = sum(ord(ch) for ch in name)
     surfs, shared = [], {}
+    seen = set()
     for part in _all_parts(model):
+        if id(part) in seen:
+            continue
+        seen.add(id(part))
         part["surfaces"] = surfaces(part)
         for s in part["surfaces"]:
             s["wp"], s["hp"] = max(2, round(s["w"] * px)), max(2, round(s["h"] * px))

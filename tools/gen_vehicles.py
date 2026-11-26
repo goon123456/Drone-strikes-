@@ -44,7 +44,7 @@ def zu_23_2():
 
 def gepard():
     """Flakpanzer Gepard: Leopard 1 hull, tall slab turret, guns outside, two radars. Pivots (0,2,-.3) / (0,2.8,-.1)."""
-    gear, bones = running_gear(1.07, 0.55, -3.75, 3.75, 7, 0.7, NATO_D, rollers=4)
+    gear, bones, track = running_gear(1.07, 0.55, -3.75, 3.75, 7, 0.7, NATO_D, rollers=4)
     N, D = NATO, NATO_D
     base = gear + [
         B(D, -1.07, 0.42, -3.55, 2.14, 0.7, 6.9, plain=True),                                  # belly
@@ -119,15 +119,18 @@ def gepard():
     turret += [B(D, -0.34, 2.3, 1.2, 0.68, 0.7, 0.3)] + P(D, 0.42, 2.38, 1.3, 0.1, 0.55, 0.45)
     turret += rod_z(D, 0, 2.66, 1.42, 0.2, 1.0) + rod_z(RADOME, 0, 2.66, 1.62, 0.2, 0.92) + rod_z(RADOME, 0, 2.66, 1.82, 0.08, 0.6)
     turret += rod_z(STEEL_D, 0, 2.66, 1.9, 0.12, 0.12)
-    # search radar at the back: a mast, a curved reflector made of five slats, its frame and feed horn
-    turret += [B(D, -0.14, 3.3, -2.2, 0.28, 0.2, 0.28), B(D, -0.09, 3.5, -2.15, 0.18, 0.55, 0.18),
-               B(STEEL_D, -0.7, 4.3, -2.1, 1.4, 0.05, 0.05, plain=True), B(STEEL_D, -0.03, 4.05, -2.1, 0.06, 0.06, 0.55, plain=True),
-               B(BLACK, -0.12, 4.0, -1.6, 0.24, 0.16, 0.12), B(D, -0.6, 4.72, -2.2, 1.2, 0.06, 0.06, plain=True),
-               B(D, -0.03, 4.55, -2.2, 0.06, 0.2, 0.06, plain=True)]
+    # search radar at the back: a mast, and a head that turns once a second carrying a curved reflector made of
+    # five slats, its frame and feed horn
+    turret += [B(D, -0.14, 3.3, -2.2, 0.28, 0.2, 0.28)] + rod_y(D, 0, -2.06, 3.5, 0.5, 0.18)
+    radar = rod_y(STEEL_D, 0, -2.06, 4.0, 0.08, 0.26)
+    radar += [B(STEEL_D, -0.7, 4.3, -2.1, 1.4, 0.05, 0.05, plain=True), B(STEEL_D, -0.03, 4.05, -2.1, 0.06, 0.06, 0.55, plain=True),
+              B(BLACK, -0.12, 4.0, -1.6, 0.24, 0.16, 0.12), B(D, -0.6, 4.72, -2.2, 1.2, 0.06, 0.06, plain=True),
+              B(D, -0.03, 4.55, -2.2, 0.06, 0.2, 0.06, plain=True)]
     for i, ang in enumerate((-30, -15, 0, 15, 30)):
         x = (i - 2) * 0.38
-        turret += [B(D, x - 0.2, 3.95, -2.24 + abs(i - 2) * 0.05, 0.4, 0.6, 0.05, yaw=ang),
-                   B(STEEL_D, x - 0.19, 3.97, -2.19 + abs(i - 2) * 0.05, 0.38, 0.56, 0.02, yaw=ang, plain=True)]
+        radar += [B(D, x - 0.2, 3.95, -2.24 + abs(i - 2) * 0.05, 0.4, 0.6, 0.05, yaw=ang),
+                  B(STEEL_D, x - 0.19, 3.97, -2.19 + abs(i - 2) * 0.05, 0.38, 0.56, 0.02, yaw=ang, plain=True)]
+    bones.append({"name": "spinRadar", "parent": "turret", "pivot": (0, 4.0, -2.06), "cubes": radar})
     # smoke-grenade dischargers, aerials, lifting hooks, hand rails
     for sx in (1, -1):
         for i in range(4):
@@ -154,7 +157,7 @@ def gepard():
         barrel += [B(BLACK, cx - 0.1, 2.72, 3.2, 0.2, 0.04, 0.05, plain=True), B(BLACK, cx - 0.1, 2.72, 3.32, 0.2, 0.04, 0.05, plain=True),
                    B(STEEL_D, cx - 0.045, 2.84, 3.05, 0.09, 0.1, 0.4, plain=True),                # muzzle-velocity gauge
                    B(STEEL_D, cx - 0.02, 2.82, 2.0, 0.04, 0.04, 1.05, plain=True)]
-    return dict(base=base, turret=turret, barrel=barrel, bones=bones)
+    return dict(base=base, turret=turret, barrel=barrel, bones=bones, track=track)
 
 
 def pantsir():
@@ -179,10 +182,11 @@ def pantsir():
               # phased-array tracking radar on the tower front, leaning back
               B(RUS_D, -0.55, 2.9, -0.7, 1.1, 1.3, 0.25),
               B(BLACK, -0.3, 2.4, -0.3, 0.6, 0.45, 0.25), B(GLASS, -0.22, 2.48, -0.05, 0.44, 0.28, 0.02),   # optical sight
-              # search radar: flat panel on top at the back
-              B(RUS_D, -0.15, 4.28, -2.35, 0.3, 0.35, 0.3),
-              B(RUS_D, -0.95, 4.6, -2.3, 1.9, 0.75, 0.16, pitch=-8),
-              B(RADOME, -0.88, 4.66, -2.14, 1.76, 0.63, 0.03, pitch=-8, pivot=(0, 4.97, -2.22))]
+              B(RUS_D, -0.15, 4.28, -2.35, 0.3, 0.2, 0.3)]
+    # search radar: a flat panel on top at the back that turns continuously
+    radar = rod_y(RUS_D, 0, -2.2, 4.48, 0.15, 0.24) + [
+        B(RUS_D, -0.95, 4.6, -2.3, 1.9, 0.75, 0.16, pitch=-8),
+        B(RADOME, -0.88, 4.66, -2.14, 1.76, 0.63, 0.03, pitch=-8, pivot=(0, 4.97, -2.22))]
     turret += rod_z(RUS_D, 0, 3.55, -0.5, 0.3, 1.5) + rod_z(AMBER, 0, 3.55, -0.22, 0.06, 1.36)   # round tracking radar
     barrel = []
     for sx in (1, -1):
@@ -198,7 +202,9 @@ def pantsir():
         for off in (-0.06, 0.06):
             barrel += rod_z(STEEL_D, sx * 0.85 + off, 2.55, -0.1, 1.55, 0.07)
         barrel += rod_z(BLACK, sx * 0.85, 2.55, 1.4, 0.3, 0.2)
-    return dict(base=base, turret=turret, barrel=barrel, bones=truck_wheels(zs, 0.85, 0.42, 1.2))
+    bones = truck_wheels(zs, 0.85, 0.42, 1.2, steer=2)
+    bones.append({"name": "spinRadar", "parent": "turret", "pivot": (0, 4.5, -2.2), "cubes": radar})
+    return dict(base=base, turret=turret, barrel=barrel, bones=bones)
 
 
 def patriot():
@@ -291,7 +297,7 @@ def mortar_120():
 
 def m109():
     """M109A6 Paladin. Pivots (0,1.7,-.9) / (0,2.3,.9); the muzzle is 5.2 ahead of the barrel pivot."""
-    gear, bones = running_gear(1.05, 0.5, -3.0, 3.0, 7, 0.62, US_D)
+    gear, bones, track = running_gear(1.05, 0.5, -3.0, 3.0, 7, 0.62, US_D)
     base = gear + [
         B(US, -1.05, 0.4, -2.95, 2.1, 0.6, 5.7),
         B(US, -1.57, 0.95, -3.1, 3.14, 0.75, 5.3),                                 # hull
@@ -325,7 +331,7 @@ def m109():
     barrel += rod_z(US, 0, 2.3, 3.6, 0.8, 0.38)                                     # fume extractor
     barrel += rod_z(US_D, 0, 2.3, 5.55, 0.55, 0.4)                                  # muzzle brake
     barrel += [B(BLACK, -0.24, 2.22, 5.7, 0.48, 0.16, 0.1), B(BLACK, -0.24, 2.22, 5.9, 0.48, 0.16, 0.1)]
-    return dict(base=base, turret=turret, barrel=barrel, bones=bones)
+    return dict(base=base, turret=turret, barrel=barrel, bones=bones, track=track)
 
 
 # ---------------------------------------------------------------- missile launchers
@@ -385,7 +391,7 @@ def iskander_launcher():
     barrel += rod_z(RUS_D, 0, 2.78, 1.7, 0.45, 0.26)
     barrel += rod_z(BLACK, 0, 2.78, -5.62, 0.14, 0.66)
     barrel += [B(RUS_D, -0.8, 2.75, -5.3, 1.6, 0.06, 0.6), B(RUS_D, -0.03, 2.0, -5.3, 0.06, 1.56, 0.6)]   # tail fins
-    return dict(base=base, turret=[], barrel=barrel, bones=truck_wheels(zs, 1.0, 0.5, 1.3, RUS_D))
+    return dict(base=base, turret=[], barrel=barrel, bones=truck_wheels(zs, 1.0, 0.5, 1.3, RUS_D, steer=2))
 
 
 # ---------------------------------------------------------------- electronic warfare
@@ -446,18 +452,22 @@ def krasukha():
              B(RUS_D, -1.0, 1.45, -5.3, 2.0, 0.5, 3.2),                            # aerial pedestal
              B(STEEL_D, -1.0, 0.75, -5.55, 2.0, 0.3, 0.1)]
     base += rod_y(RUS_D, 0, -3.9, 1.95, 1.9, 0.7)                                   # mast
-    base += [B(RUS_D, -0.4, 3.7, -4.3, 0.8, 0.8, 0.8)]                             # yoke
-    # three round dishes facing rearwards: a big one in the middle and one on each side, with their feeds
-    base += [B(RUS_D, -2.3, 4.0, -4.1, 4.6, 0.3, 0.3)]
+    # three round dishes that sweep slowly from side to side: a big one in the middle and one on each side
+    dish = [B(RUS_D, -2.3, 4.0, -4.1, 4.6, 0.3, 0.3)]
     for cx, dia in ((0, 2.5), (2.2, 2.1), (-2.2, 2.1)):
-        base += rod_z(RADOME, cx, 4.3, -4.5, 0.12, dia) + rod_z(RUS_D, cx, 4.3, -4.38, 0.14, dia * 0.5)
-        base += [B(STEEL_D, cx - 0.03, 4.27, -5.2, 0.06, 0.06, 0.7), B(BLACK, cx - 0.1, 4.2, -5.3, 0.2, 0.2, 0.12)]
-    base += rod_y(STEEL_D, 0, -4.0, 4.7, 1.3, 0.1) + [B(BLACK, -0.25, 5.9, -4.2, 0.5, 0.4, 0.4)]
+        dish += [lathe(RADOME, "z", cx, 4.3, [(-4.32, dia * 0.12), (-4.42, dia * 0.3), (-4.56, dia * 0.5), (-4.52, dia * 0.5),
+                                               (-4.38, dia * 0.3), (-4.28, dia * 0.12), (-4.26, 0.0)])]
+        dish += rod_z(RUS_D, cx, 4.3, -4.3, 0.2, dia * 0.24)
+        dish += [B(STEEL_D, cx - 0.03, 4.27, -5.2, 0.06, 0.06, 0.9, plain=True), B(BLACK, cx - 0.1, 4.2, -5.3, 0.2, 0.2, 0.12)]
+    dish += rod_y(STEEL_D, 0, -4.0, 4.7, 1.3, 0.1) + [B(BLACK, -0.25, 5.9, -4.2, 0.5, 0.4, 0.4)]
+    dish += [B(RUS_D, -0.4, 3.7, -4.3, 0.8, 0.8, 0.8)]
     base += P(STEEL_D, 0.6, 0.5, 0.3, 0.5, 0.6, 0.9)
     base += P(RUS_D, 1.05, 0.2, -1.8, 0.2, 1.1, 0.2) + P(STEEL_D, 0.95, 0.0, -1.95, 0.4, 0.2, 0.5)
     base += P(RUS_D, 1.05, 0.2, -5.45, 0.2, 1.1, 0.2) + P(RED, 1.0, 0.85, -5.57, 0.2, 0.12, 0.03)
     base += mudguards(RUS_D, 0.85, 0.45, zs, 1.2)
-    return dict(base=base, turret=[], barrel=[], bones=truck_wheels(zs, 0.85, 0.42, 1.2))
+    bones = truck_wheels(zs, 0.85, 0.42, 1.2, steer=2)
+    bones.append({"name": "scanDish", "parent": "base", "pivot": (0, 4.3, -3.9), "cubes": dish})
+    return dict(base=base, turret=[], barrel=[], bones=bones)
 
 
 MODELS = {"zu_23_2": zu_23_2, "gepard": gepard, "pantsir": pantsir, "patriot": patriot, "himars": himars,

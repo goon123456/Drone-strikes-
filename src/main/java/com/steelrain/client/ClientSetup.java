@@ -43,12 +43,9 @@ public final class ClientSetup {
             e.registerEntityRenderer(ModRegistry.AIRCRAFT.get(type).get(),
                     c -> new EntityModelRenderer<>(c, Models.aircraft(type), (float) type.gear, 1f));
         }
-        ModRegistry.AIR_DEFENCE.values().forEach(v -> e.registerEntityRenderer(v.get(),
-                com.atsuishio.superbwarfare.client.renderer.entity.BasicAutoAimableRenderer::new));
-        ModRegistry.STRIKE.values().forEach(v -> e.registerEntityRenderer(v.get(),
-                com.atsuishio.superbwarfare.client.renderer.entity.BasicVehicleRenderer::new));
-        ModRegistry.SUPPORT.values().forEach(v -> e.registerEntityRenderer(v.get(),
-                com.atsuishio.superbwarfare.client.renderer.entity.BasicVehicleRenderer::new));
+        ModRegistry.AIR_DEFENCE.forEach((name, v) -> e.registerEntityRenderer(v.get(), c -> new SteelAutoAimRenderer(c, name)));
+        ModRegistry.STRIKE.forEach((name, v) -> e.registerEntityRenderer(v.get(), c -> new SteelVehicleRenderer(c, name)));
+        ModRegistry.SUPPORT.forEach((name, v) -> e.registerEntityRenderer(v.get(), c -> new SteelVehicleRenderer(c, name)));
         e.registerEntityRenderer(ModRegistry.OPERATOR_BODY.get(), OperatorBodyRenderer::new);
         e.registerBlockEntityRenderer(ModRegistry.WEAPON_BE.get(), c -> new WeaponRenderer());
     }

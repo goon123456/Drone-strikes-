@@ -2,7 +2,7 @@
 """Generates every resource file of the mod (textures, models, lang, recipes, tags).
 Run from the repository root:  python3 tools/gen_assets.py
 """
-import json, os, random
+import json, math, os, random
 from PIL import Image, ImageDraw
 
 MOD = "steelrain"
@@ -739,6 +739,8 @@ import vehicle_kit as VK
 def piv(p):
     return [round(p[0] * 16, 3), round(p[1] * 16, 3), round(-p[2] * 16, 3)]
 
+TRACKS = {}   # per tracked vehicle: where each link is at every point of its trip round the wheels
+
 def sbw_vehicle(name, base, turret, barrel, turret_pivot, barrel_pivot, data):
     # The shapes come from gen_vehicles.py; the box lists passed in here are only the old placeholder models.
     m = GV.MODELS[name]()
@@ -747,11 +749,13 @@ def sbw_vehicle(name, base, turret, barrel, turret_pivot, barrel_pivot, data):
     mesh = lambda parts: {"poly_mesh": VK.to_mesh(parts, tw, th)} if parts else {}
     bones = [{"name": "root", "pivot": [0, 0, 0]},
              {"name": "base", "parent": "root", "pivot": [0, 0, 0], **mesh(m["base"])}]
-    for extra in m["bones"]:
-        bones.append({"name": extra["name"], "parent": extra["parent"], "pivot": piv(extra["pivot"]), **mesh(extra["cubes"])})
     if turret_pivot is not None:
         bones += [{"name": "turret", "parent": "root", "pivot": piv(turret_pivot), **mesh(m["turret"])},
                   {"name": "barrel", "parent": "turret", "pivot": piv(barrel_pivot), **mesh(m["barrel"])}]
+    for extra in m["bones"]:
+        bones.append({"name": extra["name"], "parent": extra["parent"], "pivot": piv(extra["pivot"]), **mesh(extra["cubes"])})
+    if m.get("track"):
+        TRACKS[name] = m["track"]
     path = f"{A}/models/bedrock/vehicle/{name}.geo.json"
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w") as f:   # compact: these files hold tens of thousands of points
@@ -770,6 +774,8 @@ def sbw_vehicle(name, base, turret, barrel, turret_pivot, barrel_pivot, data):
             "DamageModifiers": ["All - 6", "All * 0.4", "minecraft:explosion * 5", "#superbwarfare:projectile * 0.3"],
             "DestroyInfo": {"ExplosionDamage": 60, "ExplosionRadius": 5}}
     full.update(data)
+    if m.get("track"):   # one trip round is 100 animation units; this makes the links on the ground stand still
+        full["EngineInfo"] = dict(full["EngineInfo"], TrackRotSpeed=round(100 / (math.pi * m["track"]["length"]), 4))
     write(f"{D}/sbw/vehicles/{name}.json", full)
 
 def cannon(name, belt, rounds, rpm, damage, muzzles, lead):
@@ -982,6 +988,9 @@ def sbw_vehicles():
               "VehicleContainerType": "Empty", "Seats": driver(0.6, 1.6, 4.4), "RotateOffsetHeight": 2.2,
               "TerrainCompat": [[1.3, 0, 3.5], [-1.3, 0, 3.5], [1.3, 0, 2.1], [-1.3, 0, 2.1], [1.3, 0, -2.7], [-1.3, 0, -2.7], [1.3, 0, -4.1], [-1.3, 0, -4.1]],
               "ContainerIcon": "superbwarfare:textures/gui/vehicle/type/land.png"})
+
+    with open(f"{A}/sbw/tracks.json", "w") as f:
+        json.dump(TRACKS, f, separators=(",", ":"))
 
     # Survival recipes: each one crafts the vehicle packed in a Superb Warfare container (open it with a crowbar).
     def crate(name, pattern, key):

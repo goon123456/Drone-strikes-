@@ -57,11 +57,41 @@ repositories {
     }
 }
 
+configurations {
+    sbwOnly { transitive = false }
+}
+
+tasks.register('unpackSbwLibraries', Copy) {
+    from({ zipTree(configurations.sbwOnly.singleFile) }) {
+        include 'META-INF/jarjar/simplebedrockmodel-*.jar'
+        eachFile { path = name }
+        includeEmptyDirs = false
+    }
+    into layout.buildDirectory.dir('sbw-libraries')
+    doLast {   // that library bundles one of its own in the same way
+        def dir = destinationDir
+        fileTree(dir).matching { include 'simplebedrockmodel-*.jar' }.each { jar ->
+            project.copy {
+                from(project.zipTree(jar)) {
+                    include 'META-INF/jarjar/*.jar'
+                    eachFile { path = name }
+                    includeEmptyDirs = false
+                }
+                into dir
+            }
+        }
+    }
+}
+
 dependencies {
     // Steel Rain is an addon for Superb Warfare, which is written in Kotlin and bundles Curios and its model library.
     implementation "maven.modrinth:superb-warfare:${sbw_version}"
     implementation "thedarkcolour:kotlinforforge-neoforge:${kff_version}"
     compileOnly "top.theillusivec4.curios:curios-neoforge:${curios_version}:api"
+    // Superb Warfare bundles the model library its renderers are built on; we extend those renderers, so the
+    // compiler needs to see it. It is unpacked from Superb Warfare's own jar rather than shipped with this mod.
+    sbwOnly "maven.modrinth:superb-warfare:${sbw_version}"
+    compileOnly files(tasks.named('unpackSbwLibraries').map { fileTree(it.destinationDir).matching { include '*.jar' } })
 }
 
 tasks.withType(JavaCompile).configureEach {

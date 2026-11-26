@@ -303,8 +303,7 @@ python3 tools/gen_assets.py   # regenerate textures, models, recipes and languag
 ## Known limits
 - Drones, aircraft, missiles, shells and all ground vehicles have detailed models built from reference
   photographs, in real-world paint. Propellers and rotors spin, landing gear retracts, aircraft bank in turns
-  and vehicle wheels turn when driving. Tracks, radar dishes and steering are not animated, and every vehicle
-  still has one plain hit box. The three launch sites (Ground Station, Orlan Catapult, Shahed Launch Rail)
+  and vehicle wheels turn when driving. Every vehicle still has one plain hit box. The three launch sites (Ground Station, Orlan Catapult, Shahed Launch Rail)
   still have simple shapes.
 - Ground vehicles are true meshes (Superb Warfare's `poly_mesh` format), not boxes: turned wheels with dished
   rims, round barrels, masts and dishes, and bevelled plate edges. Shapes are in `tools/gen_vehicles.py`; the kit
@@ -313,8 +312,13 @@ python3 tools/gen_assets.py   # regenerate textures, models, recipes and languag
   real position: soft-edged camouflage that flows across parts, faded paint, plate seams and bolt rows, rain
   streaks, grime, chips, road dust, tyre tread and track links.
   `python3 tools/gen_vehicles.py <dir> [vehicle]` renders textured previews without the game.
+- Moving parts: tracks are made of separate links that travel round the sprocket, idler and road wheels as
+  the vehicle drives (the Gepard and M109), with the sprockets, idlers and return rollers turning too. Front
+  axles steer. The Gepard's and Pantsir's search radars turn and the Krasukha's dishes sweep. Track paths are
+  worked out by the generator from the wheel positions and read by `VehicleAnim` from `sbw/tracks.json`.
 - The Gepard has the most modelled detail; the other vehicles use the same mesh and paint system but have fewer
   parts so far. Real artist-made models can replace generated ones where a freely licensed one is available.
+- Not animated yet: suspension travel, gun recoil, hatches and stabiliser jacks.
 - A loaded Iskander is not drawn on its launcher.
 - The Pantsir's missiles only fire in automatic mode.
 - A fitted Jammer Dome is not drawn.
