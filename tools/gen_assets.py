@@ -733,42 +733,29 @@ PALETTE = [OL, OD, OLL, TY, ST, SD, GL, WH, SA, SAD, BK, RD]
 def pair(c, x, y, z, w, h, d):
     return [(c, x, y, z, w, h, d), (c, -x - w, y, z, w, h, d)]
 
-def vehicle_texture():
-    img = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
-    rnd = random.Random(5)
-    for i, col in enumerate(PALETTE):
-        ox, oy = (i % 8) * 8, (i // 8) * 8
-        for y in range(8):
-            for x in range(8):
-                n = rnd.randint(-7, 7)
-                img.putpixel((ox + x, oy + y), tuple(max(0, min(255, ((col >> s) & 255) + n)) for s in (16, 8, 0)) + (255,))
-    save(img, f"{A}/textures/bedrock/vehicle/steelrain_vehicles.png")
+import gen_vehicles as GV
 
-def cube(box):
-    c, x, y, z, w, h, d = box[:7]
-    i = PALETTE.index(c)
-    u, v = (i % 8) * 8 + 1, (i // 8) * 8 + 1
-    face = {"uv": [u, v], "uv_size": [6, 6]}
-    # Bedrock models face -Z, so the vehicle's front (+z here) becomes -Z.
-    out = {"origin": [round(x * 16, 3), round(y * 16, 3), round(-(z + d) * 16, 3)],
-           "size": [round(w * 16, 3), round(h * 16, 3), round(d * 16, 3)],
-           "uv": {f: face for f in ("north", "south", "east", "west", "up", "down")}}
-    if len(box) > 7:   # (degrees nose-up, pivot point)
-        out["rotation"] = [box[7], 0, 0]
-        out["pivot"] = piv(box[8])
-    return out
+def vehicle_texture():
+    GV.texture(f"{A}/textures/bedrock/vehicle/steelrain_vehicles.png", save)
+
+def cube(c):
+    return {k: v for k, v in c.items() if k != "_sem"}
 
 def piv(p):
     return [round(p[0] * 16, 3), round(p[1] * 16, 3), round(-p[2] * 16, 3)]
 
 def sbw_vehicle(name, base, turret, barrel, turret_pivot, barrel_pivot, data):
+    # The shapes come from gen_vehicles.py; the box lists passed in here are only the old placeholder models.
+    m = GV.MODELS[name]()
     bones = [{"name": "root", "pivot": [0, 0, 0]},
-             {"name": "base", "parent": "root", "pivot": [0, 0, 0], "cubes": [cube(b) for b in base]}]
+             {"name": "base", "parent": "root", "pivot": [0, 0, 0], "cubes": [cube(b) for b in m["base"]]}]
+    for extra in m["bones"]:
+        bones.append({**extra, "cubes": [cube(b) for b in extra["cubes"]]})
     if turret_pivot is not None:
-        bones += [{"name": "turret", "parent": "root", "pivot": piv(turret_pivot), "cubes": [cube(b) for b in turret]},
-                  {"name": "barrel", "parent": "turret", "pivot": piv(barrel_pivot), "cubes": [cube(b) for b in barrel]}]
+        bones += [{"name": "turret", "parent": "root", "pivot": piv(turret_pivot), "cubes": [cube(b) for b in m["turret"]]},
+                  {"name": "barrel", "parent": "turret", "pivot": piv(barrel_pivot), "cubes": [cube(b) for b in m["barrel"]]}]
     write(f"{A}/models/bedrock/vehicle/{name}.geo.json", {"format_version": "1.12.0", "minecraft:geometry": [{
-        "description": {"identifier": f"geometry.{name}", "texture_width": 64, "texture_height": 64,
+        "description": {"identifier": f"geometry.{name}", "texture_width": 256, "texture_height": 256,
                         "visible_bounds_width": 16, "visible_bounds_height": 8, "visible_bounds_offset": [0, 3, 0]},
         "bones": bones}]})
     write(f"{A}/sbw/vehicles/{name}.json", {"Models": [{

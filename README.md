@@ -301,9 +301,13 @@ python3 tools/gen_assets.py   # regenerate textures, models, recipes and languag
   jammer hums, a jammed video link hisses louder the worse it gets, and the fibre makes one of three snaps.
 
 ## Known limits
-- Drones, aircraft, missiles and shells have detailed models built from reference photographs, in real-world
-  paint, with spinning propellers and rotors, retracting landing gear and banking in turns. The ground vehicles
-  and launch sites are still simple generated shapes, each with one plain hit box; their rework is next.
+- Drones, aircraft, missiles, shells and all ground vehicles have detailed models built from reference
+  photographs, in real-world paint. Propellers and rotors spin, landing gear retracts, aircraft bank in turns
+  and vehicle wheels turn when driving. Tracks, radar dishes and steering are not animated, and every vehicle
+  still has one plain hit box. The three launch sites (Ground Station, Orlan Catapult, Shahed Launch Rail)
+  still have simple shapes.
+- Vehicle shapes and paint come from `tools/gen_vehicles.py`; `python3 tools/gen_vehicles.py <dir>` dumps them
+  for an offline preview.
 - A loaded Iskander is not drawn on its launcher.
 - The Pantsir's missiles only fire in automatic mode.
 - A fitted Jammer Dome is not drawn.
