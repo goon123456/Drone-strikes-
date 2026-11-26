@@ -90,7 +90,43 @@ public class AirDefenceVehicle extends AutoAimableEntity {
 
     @Override
     public void autoAim() {
-        if (!(level() instanceof ServerLevel level) || isWreck() || getFirstPassenger() != null || !getActive()) return;
+        if (level().isClientSide) {
+            clientAim();
+            return;
+        }
+        serverAim();
+        // Tell every player's game what is being tracked, so the turret they see follows it too.
+        Entity tracked = targetId < 0 ? null : level().getEntity(targetId);
+        String want = tracked == null ? "" : tracked.getStringUUID();
+        if (!want.equals(getTargetUUID())) setTargetUUID(want);
+    }
+
+    /**
+     * The turret a player sees is turned by their own game, the same way Superb Warfare's own turrets are: it
+     * knows the target and works out the same lead the server does.
+     */
+    private void clientAim() {
+        if (isWreck() || getFirstPassenger() != null || !getActive()) return;
+        String uuid = getTargetUUID();
+        if (uuid == null || uuid.isEmpty()) return;
+        Entity target = com.atsuishio.superbwarfare.tools.EntityFindUtil.findEntity(level(), uuid);
+        if (target == null || !target.isAlive()) return;
+        Vec3 centre = position().add(0, getBbHeight(), 0);
+        Vec3 targetPos = target.position().add(0, target.getBbHeight() / 2, 0);
+        Vec3 targetMove = Ballistics.velocity(target);
+        boolean useGuns = kind.guns && centre.distanceTo(targetPos) <= kind.gunRange && getAmmoCount("Main") > 0;
+        Vec3 from = kind.guns ? getShootPos("Main", 1f) : centre;
+        double shotSpeed = useGuns ? getProjectileVelocity("Main") : (kind == Kind.PATRIOT ? 6.0 : 4.5);
+        Vec3 aim = Ballistics.intercept(from, targetPos, targetMove, shotSpeed);
+        if (aim == null) aim = targetPos;
+        turretAutoAimFromVector(aim.subtract(from).normalize());
+    }
+
+    private void serverAim() {
+        if (!(level() instanceof ServerLevel level) || isWreck() || getFirstPassenger() != null || !getActive()) {
+            targetId = -1;
+            return;
+        }
         if (cooldown > 0) cooldown--;
         LivingEntity ownerEntity = getOwner();
         if (ownerEntity instanceof Player p) ownerName = p.getGameProfile().getName();

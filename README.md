@@ -337,6 +337,10 @@ python3 tools/gen_assets.py   # regenerate textures, models, recipes and languag
   screw jacks, jerrycans, fire extinguishers, pioneer tools, sprung aerials, hatches, vision blocks, lamps in
   bezels, beacons, bedrolls, spare wheels, shackles, wheel chocks, hoses, cable runs and diagonal struts.
   Real artist-made models can still replace generated ones where a freely licensed one is available.
+- Air-defence turrets turn and elevate on screen as they track: the server syncs what each one is tracking and
+  every player's game works out the same aim, the way Superb Warfare's own turrets do.
+- Anti-aircraft shells have proximity fuses: one that passes close to the tracked target bursts there and does
+  light fragment damage. The balance between the three guns is still being tuned.
 - Animation, driven by `VehicleAnim` on top of Superb Warfare's renderer:
   the hull sits on its own bone above the running gear and squats when pulling away, dips under braking and
   rolls in turns; gun barrels slide back on firing and run out again; search radars turn and the Krasukha's
