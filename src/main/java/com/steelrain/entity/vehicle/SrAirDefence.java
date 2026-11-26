@@ -96,6 +96,10 @@ public abstract class SrAirDefence extends SrVehicle {
     protected int beltChangeTicks() { return 6; }
     public double minPitch() { return -8; }
     public double maxPitch() { return 85; }
+    /** Elevation a launcher must be raised to before it may traverse (to clear the vehicle); none by default. */
+    protected float traverseClearance() { return -90f; }
+    /** How far either side of straight ahead it can traverse. */
+    protected float yawLimit() { return 180f; }
     protected abstract float traverseRate();
     protected abstract float elevateRate();
     /** Close, far and very far firing sounds (Superb Warfare's, until Steel Rain has its own). */
@@ -336,9 +340,13 @@ public abstract class SrAirDefence extends SrVehicle {
 
     /** Turns the turret and raises the guns towards a direction, at their own pace. */
     private void slewTo(Vec3 dir) {
-        float wantYaw = Mth.wrapDegrees((float) Math.toDegrees(Math.atan2(-dir.x, dir.z)) - getYRot());
+        float wantYaw = Mth.clamp(Mth.wrapDegrees((float) Math.toDegrees(Math.atan2(-dir.x, dir.z)) - getYRot()), -yawLimit(), yawLimit());
         float wantPitch = (float) Mth.clamp(Math.toDegrees(Math.asin(Mth.clamp(dir.y, -1, 1))), minPitch(), maxPitch());
-        float dy = Mth.clamp(Mth.wrapDegrees(wantYaw - turretYaw()), -traverseRate(), traverseRate());
+        // a limited traverse does not wrap round the back; a launcher that must clear the vehicle rises first
+        float off = yawLimit() < 180f ? wantYaw - turretYaw() : Mth.wrapDegrees(wantYaw - turretYaw());
+        boolean turning = Math.abs(off) > 0.5f;
+        if (turning) wantPitch = Math.max(wantPitch, traverseClearance());
+        float dy = turning && gunPitch() >= traverseClearance() - 0.5f ? Mth.clamp(off, -traverseRate(), traverseRate()) : 0;
         float dp = Mth.clamp(wantPitch - gunPitch(), -elevateRate(), elevateRate());
         if (Math.abs(dy) > 0.001f) setTurretYaw(turretYaw() + dy);
         if (Math.abs(dp) > 0.001f) setGunPitch(gunPitch() + dp);

@@ -75,6 +75,7 @@
   "item.steelrain.tomahawk_launcher": "Tomahawk Launcher",
   "item.steelrain.iskander_launcher": "Iskander-M Launcher",
   "message.steelrain.moving": "Stop the vehicle before launching",
+  "message.steelrain.traverse_limit": "Target is behind the cab: turn the truck towards it",
   "key.steelrain.switch_seat": "Change seat in a vehicle",
   "key.steelrain.shell_type": "Gun: next shell type",
   "message.steelrain.seat_0": "Driver's seat",

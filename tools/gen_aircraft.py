@@ -120,7 +120,8 @@ def reaper():
     parts += wings(g, 0.3, 0.25, -3.2, 1.45, 0.15, 2.3, 2.35, -4.2, 0.75, 0.07)
     parts += [wing(g, 0, -0.36, -3.6, 1.2, 0.13, 0, -1.4, -4.2, 0.6, 0.06)]
     for sx in (1, -1):
-        parts += [B(g, sx * 1.6 - 0.003, 1.55, -4.5, 0.006, 0.4, 0.7, roll=-sx * 43, plain=True, marks=[("left" if sx > 0 else "right", "digits:AF 07 104", 0.5, 0.5, 0)])]
+        # tail lettering, on the V-tail's centre plane
+        parts += [B(g, sx * 1.6 - 0.02, 1.415, -4.55, 0.04, 0.4, 0.7, roll=-sx * 43, plain=True, marks=[("left" if sx > 0 else "right", "digits:AF 07 104", 0.5, 0.5, 0)])]
     parts += _sensor_ball(0, 4.25, -0.42, 0.56)
     # aerials, pitot, lights
     parts += [wing(d, 0, 0.5, 0.9, 0.3, 0.03, 0, 0.82, 0.8, 0.16, 0.02), wing(d, 0, -0.5, 1.4, 0.26, 0.03, 0, -0.8, 1.3, 0.14, 0.02),
@@ -170,7 +171,7 @@ def tb2():
                 s, c = math.sin(math.radians(a)), math.cos(math.radians(a))
                 parts.append(wing(d, cx + s * 0.07, y - 0.28 + c * 0.07, -0.3, 0.2, 0.015, cx + s * 0.17, y - 0.28 + c * 0.17, -0.36, 0.12, 0.01))
     bones = [_bone("prop", (0, 0.1, -2.42), propeller(STEEL_D, 0, 0.1, -2.42, 1.5, 2, 0.2, facing=-1, hub=STEEL_D)),
-             _gear("gearN", (0, -0.2, 2.2), (0, -1.1, 2.25), 0.3),
+             _gear("gearNf", (0, -0.2, 2.2), (0, -1.1, 2.25), 0.3),          # folds forward, clear of the sensor ball behind it
              _gear("gearL", (0.4, -0.15, -0.5), (0.8, -1.1, -0.45), 0.36),
              _gear("gearR", (-0.4, -0.15, -0.5), (-0.8, -1.1, -0.45), 0.36)]
     return _model(parts, bones)
@@ -201,7 +202,7 @@ def global_hawk():
     for sx in (1, -1):
         parts += [wing(g, sx * 13.0, 0.5, -1.2, 0.34, 0.05, sx * 19.4, 1.08, -1.25, 0.22, 0.03),
                   wing(g, sx * 4.6, -0.1, -1.24, 0.5, 0.08, sx * 11.6, 0.38, -1.08, 0.4, 0.06)]
-        parts += [B(g, sx * 1.9 - 0.004, 2.2, -5.9, 0.008, 0.7, 1.0, roll=-sx * 40, plain=True,
+        parts += [B(g, sx * 1.9 - 0.02, 1.746, -6.45, 0.04, 0.7, 1.0, roll=-sx * 40, plain=True,
                     marks=[("left" if sx > 0 else "right", "digits:BB", 0.5, 0.35, 0), ("left" if sx > 0 else "right", "digits:02 2010", 0.5, 0.7, 0)])]
     parts += wings(g, 0.45, 0.35, -4.4, 1.9, 0.17, 2.9, 3.3, -5.9, 0.95, 0.08)                                      # V tail
     # sensor fairings under the chin and belly, aerials, pitot
@@ -279,8 +280,8 @@ def fpv(fiber=False):
              B(LIPO, -0.04, 0.056, -0.09, 0.08, 0.04, 0.17, plain=True, marks=[("top", "digits:1300", 0.5, 0.5, 0)]),                    # battery
              B(BLACK, -0.045, 0.07, -0.03, 0.09, 0.03, 0.03, plain=True), B(BLACK, -0.045, 0.07, 0.04, 0.09, 0.03, 0.02, plain=True),    # straps
              B(BLACK, -0.028, 0.012, 0.13, 0.056, 0.04, 0.035, pitch=20, plain=True),                                                    # camera, tilted up
-             bar(STEEL_D, (0, 0.05, -0.15), (0, 0.16, -0.18), 0.008), bar(STEEL_D, (0.03, 0.03, -0.12), (0.06, 0.06, -0.2), 0.004),
-             bar(STEEL_D, (-0.03, 0.03, -0.12), (-0.06, 0.06, -0.2), 0.004)]
+             bar(STEEL_D, (0, 0.05, -0.15), (0, 0.16, -0.18), 0.008), bar(STEEL_D, (0.03, 0.04, -0.1), (0.06, 0.06, -0.2), 0.004),
+             bar(STEEL_D, (-0.03, 0.04, -0.1), (-0.06, 0.06, -0.2), 0.004)]                     # receiver antennas, from the frame
     parts += rod_z(GLASS, 0, 0.036, 0.16, 0.012, 0.03) + rod_y(BLACK, 0, -0.18, 0.155, 0.03, 0.03)
     for (x, z) in ((0.035, 0.09), (-0.035, 0.09), (0.035, -0.09), (-0.035, -0.09)):
         parts += rod_y(STEEL, x, z, 0.012, 0.033, 0.008)                                                                                 # stand-offs

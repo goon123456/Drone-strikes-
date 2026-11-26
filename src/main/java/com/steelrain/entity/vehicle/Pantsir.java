@@ -43,7 +43,9 @@ public class Pantsir extends SrAirDefence {
     @Override public double missileRange() { return 128; }
     @Override protected Item missileItem() { return ModRegistry.PANTSIR_MISSILE.get(); }
     @Override protected EntityType<InterceptorEntity> interceptor() { return ModRegistry.INTERCEPTOR.get(); }
-    @Override protected Vec3 missileTube() { return new Vec3(0, 3.6, -0.5); }
+    @Override protected Vec3 missileTube() { return new Vec3(0, 3.3, 1.05); }
+    /** The guns do not depress below level: lower, they would swing into the cab and the crew module. */
+    @Override public double minPitch() { return 0; }
     @Override protected Item heBelt() { return ModRegistry.AMMO_30MM.get(); }
     @Override protected Item apBelt() { return ModRegistry.AMMO_30MM_AP.get(); }
     @Override protected float traverseRate() { return 5f; }

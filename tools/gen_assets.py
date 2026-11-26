@@ -655,6 +655,7 @@ def lang():
         "item.steelrain.tomahawk_launcher": "Tomahawk Launcher",
         "item.steelrain.iskander_launcher": "Iskander-M Launcher",
         "message.steelrain.moving": "Stop the vehicle before launching",
+        "message.steelrain.traverse_limit": "Target is behind the cab: turn the truck towards it",
         "key.steelrain.switch_seat": "Change seat in a vehicle",
         "key.steelrain.shell_type": "Gun: next shell type",
         "message.steelrain.seat_0": "Driver's seat",
@@ -920,8 +921,12 @@ def own_vehicle(name):
         return dict(b, parent={"base": "root", "move_body": "body"}.get(b["parent"], b["parent"]))
     tex, tw, th = VK.bake(m, name)
     save(Image.fromarray(tex).convert("RGB"), f"{A}/textures/entity/vehicle/{name}.png")
+    # window glass is its own part, so it can be left out while the crew look out from inside
+    glass = [p for p in m["base"] if p["mat"] == "glass"]
+    m["base"] = [p for p in m["base"] if p["mat"] != "glass"]
     out = GA.export({"base": [], "bones": [
         {"name": "body", "parent": "root", "pivot": (0, 0.6, 0), "cubes": m["base"]},
+        *([{"name": "move_glass", "parent": "body", "pivot": (0, 0.6, 0), "cubes": glass}] if glass else []),
         {"name": "turret", "parent": "body", "pivot": GV.PIVOTS[name][0], "cubes": m["turret"]},
         {"name": "barrel", "parent": "turret", "pivot": GV.PIVOTS[name][1], "cubes": m["barrel"]},
         *[links(b) for b in m["bones"] if not b["name"].startswith("trackMov")]]}, tw, th)

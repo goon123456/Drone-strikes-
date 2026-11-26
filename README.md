@@ -304,6 +304,7 @@ Requires Java 21.
 ./gradlew runClient      # start a development client
 ./gradlew runServer      # start a development server
 python3 tools/gen_assets.py   # regenerate textures, models, recipes and language file
+python3 tools/audit_models.py [model ...]   # check models for clipping, floating parts and flickering faces
 ```
 
 ## Sounds
@@ -314,6 +315,24 @@ python3 tools/gen_assets.py   # regenerate textures, models, recipes and languag
 - FPV and Mavic rotors blend between low, medium and high-speed loops as the drone speeds up, with a spin-up
   when you take control. The Shahed, Reaper, Bayraktar, Orlan and Global Hawk each have their own engine. The
   jammer hums, a jammed video link hisses louder the worse it gets, and the fibre makes one of three snaps.
+
+## Model checks
+`tools/audit_models.py` checks every model for:
+- **Clipping:** turrets, guns, launchers, steered wheels, hatch lids, propellers, rotors and landing gear are swept
+  through their whole travel and tested against every fixed part.
+- **Floating parts:** parts that touch nothing.
+- **Coplanar faces:** faces that would flicker.
+- **Crew eyes:** crew eye positions inside solid geometry.
+
+The generator nudges any remaining coplanar faces apart by a millimetre and a half. Moving parts follow real
+practice, which keeps them clear:
+- **HIMARS and Patriot:** the launchers hinge at their rear end, rise clear of the cab before they traverse, and
+  can traverse up to 110° either side.
+- **Pantsir:** its guns do not depress below level.
+- **Nose gear:** a nose leg with a sensor turret behind it folds forward.
+
+Riding in first person, the faces of your own vehicle that point away from you are not drawn, and its window glass
+is hidden, so you look out through the cab instead of at the inside of its walls.
 
 ## Superb Warfare compatibility (optional)
 Steel Rain does not need Superb Warfare. If it is installed as well: Steel Rain air defence engages its crewed

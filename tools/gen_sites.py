@@ -144,12 +144,15 @@ def shahed_launcher():
         p += rod_x(STEEL_D, x0 - 0.02, 0.14, 0.46, 0.3, 0.1)
         ty = 0.4 + math.tan(math.radians(ang)) * 4.0
         p += [bar(d, (sx * 1.0, 0.2, 4.6), (sx * 0.3, ty, 4.3), 0.09), bar(d, (sx * 1.0, 0.2, 3.2), (sx * 0.3, ty, 4.3), 0.07)]
-        p += [lathe(STEEL_D, "z", sx * 0.6, 0.3, [(1.2, 0.0), (1.2, 0.07), (2.0, 0.07), (2.0, 0.04), (2.9, 0.04), (2.9, 0.0)], pitch=20, pivot=(sx * 0.6, 0.3, 1.2))]
+        # lifting ram: cylinder from the cross-member at z 1.6, rod up to the underside of the rail
+        top = (sx * 0.3, 0.4 + math.tan(math.radians(ang)) * (2.6 - 0.3), 2.6)
+        mid = (sx * 0.3, 0.16 + (top[1] - 0.16) * 0.55, 1.6 + (top[2] - 1.6) * 0.55)
+        p += [bar(STEEL_D, (sx * 0.3, 0.16, 1.6), mid, 0.1), bar(STEEL, mid, top, 0.06)]
     ty = 0.4 + math.tan(math.radians(ang)) * 4.0
     p += [bar(d, (0.34, ty - 0.02, 4.3), (-0.34, ty - 0.02, 4.3), 0.08)]
     # blast plate behind the booster, standing back from the rail
     p += [B(STEEL_D, -0.8, 0.2, 0.02, 1.6, 1.0, 0.05, pitch=-25, pivot=(0, 0.2, 0.05), marks=[("rear", "hazard", 0.5, 0.15, 1.4, 0.12)]),
-          bar(d, (0.6, 0.2, 0.5), (0.6, 0.9, -0.28), 0.05), bar(d, (-0.6, 0.2, 0.5), (-0.6, 0.9, -0.28), 0.05)]
+          bar(d, (0.6, 0.16, 0.37), (0.6, 0.9, -0.28), 0.05), bar(d, (-0.6, 0.16, 0.37), (-0.6, 0.9, -0.28), 0.05)]   # struts from the cross-member
     # firing box on its cable, earth spike, a spare booster in its crate
     p += [B(d, 1.15, 0.2, 2.0, 0.3, 0.3, 0.4, marks=[("left", "panel", 0.5, 0.5, 0.3, 0.2), ("top", "digits:FIRE", 0.5, 0.5, 0)]),
           B(RED, 1.26, 0.5, 2.15, 0.06, 0.04, 0.06, plain=True)]

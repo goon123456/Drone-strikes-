@@ -37,7 +37,12 @@ public class Himars extends SrVehicle implements Launcher {
     private static final float FIRE_ELEVATION = 50f, TRAVERSE_RATE = 3f, ELEVATE_RATE = 1.5f;
 
     // where things are on the model (vehicle space, metres)
-    private static final Vec3 TURRET_PIVOT = new Vec3(0, 1.2, -1.5), POD_PIVOT = new Vec3(0, 1.7, -2.5);
+    // the pod elevates about its rear end, so raising it never dips any of it into the cab
+    private static final Vec3 TURRET_PIVOT = new Vec3(0, 1.2, -1.5), POD_PIVOT = new Vec3(0, 1.6, -3.4);
+    /** Elevation the pod must be raised to before it may traverse, to clear the cab. */
+    private static final float CLEAR = 18f;
+    /** How far either side of straight ahead the launcher can traverse before it would hit the cab. */
+    private static final float YAW_LIMIT = 110f;
     private static final Vec3[] TUBES = new Vec3[6];
     static {
         for (int i = 0; i < 3; i++) {
@@ -100,6 +105,8 @@ public class Himars extends SrVehicle implements Launcher {
         double dist = Math.sqrt(dx * dx + dz * dz);
         if (dist < MIN_RANGE) return Component.translatable("message.steelrain.too_close", MIN_RANGE);
         if (dist > maxRangeNow()) return Component.translatable("message.steelrain.too_far", maxRangeNow());
+        float bearing = (float) Math.toDegrees(Math.atan2(-dx, dz));
+        if (Math.abs(Mth.wrapDegrees(bearing - getYRot())) > YAW_LIMIT) return Component.translatable("message.steelrain.traverse_limit");
         salvoLeft = Math.max(1, Math.min(count, pod));
         salvoX = x + 0.5;
         salvoZ = z + 0.5;
@@ -135,9 +142,12 @@ public class Himars extends SrVehicle implements Launcher {
     /** Moves the launcher towards a bearing and elevation at its own pace. @return whether it is there */
     private boolean slew(float yaw, float pitch) {
         float y = turretYaw(), p = gunPitch();
-        float dy = Mth.clamp(Mth.wrapDegrees(yaw - y), -TRAVERSE_RATE, TRAVERSE_RATE);
-        // raise or lower the pod only once it is roughly on its bearing, as the crane arm needs room to swing
-        float dp = Math.abs(Mth.wrapDegrees(yaw - y)) < 20 ? Mth.clamp(pitch - p, -ELEVATE_RATE, ELEVATE_RATE) : Mth.clamp(-p, -ELEVATE_RATE, 0);
+        float off = Mth.wrapDegrees(yaw - y);
+        boolean turning = Math.abs(off) > 0.5f;
+        // up clear of the cab first, then round, then to the wanted elevation (stowing: round, then down)
+        float wantPitch = turning ? Math.max(pitch, CLEAR) : pitch;
+        float dp = Mth.clamp(wantPitch - p, -ELEVATE_RATE, ELEVATE_RATE);
+        float dy = turning && p >= CLEAR - 0.5f ? Mth.clamp(off, -TRAVERSE_RATE, TRAVERSE_RATE) : 0;
         if (dy != 0) setTurretYaw(y + dy);
         if (dp != 0) setGunPitch(p + dp);
         return Math.abs(Mth.wrapDegrees(yaw - turretYaw())) < 0.5f && Math.abs(pitch - gunPitch()) < 0.5f;

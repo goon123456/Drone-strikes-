@@ -279,6 +279,9 @@ public final class BoxModel {
 
     // ------------------------------------------------------------------ drawing
 
+    /** While set, mesh faces turned away from the camera are not drawn (used when the camera is inside the model). */
+    public static boolean cullFacingAway;
+
     public void render(PoseStack pose, VertexConsumer vc, int light) {
         render(root, pose, vc, light);
     }
@@ -300,7 +303,16 @@ public final class BoxModel {
             vertex(p, m, vc, light, q, 6, q[18], 0);
             vertex(p, m, vc, light, q, 9, 0, 0);
         }
+        org.joml.Vector3f centre = new org.joml.Vector3f(), normal = new org.joml.Vector3f();
         for (float[] f : g.mesh) {
+            if (cullFacingAway) {
+                // the camera sits at the origin of this pose: skip faces whose outward normal points away from it
+                centre.set((f[0] + f[16]) * 0.5f, (f[1] + f[17]) * 0.5f, (f[2] + f[18]) * 0.5f);
+                m.transformPosition(centre);
+                normal.set(f[3] + f[11] + f[19] + f[27], f[4] + f[12] + f[20] + f[28], f[5] + f[13] + f[21] + f[29]);
+                p.normal().transform(normal);
+                if (normal.dot(centre) > 0) continue;
+            }
             for (int c = 0; c < 32; c += 8) {
                 vc.addVertex(m, f[c], f[c + 1], f[c + 2]).setColor(1f, 1f, 1f, 1f).setUv(f[c + 6], f[c + 7])
                         .setOverlay(OverlayTexture.NO_OVERLAY).setLight(light).setNormal(p, f[c + 3], f[c + 4], f[c + 5]);

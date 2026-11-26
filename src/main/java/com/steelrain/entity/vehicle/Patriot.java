@@ -27,7 +27,9 @@ public class Patriot extends SrAirDefence {
     @Override protected ItemStack asItem() { return new ItemStack(ModRegistry.PATRIOT_ITEM.get()); }
     @Override public String modelName() { return "patriot"; }
     @Override protected Vec3 turretPivot() { return new Vec3(0, 1.3, -1.0); }
-    @Override protected Vec3 barrelPivot() { return new Vec3(0, 1.9, -2.0); }
+    @Override protected Vec3 barrelPivot() { return new Vec3(0, 1.65, -4.1); }   // the launcher hinges at its rear
+    @Override protected float traverseClearance() { return 15f; }
+    @Override protected float yawLimit() { return 110f; }
 
     @Override public int gunnerSeat() { return -1; }
     @Override public boolean hasRadar() { return true; }
@@ -42,7 +44,7 @@ public class Patriot extends SrAirDefence {
     @Override protected int missileEnergy() { return 25_000; }
     @Override protected Item missileItem() { return ModRegistry.PATRIOT_MISSILE.get(); }
     @Override protected EntityType<InterceptorEntity> interceptor() { return ModRegistry.PATRIOT_INTERCEPTOR.get(); }
-    @Override protected Vec3 missileTube() { return new Vec3(0, 2.3, 3.2); }
+    @Override protected Vec3 missileTube() { return new Vec3(0, 2.3, 2.2); }
     @Override protected boolean highValueOnly() { return true; }
     @Override protected boolean hasCeiling() { return false; }
     @Override protected Item heBelt() { return null; }

@@ -254,13 +254,16 @@ def truck_wheels(zs, x, width, dia, rim=STEEL_D, steer=1):
     return bones
 
 
-def axles(zs, x, dia, mat=STEEL_D):
-    """Axle beams, differentials and leaf springs under a truck."""
+def axles(zs, x, dia, mat=STEEL_D, steer=1):
+    """Axle beams, differentials and leaf springs under a truck. The front `steer` axles stop short of the wheels,
+    where the steering knuckles would be, so the wheels can turn."""
     c = []
+    steering = sorted(zs, reverse=True)[:steer]
     for z in zs:
-        c += rod_x(mat, -x, 2 * x, dia / 2, z, 0.16)
+        half = x - 0.14 if z in steering else x
+        c += rod_x(mat, -half, 2 * half, dia / 2, z, 0.16)
         c += [B(mat, -0.22, dia / 2 - 0.2, z - 0.2, 0.44, 0.4, 0.4, plain=True)]
-        c += P(mat, x - 0.32, dia / 2 + 0.1, z - 0.55, 0.08, 0.08, 1.1, plain=True)
+        c += P(mat, x - 0.32, dia / 2 + 0.06, z - 0.55, 0.08, 0.08, 1.1, plain=True)    # leaf springs, sitting on the beam
     return c
 
 
@@ -401,8 +404,10 @@ def cab(mat, dark, z0, length, width, floor, height, bonnet=0.0):
     c += P(BLACK, hw + 0.2, floor + height * 0.5, front - 0.53, 0.05, 0.4, 0.2)                 # mirrors
     c += P(dark, hw - 0.02, floor - 0.45, z0 + length * 0.35, 0.08, 0.05, 0.5, plain=True)      # steps
     c += P(dark, hw - 0.02, floor - 0.22, z0 + length * 0.35, 0.08, 0.05, 0.5, plain=True)
+    c += P(dark, hw - 0.01, floor - 0.45, z0 + length * 0.35, 0.05, 0.45, 0.04, plain=True)     # step hangers up to the cab
+    c += P(dark, hw - 0.01, floor - 0.45, z0 + length * 0.35 + 0.46, 0.05, 0.45, 0.04, plain=True)
     c += P(BLACK, 0.2, floor + height * 0.56, front + 0.03, 0.5, 0.02, 0.02, plain=True)        # wipers
-    c += P(AMBER, hw - 0.25, floor + height + 0.08, front - 0.6, 0.12, 0.06, 0.08)              # roof marker lights
+    c += P(AMBER, hw - 0.25, floor + height, front - 0.6, 0.12, 0.06, 0.08)                     # roof marker lights
     c += [B(STEEL_D, hw - 0.15, floor + height, z0 + 0.15, 0.04, 1.3, 0.04, plain=True)]        # aerial
     return c
 
@@ -422,14 +427,19 @@ def truck_details(mat, dark, zs, x, dia, z_rear, z_front, bed):
         c += [lathe(STEEL_D, "z", cx, bed - 0.62, [(mid - 0.75, 0.0), (mid - 0.75, 0.24), (mid - 0.7, 0.27), (mid + 0.1, 0.27), (mid + 0.15, 0.24), (mid + 0.15, 0.0)])]
         c += [B(BLACK, cx - 0.28, bed - 0.9, mid - 0.55, 0.56, 0.03, 0.05, plain=True), B(BLACK, cx - 0.28, bed - 0.9, mid - 0.1, 0.56, 0.03, 0.05, plain=True)]
         c += rod_z(STEEL, cx, bed - 0.55, mid + 0.3, 0.5, 0.2)                                    # air tanks
-        c += [B(dark, sx * x - 0.25 + (0.0 if sx > 0 else 0.0), bed - 0.85, mid + 0.9, 0.5, 0.45, 0.4, marks=[("left" if sx > 0 else "right", "panel", 0.5, 0.5, 0.3, 0.3)])]
+        c += [B(dark, cx - 0.03, bed - 0.55, mid + 0.52, 0.06, 0.55, 0.06, plain=True),             # and their hanger
+              B(dark, cx - 0.03, bed - 0.38, mid - 0.4, 0.06, 0.38, 0.06, plain=True)]               # fuel tank hanger
+        # battery and tool boxes: inboard of the wheels and clear of the front ones as they steer
+        bz = min(mid + 0.9, zs[-1] - dia * 0.62 - 0.45)
+        c += [B(dark, sx * (x - 0.05) - (0.5 if sx > 0 else 0.0), bed - 0.85, bz, 0.5, 0.45, 0.4, marks=[("left" if sx > 0 else "right", "panel", 0.5, 0.5, 0.3, 0.3)])]
         c += [B(RED, sx * (x + 0.1) - 0.11, bed - 0.3, z_rear - 0.04, 0.22, 0.12, 0.04), B(AMBER, sx * (x - 0.16) - 0.07, bed - 0.3, z_rear - 0.04, 0.14, 0.12, 0.04),
               B(WHITE, sx * (x - 0.36) - 0.06, bed - 0.3, z_rear - 0.04, 0.12, 0.12, 0.04),
-              B(AMBER, sx * (x + 0.36) - 0.02, bed - 0.12, mid, 0.04, 0.06, 0.1, plain=True)]    # side marker
+              B(AMBER, sx * (x + 0.33) - 0.02, bed - 0.06, mid, 0.04, 0.06, 0.1, plain=True)]    # side marker, under the deck edge
     c += [B(dark, -x - 0.3, bed - 0.42, z_rear - 0.06, 2 * x + 0.6, 0.22, 0.1, marks=[("rear", "hazard", 0.5, 0.5, 1.6, 0.12)]),   # under-run bar
           B(STEEL_D, -0.1, bed - 0.55, z_rear - 0.2, 0.2, 0.16, 0.2, plain=True)]
     c += rod_x(STEEL_D, -0.16, 0.32, bed - 0.47, z_rear - 0.22, 0.06)                             # tow pin
-    c += rod_y(STEEL_D, x + 0.1, mid + 1.5, bed - 0.2, 1.5, 0.14) + rod_z(STEEL_D, x + 0.1, bed - 0.35, mid + 1.1, 0.6, 0.26)   # exhaust stack and silencer
+    # exhaust silencer under the bed, inboard of the wheels' steering sweep (a truck models its own stack)
+    c += rod_z(STEEL_D, x - 0.45, bed - 0.35, z_front - 0.75, 0.6, 0.26)
     for i in range(4):                                                                            # ladder
         c.append(B(STEEL_D, -x - 0.42, bed - 0.8 + i * 0.22, mid - 1.2, 0.04, 0.03, 0.4, plain=True))
     c += [B(STEEL_D, -x - 0.42, bed - 0.85, mid - 1.22, 0.04, 0.9, 0.03, plain=True), B(STEEL_D, -x - 0.42, bed - 0.85, mid - 0.83, 0.04, 0.9, 0.03, plain=True)]
@@ -600,7 +610,7 @@ def mudguards(mat, x, width, zs, dia):
     c = []
     for z in zs:
         c += P(mat, x - 0.03, dia + 0.08, z - dia * 0.62, width + 0.06, 0.06, dia * 1.24, plain=True)
-        c += P(BLACK, x, dia * 0.45, z - dia * 0.66, width, dia * 0.6, 0.03, plain=True)        # mud flap
+        c += P(BLACK, x, dia * 0.45, z - dia * 0.6, width, dia * 0.55 + 0.08, 0.03, plain=True)    # mud flap, hung from the guard
     return c
 
 
@@ -1219,10 +1229,55 @@ def _all_parts(model):
     return model["base"] + model["turret"] + model["barrel"] + [c for b in model["bones"] for c in b["cubes"]]
 
 
+def _deconflict(parts):
+    """Two boxes with faces in the same plane, facing the same way and overlapping, flicker in game (z-fighting).
+    The smaller face of each such pair is pushed out by a millimetre and a half (further for a third, a fourth...)."""
+    seen, boxes = set(), []
+    for p in parts:                                   # track links share their parts: handle each part once
+        if p["kind"] == "box" and not any(p["rot"]) and id(p) not in seen and not p["opt"].get("deconflicted"):
+            seen.add(id(p))
+            boxes.append(p)
+    for p in boxes:
+        p["opt"]["deconflicted"] = True
+    push = 0.0015
+    for _ in range(3):                                # a push along one axis can make new overlaps along another
+        _deconflict_pass(boxes, push)
+
+
+def _deconflict_pass(boxes, push):
+    for ax in range(3):
+        o = [k for k in range(3) if k != ax]
+        for side in (0, 1):
+            planes = {}
+            for p in boxes:
+                b = p["box"]
+                val = b[ax] + (b[ax + 3] if side else 0)
+                planes.setdefault(round(val, 4), []).append(p)
+            for group in planes.values():
+                if len(group) < 2:
+                    continue
+                group.sort(key=lambda p: -(p["box"][o[0] + 3] * p["box"][o[1] + 3]))
+                placed = []
+                for p in group:
+                    b = p["box"]
+                    rank = sum(1 for q in placed
+                               if all(min(b[k] + b[k + 3], q["box"][k] + q["box"][k + 3]) - max(b[k], q["box"][k]) > 0.002 for k in o))
+                    if rank:
+                        b = list(b)
+                        if side:
+                            b[ax + 3] += push * rank
+                        else:
+                            b[ax] -= push * rank
+                            b[ax + 3] += push * rank
+                        p["box"] = tuple(b)
+                    placed.append(p)
+
+
 def bake(model, name, px=None):
     """Turns every part into surfaces, lays them out on one texture and paints it. Returns (image, width, height)."""
     px = px or PX
     finish(model)
+    _deconflict(_all_parts(model))
     seed = sum(ord(ch) for ch in name)
     surfs, shared = [], {}
     seen = set()

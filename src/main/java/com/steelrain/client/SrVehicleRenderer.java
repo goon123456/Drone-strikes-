@@ -21,7 +21,7 @@ import java.util.WeakHashMap;
  * aiming, hatches, jacks, chocks and aerials.
  */
 public class SrVehicleRenderer<T extends SrVehicle> extends EntityRenderer<T> {
-    private enum Part { BODY, TURRET, GUN, WHEEL, STEER_WHEEL, TRACK_L, TRACK_R, DOOR_L, DOOR_R, PAYLOAD, HATCH, SWAY, JACK, CHOCK, RECOIL_HEAVY, RECOIL_LIGHT, SPIN_RADAR, SCAN_DISH }
+    private enum Part { BODY, TURRET, GUN, WHEEL, STEER_WHEEL, TRACK_L, TRACK_R, DOOR_L, DOOR_R, PAYLOAD, GLASS, HATCH, SWAY, JACK, CHOCK, RECOIL_HEAVY, RECOIL_LIGHT, SPIN_RADAR, SCAN_DISH }
 
     private record Bone(BoxModel.Group group, Part part, int index) {}
 
@@ -53,7 +53,8 @@ public class SrVehicleRenderer<T extends SrVehicle> extends EntityRenderer<T> {
                     : n.startsWith("move_chock") ? Part.CHOCK : n.equals("move_recoilHeavy") ? Part.RECOIL_HEAVY
                     : n.equals("move_recoilLight") ? Part.RECOIL_LIGHT : n.equals("move_spinRadar") ? Part.SPIN_RADAR
                     : n.equals("move_scanDish") ? Part.SCAN_DISH : n.equals("move_doorL") ? Part.DOOR_L
-                    : n.equals("move_doorR") ? Part.DOOR_R : n.equals("move_payload") ? Part.PAYLOAD : null;
+                    : n.equals("move_doorR") ? Part.DOOR_R : n.equals("move_payload") ? Part.PAYLOAD
+                    : n.equals("move_glass") ? Part.GLASS : null;
             if (part == Part.WHEEL || part == Part.STEER_WHEEL) {
                 bones.add(new Bone(g, part, n.charAt(5) == 'L' ? 0 : 1));      // which side it runs on
             } else if (part != null) {
@@ -117,6 +118,7 @@ public class SrVehicleRenderer<T extends SrVehicle> extends EntityRenderer<T> {
                 // the Iskander's roof doors swing open as the missile starts to rise
                 case DOOR_L -> g.zRot = Mth.clamp(Mth.lerp(pt, v.gunPitchO, v.gunPitch()) / 6f, 0f, 1f) * 1.3f;
                 case DOOR_R -> g.zRot = -Mth.clamp(Mth.lerp(pt, v.gunPitchO, v.gunPitch()) / 6f, 0f, 1f) * 1.3f;
+                case GLASS -> g.visible = !insideView(v);
                 case PAYLOAD -> g.visible = !(v instanceof com.steelrain.entity.vehicle.SrErector e) || e.armed();
                 case RECOIL_HEAVY -> g.oz = -back * 0.9f;
                 case RECOIL_LIGHT -> g.oz = -back * 0.1f;
@@ -137,9 +139,21 @@ public class SrVehicleRenderer<T extends SrVehicle> extends EntityRenderer<T> {
         pose.mulPose(Axis.YP.rotationDegrees(-Mth.rotLerp(pt, v.yRotO, v.getYRot())));
         pose.mulPose(Axis.XP.rotation(Mth.lerp(pt, v.tiltPitchO, v.tiltPitch)));
         pose.mulPose(Axis.ZP.rotation(Mth.lerp(pt, v.tiltRollO, v.tiltRoll)));
+        // riding it in first person the eye is inside the hull: drop the faces turned away from the eye (by their
+        // outward normals), so the walls round the crew vanish from the inside and they see out
+        var mc = net.minecraft.client.Minecraft.getInstance();
+        boolean inside = mc.options.getCameraType().isFirstPerson() && mc.getCameraEntity() != null && mc.getCameraEntity().getVehicle() == v;
+        BoxModel.cullFacingAway = inside;
         model.render(pose, buffers.getBuffer(RenderType.entityCutoutNoCull(model.texture())), light);
+        BoxModel.cullFacingAway = false;
         pose.popPose();
         super.render(v, entityYaw, pt, pose, buffers, light);
+    }
+
+    /** The local player is riding this vehicle and looking out from inside it. */
+    private static boolean insideView(SrVehicle v) {
+        var mc = net.minecraft.client.Minecraft.getInstance();
+        return mc.options.getCameraType().isFirstPerson() && mc.getCameraEntity() != null && mc.getCameraEntity().getVehicle() == v;
     }
 
     @Override

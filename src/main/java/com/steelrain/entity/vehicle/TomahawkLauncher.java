@@ -14,7 +14,7 @@ import net.minecraft.world.phys.Vec3;
  * cruise missiles one after another. Parked where it is put; its own diesel power unit charges the launch battery.
  */
 public class TomahawkLauncher extends SrErector {
-    private static final Vec3 PIVOT = new Vec3(0, 1.2, -3.9);
+    private static final Vec3 PIVOT = new Vec3(0, 1.2, -3.97);   // behind the door bars, so they clear the bed when raised
     private static final Vec3[] TUBES = {new Vec3(-0.5, 1.7, 3.4), new Vec3(0.5, 2.56, 3.4), new Vec3(0.5, 1.7, 3.4), new Vec3(-0.5, 2.56, 3.4)};
 
     public TomahawkLauncher(EntityType<?> type, Level level) {

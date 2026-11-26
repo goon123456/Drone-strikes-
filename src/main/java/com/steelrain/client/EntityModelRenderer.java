@@ -13,7 +13,7 @@ import net.minecraft.world.entity.Entity;
 
 /** Draws a box model pointed along the entity's yaw and pitch. */
 public class EntityModelRenderer<T extends Entity> extends EntityRenderer<T> {
-    private static final String[] GEAR = {"gearN", "gearL", "gearR"};
+    private static final String[] GEAR = {"gearN", "gearNf", "gearL", "gearR"};
     private final BoxModel model;
     private final float axisHeight;
     private final float pitchFactor;
@@ -56,7 +56,8 @@ public class EntityModelRenderer<T extends Entity> extends EntityRenderer<T> {
             float gear = aircraft.gearAnim(partialTick);
             for (String name : GEAR) {
                 if (!model.has(name)) continue;
-                model.get(name).xRot = gear * 1.5f;
+                // legs fold back into their wells; a nose leg with a sensor ball behind it ("gearNf") folds forward
+                model.get(name).xRot = name.equals("gearNf") ? -gear * 1.5f : gear * 1.5f;
                 model.get(name).visible = gear < 0.97f;
             }
         }
