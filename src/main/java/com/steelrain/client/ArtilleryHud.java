@@ -13,9 +13,9 @@ import net.minecraft.world.phys.Vec3;
 import javax.annotation.Nullable;
 
 /**
- * Gun sights, in the rugged-tablet style. Artillery: compass tape and elevation scale for where the barrel points,
- * the charge, shell and breech, a range table, and a marker for the barrel catching up with the eye. Air defence:
- * the same tape and scale, radar state, a box round the tracked target and a diamond on the lead, rounds and belts.
+ * Gun sights as bare text over the world, kept to what the gunner needs at a glance: a compass tape, the barrel's
+ * elevation by the crosshair, a marker for the barrels catching up with the eye, and the ammunition in the bottom
+ * right corner. Details fade out a few seconds after they last changed.
  */
 public final class ArtilleryHud {
     static void render(GuiGraphics g, DeltaTracker delta) {
@@ -37,10 +37,12 @@ public final class ArtilleryHud {
         return new int[]{(int) (g.guiWidth() / 2.0 + Math.tan(Math.toRadians(dyaw)) * scale), (int) (g.guiHeight() / 2.0 - Math.tan(Math.toRadians(dpitch)) * scale)};
     }
 
-    private static final int PANEL_W = 136;
+    /** Range table shown, toggled with its key. */
+    static boolean table;
 
-    /** The compass tape fills the gap between the left panels and the elevation scale. */
-    private static int compassWidth(int w) { return Mth.clamp(w - 2 * (PANEL_W + 14), 80, 220); }
+    private static final Ui.Fader GUN = new Ui.Fader(), AIR = new Ui.Fader();
+
+    private static int compassWidth(int w) { return Mth.clamp(w / 3, 120, 200); }
 
     private static double bearingOf(Vec3 d) { return (Math.toDegrees(Math.atan2(d.x, -d.z)) + 360) % 360; }
 
@@ -51,119 +53,117 @@ public final class ArtilleryHud {
         int[] m = onScreen(g, mc, dir);
         if (m == null) return;
         boolean laid = Math.abs(m[0] - g.guiWidth() / 2) <= 1 && Math.abs(m[1] - g.guiHeight() / 2) <= 1;
-        int c = laid ? Ui.GREEN : Ui.AMBER;
+        int c = Ui.fade(laid ? Ui.GREEN : Ui.AMBER, 0.85f);
         g.fill(m[0] - 7, m[1], m[0] - 2, m[1] + 1, c); g.fill(m[0] + 3, m[1], m[0] + 8, m[1] + 1, c);
         g.fill(m[0], m[1] - 7, m[0] + 1, m[1] - 2, c); g.fill(m[0], m[1] + 3, m[0] + 1, m[1] + 8, c);
     }
 
-    private static void keys(GuiGraphics g, Font font, Component text) {
-        int w = font.width(text) + 10, x = (g.guiWidth() - w) / 2, y = g.guiHeight() - 62;
-        Ui.hudBox(g, x, y, w, 13);
-        g.drawString(font, text, x + 5, y + 3, Ui.DIM, false);
-    }
-
     // ------------------------------------------------------------------ artillery
 
+    /**
+     * Bare readouts only. Always: the compass with the barrel's bearing at the top, and beside the crosshair the
+     * barrel's elevation and where a shell would land on level ground. Bottom right: the breech state always, the
+     * shell and charge for a few seconds after they change. The range table only while toggled on.
+     */
     private static void artillery(GuiGraphics g, SrGun gun, Minecraft mc) {
         Font font = mc.font;
         int w = g.guiWidth(), h = g.guiHeight();
         Vec3 barrel = gun.gunDirection();
         double bearing = bearingOf(barrel), elevation = elevationOf(barrel);
-        Ui.compass(g, font, w / 2, 6, compassWidth(w), bearing, Ui.TEXT);
-        String bt = String.format("%05.1f°", bearing);
-        g.drawString(font, bt, w / 2 - font.width(bt) / 2, 31, Ui.AMBER, true);
-        double want = Mth.clamp(-mc.player.getXRot(), gun.minElevation(), gun.maxElevation());
-        Ui.elevationScale(g, font, w - 40, h / 2 - 60, 120, gun.minElevation(), gun.maxElevation(), elevation, want, Ui.TEXT);
-        String et = String.format("%.1f°", elevation);
-        g.drawString(font, et, w - 40 + 13 - font.width(et) / 2, h / 2 + 64, Ui.AMBER, true);
+        Ui.compassBare(g, font, w / 2, 8, compassWidth(w), bearing, 0.9f);
 
-        // gun state, top left
-        int x = 6, y = 6, pw = PANEL_W;
-        Ui.hudBox(g, x, y, pw, 58);
-        g.drawString(font, Ui.upper(Component.translatable("hud.steelrain.gun_title")), x + 5, y + 4, Ui.DIM, false);
         double[] charges = gun.charges();
-        int cx = x + 5;
-        for (int c = 0; c < charges.length; c++) cx += Ui.chip(g, font, cx, y + 15, Component.literal("C" + (c + 1)), c == gun.charge() ? Ui.AMBER : Ui.FAINT) + 3;
-        g.drawString(font, "⇅", cx + 2, y + 16, Ui.FAINT, false);
-        var shells = gun.shells();
-        Component shell = shells.get(Math.min(gun.selectedShell(), shells.size() - 1)).getDescription();
-        g.drawString(font, font.plainSubstrByWidth(shell.getString(), pw - 30), x + 5, y + 29, Ui.TEXT, false);
-        g.drawString(font, "[B]", x + pw - 5 - font.width("[B]"), y + 29, Ui.FAINT, false);
-        if (gun.loaded() >= 0) {
-            Ui.chip(g, font, x + 5, y + 42, Component.translatable("hud.steelrain.breech_loaded"), Ui.GREEN);
-        } else if (gun.loading() > 0) {
-            double frac = 1 - (double) gun.loading() / Math.max(1, gun.reloadTotal());
-            int cw = Ui.chip(g, font, x + 5, y + 42, Component.translatable("hud.steelrain.breech_loading"), Ui.AMBER);
-            Ui.gauge(g, x + 9 + cw, y + 45, pw - 18 - cw, 4, frac, Ui.AMBER, 12);
-        } else {
-            Ui.chip(g, font, x + 5, y + 42, Component.translatable("hud.steelrain.breech_empty"), Ui.blink() ? Ui.RED : 0xFFB04040);
-        }
+        int charge = Mth.clamp(gun.charge(), 0, charges.length - 1);
+        double v = charges[charge];
+        double range = elevation > 0 ? v * v * Math.sin(Math.toRadians(2 * elevation)) / com.steelrain.entity.MissileEntity.GRAVITY : 0;
+        int cx = w / 2 + 14, cy = h / 2 - 9;
+        Ui.text(g, font, String.format("EL %.1f", elevation), cx, cy, Ui.HUD_TEXT, 0.9f);
+        Ui.text(g, font, range > 1 ? String.format("%,d m", Math.round(range)) : "-- m", cx, cy + 10, Ui.HUD_DIM, 0.9f);
 
-        // range table, below
-        int ty = y + 64, rows = Mth.clamp((h - 66 - ty - 24) / 9, 3, 12), step = gun.rangeStep();
-        Ui.hudBox(g, x, ty, pw, 24 + rows * 9);
-        g.drawString(font, Ui.upper(Component.translatable("hud.steelrain.range_table")), x + 5, ty + 4, Ui.DIM, false);
-        g.drawString(font, "M", x + 5, ty + 14, Ui.FAINT, false);
-        for (int c = 0; c < charges.length; c++) g.drawString(font, "C" + (c + 1), x + 36 + c * 32, ty + 14, c == gun.charge() ? Ui.AMBER : Ui.FAINT, false);
-        for (int r = 0; r < rows; r++) {
-            int range = step * (r + 1), ry = ty + 24 + r * 9;
-            if (r % 2 == 0) g.fill(x + 2, ry - 1, x + pw - 2, ry + 8, 0x18FFFFFF);
-            g.drawString(font, Integer.toString(range), x + 5, ry, Ui.DIM, false);
+        // breech, shell and charge, bottom right
+        var shells = gun.shells();
+        String shell = shells.get(Math.min(gun.selectedShell(), shells.size() - 1)).getDescription().getString();
+        int state = gun.loaded() >= 0 ? 1 : gun.loading() > 0 ? 2 : 0;
+        float a = GUN.update(java.util.List.of(charge, gun.selectedShell(), state));
+        int right = w - 10, y = h - 14;
+        if (state == 1) Ui.textRight(g, font, Component.translatable("hud.steelrain.breech_loaded").getString(), right, y, Ui.GREEN, 1);
+        else if (state == 2) Ui.bigRight(g, font, String.format("%.1fs", gun.loading() / 20.0), right, y - 4, Ui.AMBER, 1);
+        else Ui.textRight(g, font, Component.translatable("hud.steelrain.breech_empty").getString(), right, y, Ui.RED, 0.85f);
+        y -= state == 2 ? 14 : 11;
+        Ui.textRight(g, font, shell, right, y, Ui.HUD_TEXT, Math.max(a, 0.5f));
+        y -= 10;
+        Ui.textRight(g, font, "CHARGE " + (charge + 1) + "/" + charges.length, right, y, Ui.HUD_DIM, Math.max(a, 0.5f));
+
+        if (table) rangeTable(g, font, gun, charges, charge, h);
+        barrelMarker(g, mc, barrel);
+    }
+
+    /** Elevation for each charge at each range on level ground, as bare columns at the left edge. */
+    private static void rangeTable(GuiGraphics g, Font font, SrGun gun, double[] charges, int charge, int h) {
+        int step = gun.rangeStep(), rows = Mth.clamp((h - 120) / 9, 4, 14);
+        int x = 10, y = Math.max(40, h / 2 - (rows * 9 + 12) / 2);
+        Ui.text(g, font, Ui.upper(Component.translatable("hud.steelrain.range_table")).getString(), x, y, Ui.HUD_DIM, 0.9f);
+        y += 12;
+        Ui.text(g, font, "m", x, y, Ui.HUD_DIM, 0.7f);
+        for (int c = 0; c < charges.length; c++) Ui.text(g, font, "C" + (c + 1), x + 32 + c * 30, y, c == charge ? Ui.AMBER : Ui.HUD_DIM, c == charge ? 1 : 0.7f);
+        y += 10;
+        for (int r = 0; r < rows; r++, y += 9) {
+            int range = step * (r + 1);
+            Ui.text(g, font, Integer.toString(range), x, y, Ui.HUD_DIM, 0.8f);
             for (int c = 0; c < charges.length; c++) {
                 double e = SrGun.elevationFor(charges[c], range, 0, gun.minElevation(), gun.maxElevation());
-                String s = Double.isNaN(e) ? "--" : String.format("%.1f", e);
-                g.drawString(font, s, x + 36 + c * 32, ry, Double.isNaN(e) ? 0xFF3C4850 : c == gun.charge() ? Ui.TEXT : Ui.DIM, false);
+                Ui.text(g, font, Double.isNaN(e) ? "-" : String.format("%.1f", e), x + 32 + c * 30, y,
+                        c == charge ? Ui.HUD_TEXT : Ui.HUD_DIM, Double.isNaN(e) ? 0.3f : c == charge ? 0.95f : 0.6f);
             }
         }
-        barrelMarker(g, mc, barrel);
-        keys(g, font, Component.translatable("hud.steelrain.gun_keys"));
     }
 
     // ------------------------------------------------------------------ air defence
 
+    /**
+     * Compass at the top, elevation by the crosshair, the radar's contact under the compass, rounds bottom right.
+     * The box round the tracked target and the diamond on the lead stay as they were.
+     */
     private static void airDefence(GuiGraphics g, SrAirDefence ad, Minecraft mc, float pt) {
         Font font = mc.font;
         int w = g.guiWidth(), h = g.guiHeight();
         Vec3 guns = ad.gunDirection();
-        Ui.compass(g, font, w / 2, 6, compassWidth(w), bearingOf(guns), Ui.TEXT);
-        Ui.elevationScale(g, font, w - 40, h / 2 - 60, 120, ad.minPitch(), ad.maxPitch(), elevationOf(guns),
-                Mth.clamp(-mc.player.getXRot(), ad.minPitch(), ad.maxPitch()), Ui.TEXT);
+        Ui.compassBare(g, font, w / 2, 8, compassWidth(w), bearingOf(guns), 0.9f);
+        Ui.text(g, font, String.format("EL %.0f", elevationOf(guns)), w / 2 + 14, h / 2 - 4, Ui.HUD_TEXT, 0.75f);
         var target = ad.target();
 
-        int x = 6, y = 6, pw = PANEL_W;
-        int ph = 40 + (ad.hasGuns() ? 22 : 0) + (ad.missileRange() > 0 ? 12 : 0);
-        Ui.hudBox(g, x, y, pw, ph);
-        // radar line
-        Component radarState = !ad.hasRadar() ? Component.translatable("hud.steelrain.radar_none")
-                : ad.locked() ? Component.translatable("hud.steelrain.radar_lock_short")
-                : target != null ? Component.translatable("hud.steelrain.radar_track_short")
-                : Component.translatable("hud.steelrain.radar_search_short");
-        int rc = !ad.hasRadar() ? Ui.FAINT : ad.locked() ? Ui.RED : target != null ? Ui.AMBER : Ui.GREEN;
-        Ui.icon(g, x + 5, y + 5, Ui.ICON_SIGNAL, rc);
-        Ui.chip(g, font, x + 16, y + 4, radarState, rc);
-        if (target != null && ad.hasRadar()) {
-            String rng = (int) target.distanceTo(ad) + " m";
-            g.drawString(font, rng, x + pw - 5 - font.width(rng), y + 5, Ui.TEXT, false);
-            g.drawString(font, font.plainSubstrByWidth(target.getName().getString(), pw - 10), x + 5, y + 17, Ui.TEXT, false);
-        } else {
-            g.drawString(font, Component.translatable("hud.steelrain.no_contact"), x + 5, y + 17, Ui.FAINT, false);
+        // radar, under the compass
+        if (ad.hasRadar()) {
+            String radar;
+            int rc;
+            if (target != null) {
+                radar = Component.translatable(ad.locked() ? "hud.steelrain.radar_lock_short" : "hud.steelrain.radar_track_short").getString()
+                        + "  " + (int) target.distanceTo(ad) + " m  " + target.getName().getString();
+                rc = ad.locked() ? Ui.RED : Ui.AMBER;
+            } else {
+                radar = Component.translatable("hud.steelrain.radar_search_short").getString();
+                rc = Ui.HUD_DIM;
+            }
+            Ui.textCentre(g, font, radar, w / 2, 40, rc, target != null ? 1 : 0.5f);
         }
-        int ry = y + 29;
+
+        // rounds, belts, missiles, auto: bottom right
+        float a = AIR.update(java.util.List.of(ad.beltAp(), ad.stock(0), ad.stock(1), ad.stock(2), ad.auto()));
+        int right = w - 10, y = h - 14;
         if (ad.hasGuns()) {
-            Ui.chip(g, font, x + 5, ry, Component.literal(ad.beltAp() ? "AP" : "HE"), ad.beltAp() ? Ui.CYAN : Ui.AMBER);
-            double frac = (double) ad.rounds() / Math.max(1, ad.beltSize());
-            Ui.gauge(g, x + 26, ry + 3, pw - 66, 4, frac, ad.rounds() > 0 ? Ui.level(frac) : Ui.RED, 10);
-            String rounds = Integer.toString(ad.rounds());
-            g.drawString(font, rounds, x + pw - 5 - font.width(rounds), ry + 1, ad.rounds() > 0 ? Ui.TEXT : Ui.RED, false);
-            g.drawString(font, Component.translatable("hud.steelrain.belts", ad.stock(0), ad.stock(1)), x + 5, ry + 12, Ui.DIM, false);
-            ry += 22;
+            String belt = ad.beltAp() ? "AP" : "HE";
+            Ui.textRight(g, font, belt, right, y, ad.beltAp() ? Ui.CYAN : Ui.AMBER, 1);
+            Ui.bigRight(g, font, Integer.toString(ad.rounds()), right - font.width(belt) - 4, y - 4, ad.rounds() > 0 ? Ui.HUD_TEXT : Ui.RED, 1);
+            y -= 14;
+            Ui.textRight(g, font, Component.translatable("hud.steelrain.belts", ad.stock(0), ad.stock(1)).getString(), right, y, Ui.HUD_DIM, a);
+            y -= 10;
         }
         if (ad.missileRange() > 0) {
-            Ui.icon(g, x + 5, ry + 1, Ui.ICON_MISSILE, Ui.CYAN);
-            g.drawString(font, Component.translatable("hud.steelrain.missiles_short", ad.stock(2)), x + 16, ry + 1, ad.stock(2) > 0 ? Ui.TEXT : Ui.RED, false);
-            ry += 12;
+            Ui.textRight(g, font, Component.translatable("hud.steelrain.missiles_short", ad.stock(2)).getString(), right, y,
+                    ad.stock(2) > 0 ? Ui.HUD_TEXT : Ui.RED, ad.stock(2) > 0 ? Math.max(a, 0.6f) : 1);
+            y -= 10;
         }
-        Ui.chip(g, font, x + 5, ry, Component.translatable(ad.auto() ? "hud.steelrain.auto_chip_on" : "hud.steelrain.auto_chip_off"), ad.auto() ? Ui.GREEN : Ui.FAINT);
+        if (ad.auto()) Ui.textRight(g, font, Component.translatable("hud.steelrain.auto_chip_on").getString(), right, y, Ui.GREEN, 1);
 
         barrelMarker(g, mc, guns);
         if (target != null && ad.hasRadar()) {
@@ -193,7 +193,6 @@ public final class ArtilleryHud {
                 }
             }
         }
-        keys(g, font, Component.translatable(ad.hasRadar() ? "hud.steelrain.air_keys_radar" : "hud.steelrain.air_keys"));
     }
 
     private ArtilleryHud() {}

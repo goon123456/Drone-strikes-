@@ -316,6 +316,17 @@ python3 tools/audit_models.py [model ...]   # check models for clipping, floatin
   when you take control. The Shahed, Reaper, Bayraktar, Orlan and Global Hawk each have their own engine. The
   jammer hums, a jammed video link hisses louder the worse it gets, and the fibre makes one of three snaps.
 
+## On-screen displays
+The in-game displays are bare text over the world with no panels, and show only what you need at that moment:
+- **Driving:** speed and heading bottom right while moving. Fuel, battery, hull and engine state show for a few
+  seconds after they change, then fade; warnings (no fuel, flooded, low fuel, heavy damage) stay up.
+- **Guns:** a compass tape at the top, the barrel's elevation and level-ground range by the crosshair, and the
+  breech, shell and charge bottom right. The range table is hidden until you press **Y**.
+- **Air defence:** compass, elevation, the radar contact under the compass, and rounds bottom right.
+- **Drones and aircraft feeds:** name and recording dot top left, altitude, speed and range top right, battery and
+  link bottom left.
+- **Messages:** short notices under the crosshair that fade after a couple of seconds.
+
 ## Model checks
 `tools/audit_models.py` checks every model for:
 - **Clipping:** turrets, guns, launchers, steered wheels, hatch lids, propellers, rotors and landing gear are swept

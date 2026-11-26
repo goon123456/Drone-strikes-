@@ -240,6 +240,12 @@ public final class FpvClient {
         g.drawString(font, text, w - 18 - font.width(text), y, colour, true);
     }
 
+    private static final Ui.Fader FEED_INFO = new Ui.Fader();
+
+    /**
+     * The goggles view as bare text: what you are flying and a recording dot top left, altitude, speed and range top
+     * right, battery and link bottom left. Warnings take over the centre only while the link is being jammed.
+     */
     static void renderHud(GuiGraphics g, DeltaTracker delta) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.options.hideGui) return;
@@ -251,74 +257,54 @@ public final class FpvClient {
         if (aircraft != null) {
             AircraftType type = AircraftType.values()[Mth.clamp(feedType, 0, AircraftType.values().length - 1)];
             noise(g, w, h, aircraft.jamPercent());
-            frame(g, w, h, Ui.GREEN);
-            int x = 18, y = 18;
-            Ui.hudBox(g, x, y, 150, 30);
-            g.drawString(font, Ui.upper(Component.translatable(type.translationKey())), x + 5, y + 4, Ui.TEXT, false);
-            Ui.chip(g, font, x + 150 - 34, y + 3, Component.literal("LIVE"), blink ? Ui.RED : 0xFFB04040);
-            g.drawString(font, Component.translatable("hud.steelrain.position", Mth.floor(aircraft.getX()), Mth.floor(aircraft.getZ())), x + 5, y + 17, Ui.DIM, false);
-            flight(g, font, w, (int) Math.round(aircraft.getY()), -1, -1, aircraft.jamPercent());
+            frame(g, w, h, 0x907CD67C);
+            Ui.text(g, font, Ui.upper(Component.translatable(type.translationKey())).getString(), 22, 22, Ui.HUD_TEXT, 0.9f);
+            Ui.text(g, font, "● LIVE", 22, 32, blink ? Ui.RED : 0xFFB04040, 1);
+            float a = FEED_INFO.update(feedType);
+            Ui.text(g, font, Component.translatable("hud.steelrain.position", Mth.floor(aircraft.getX()), Mth.floor(aircraft.getZ())).getString(), 22, h - 30, Ui.HUD_DIM, Math.max(a, 0.6f));
+            flight(g, font, w, (int) Math.round(aircraft.getY()), -1, -1);
             jammedWarning(g, font, w, h, aircraft.jamPercent());
-            hint(g, font, w, h, Component.translatable("hud.steelrain.feed_hint", ClientSetup.EXIT_DRONE.getTranslatedKeyMessage()));
             return;
         }
 
         FpvDroneEntity d = drone();
         if (d == null || !attached) return;
         noise(g, w, h, d.jamPercent());
-        frame(g, w, h, Ui.GREEN);
+        frame(g, w, h, 0x907CD67C);
+        Ui.text(g, font, d.mavic() ? "MAVIC" : d.fiber() ? "FPV  FIBRE" : "FPV", 22, 22, Ui.HUD_TEXT, 0.9f);
+        Ui.text(g, font, "● REC", 22, 32, blink ? Ui.RED : 0xFFB04040, 1);
+
         double battery = Mth.clamp(d.battery() / (double) maxBattery, 0, 1);
-        int x = 18, y = 18, pw = 150, rows = 2 + (d.mavic() ? 1 : 0);
-        Ui.hudBox(g, x, y, pw, 18 + rows * 12);
-        g.drawString(font, d.mavic() ? "MAVIC" : d.fiber() ? "FPV  FIBRE" : "FPV", x + 5, y + 4, Ui.TEXT, false);
-        Ui.chip(g, font, x + pw - 31, y + 3, Component.literal("REC"), blink ? Ui.RED : 0xFFB04040);
-        int ry = y + 17;
-        Ui.meter(g, font, x + 5, ry, pw - 10, Ui.ICON_BOLT, battery, Math.round(battery * 100) + "%",
-                battery < 0.2 && blink ? Ui.RED : Ui.level(battery));
-        ry += 12;
+        int y = h - 30;
+        Ui.text(g, font, "BAT  " + Math.round(battery * 100) + "%", 22, y, battery < 0.2 ? (blink ? Ui.RED : 0xFFB04040) : battery < 0.5 ? Ui.AMBER : Ui.HUD_TEXT, 0.9f);
+        y -= 10;
         if (d.fiber()) {
             int left = Math.max(0, d.cableLeft());
-            Ui.meter(g, font, x + 5, ry, pw - 10, Ui.ICON_SIGNAL, Math.min(1, left / 1000.0), left + " m", left < 30 && blink ? Ui.RED : Ui.CYAN);
+            Ui.text(g, font, "CABLE  " + left + " m", 22, y, left < 30 ? (blink ? Ui.RED : 0xFFB04040) : Ui.HUD_TEXT, 0.9f);
         } else {
-            double signal = d.signal() / 100.0;
-            Ui.meter(g, font, x + 5, ry, pw - 10, Ui.ICON_SIGNAL, signal, d.signal() + "%", d.signal() < 25 && blink ? Ui.RED : Ui.level(signal));
+            Ui.text(g, font, "SIG  " + d.signal() + "%", 22, y, d.signal() < 25 ? (blink ? Ui.RED : 0xFFB04040) : d.signal() < 50 ? Ui.AMBER : Ui.HUD_TEXT, 0.9f);
         }
         if (d.mavic()) {
-            ry += 12;
-            Ui.chip(g, font, x + 5, ry, Component.translatable(d.hasGrenade() ? "hud.steelrain.grenade_ready" : "hud.steelrain.grenade_none"),
-                    d.hasGrenade() ? Ui.AMBER : Ui.FAINT);
+            y -= 10;
+            Ui.text(g, font, Component.translatable(d.hasGrenade() ? "hud.steelrain.grenade_ready" : "hud.steelrain.grenade_none").getString(), 22, y,
+                    d.hasGrenade() ? Ui.AMBER : Ui.HUD_DIM, d.hasGrenade() ? 0.9f : 0.5f);
         }
-        flight(g, font, w, (int) Math.round(d.getY()), speed, d.distance(), d.jamPercent());
+        flight(g, font, w, (int) Math.round(d.getY()), speed, d.distance());
         jammedWarning(g, font, w, h, d.jamPercent());
-        hint(g, font, w, h, Component.translatable(d.mavic() ? "hud.steelrain.hint_mavic" : "hud.steelrain.hint",
-                ClientSetup.EXIT_DRONE.getTranslatedKeyMessage()));
     }
 
-    /** Altitude, speed, distance home and zoom, top right. */
-    private static void flight(GuiGraphics g, Font font, int w, int altitude, double spd, int dist, int jam) {
-        int pw = 110, x = w - 18 - pw, y = 18, rows = 2 + (spd >= 0 ? 1 : 0) + (dist >= 0 ? 1 : 0);
-        Ui.hudBox(g, x, y, pw, 6 + rows * 11);
-        int ry = y + 4;
-        Ui.field(g, font, x + 5, ry, pw - 10, Component.literal("ALT"), Component.literal(altitude + " m"), Ui.TEXT); ry += 11;
-        if (spd >= 0) { Ui.field(g, font, x + 5, ry, pw - 10, Component.literal("SPD"), Component.literal(String.format("%.1f m/s", spd)), Ui.TEXT); ry += 11; }
-        if (dist >= 0) { Ui.field(g, font, x + 5, ry, pw - 10, Component.literal("HOME"), Component.literal(dist + " m"), Ui.TEXT); ry += 11; }
-        Ui.field(g, font, x + 5, ry, pw - 10, Component.literal("ZOOM"), Component.literal(String.format("%.1fx", zoom)), Ui.AMBER);
+    /** Altitude, speed, distance home and zoom (when zoomed), top right. */
+    private static void flight(GuiGraphics g, Font font, int w, int altitude, double spd, int dist) {
+        int right = w - 22, y = 22;
+        Ui.textRight(g, font, "ALT  " + altitude + " m", right, y, Ui.HUD_TEXT, 0.9f); y += 10;
+        if (spd >= 0) { Ui.textRight(g, font, String.format("SPD  %.0f m/s", spd), right, y, Ui.HUD_TEXT, 0.9f); y += 10; }
+        if (dist >= 0) { Ui.textRight(g, font, "HOME  " + dist + " m", right, y, Ui.HUD_DIM, 0.9f); y += 10; }
+        if (zoom > 1.01f) Ui.textRight(g, font, String.format("%.1fx", zoom), right, y, Ui.AMBER, 0.9f);
     }
 
     private static void jammedWarning(GuiGraphics g, Font font, int w, int h, int jam) {
         if (jam <= 30) return;
-        Component text = Component.translatable("hud.steelrain.jammed");
-        int bw = font.width(text) + 26, x = (w - bw) / 2, y = h / 2 - 44;
-        g.fill(x, y, x + bw, y + 16, Ui.blink() ? 0xC0601010 : 0xC0301010);
-        Ui.brackets(g, x, y, bw, 16, 4, Ui.RED);
-        Ui.icon(g, x + 6, y + 4, Ui.ICON_WARN, Ui.RED);
-        g.drawString(font, text, x + 18, y + 4, 0xFFFFD0D0, false);
-    }
-
-    private static void hint(GuiGraphics g, Font font, int w, int h, Component text) {
-        int bw = font.width(text) + 10, x = (w - bw) / 2, y = h - 32;
-        Ui.hudBox(g, x, y, bw, 13);
-        g.drawString(font, text, x + 5, y + 3, Ui.DIM, false);
+        Ui.textCentre(g, font, Component.translatable("hud.steelrain.jammed").getString(), w / 2, h / 2 - 40, Ui.RED, Ui.blink() ? 1 : 0.55f);
     }
 
     private FpvClient() {}

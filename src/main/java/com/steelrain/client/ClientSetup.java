@@ -21,6 +21,8 @@ public final class ClientSetup {
             InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_Z, "key.categories.steelrain");
     public static final KeyMapping AUTO_MODE = new KeyMapping("key.steelrain.auto_mode",
             InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_I, "key.categories.steelrain");
+    public static final KeyMapping RANGE_TABLE = new KeyMapping("key.steelrain.range_table",
+            InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_Y, "key.categories.steelrain");
     public static final KeyMapping SHELL_TYPE = new KeyMapping("key.steelrain.shell_type",
             InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_B, "key.categories.steelrain");
 
@@ -96,6 +98,7 @@ public final class ClientSetup {
         e.register(SWITCH_SEAT);
         e.register(SHELL_TYPE);
         e.register(AUTO_MODE);
+        e.register(RANGE_TABLE);
     }
 
     @SubscribeEvent

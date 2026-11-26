@@ -48,83 +48,86 @@ public final class VehicleHud {
         while (NOTICES.size() > 3) NOTICES.removeFirst();
     }
 
+    /** Notices sit just below the crosshair as bare coloured text, fading out after a couple of seconds. */
     private static void notices(GuiGraphics g, Font font) {
         long now = Util.getMillis();
         NOTICES.removeIf(n -> now - n.at() > NOTICE_MS);
-        int y = g.guiHeight() / 2 + 22;
+        int y = g.guiHeight() / 2 + 24;
         for (Notice n : NOTICES) {
             float age = (now - n.at()) / (float) NOTICE_MS;
-            int alpha = (int) (255 * Mth.clamp((1 - age) * 4, 0, 1));
-            if (alpha < 8) continue;
-            int w = font.width(n.text()) + 22, x = (g.guiWidth() - w) / 2;
-            g.fill(x, y, x + w, y + 14, (alpha * 0x9A / 255) << 24 | 0x0E1316);
-            g.fill(x, y, x + 2, y + 14, (alpha << 24) | (n.colour() & 0xFFFFFF));
-            Ui.icon(g, x + 6, y + 3, n.colour() == Ui.RED ? Ui.ICON_WARN : Ui.ICON_SIGNAL, (alpha << 24) | (n.colour() & 0xFFFFFF));
-            g.drawString(font, n.text(), x + 16, y + 3, (alpha << 24) | 0xE6EDF0, false);
-            y += 16;
+            Ui.textCentre(g, font, n.text().getString(), g.guiWidth() / 2, y, n.colour() == Ui.GREEN ? Ui.HUD_TEXT : n.colour(), Mth.clamp((1 - age) * 4, 0, 1));
+            y += 11;
         }
     }
 
     // ------------------------------------------------------------------ dashboard
 
+    private static final Ui.Fader DETAILS = new Ui.Fader();
+    private static SrVehicle lastVehicle;
+
+    /**
+     * Bottom right, bare text. Speed is always there while moving and warnings (no fuel, flooded, low fuel, heavy
+     * damage) stay up while they last; everything else shows for a few seconds after it changes, then fades away.
+     */
     static void render(GuiGraphics g, DeltaTracker delta) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.options.hideGui) return;
         notices(g, mc.font);
-        if (!(mc.player.getVehicle() instanceof SrVehicle v)) return;
-        Font font = mc.font;
-        int seat = v.seatOf(mc.player);
+        if (!(mc.player.getVehicle() instanceof SrVehicle v)) { lastVehicle = null; return; }
+        if (v != lastVehicle) { lastVehicle = v; DETAILS.wake(); }
         boolean gunner = (v instanceof SrGun gun && gun.isGunner(mc.player)) || (v instanceof SrAirDefence ad && ad.isGunner(mc.player));
         if (gunner) return;                                 // the gun sight shows what the gunner needs
-        int pw = 156, x = 6;
-        int rows = (v.tankLitres() > 0 ? 1 : 0) + (v.batteryFe() > 0 ? 1 : 0) + 1;
-        int ph = 30 + rows * 11 + (v.drivable() ? 12 : 0) + 14;
-        int y = g.guiHeight() - ph - 6;
-        if (x + pw > g.guiWidth() / 2 - 92) y = g.guiHeight() - ph - 44;     // narrow screen: sit above the hotbar's hearts
-        Ui.hudBox(g, x, y, pw, ph);
-        // name and seat
-        g.drawString(font, font.plainSubstrByWidth(Ui.upper(v.getName()).getString(), pw - 70), x + 5, y + 4, Ui.TEXT, false);
-        Component seatName = Component.translatable("hud.steelrain.seat_" + (gunner ? "gunner" : seat == 0 && v.drivable() ? "driver" : "passenger"));
-        int sw = font.width(seatName) + 6;
-        Ui.chip(g, font, x + pw - 5 - sw, y + 3, seatName, Ui.CYAN);
-        int ry = y + 17;
+        Font font = mc.font;
+        int seat = v.seatOf(mc.player);
+        double fuel = v.tankLitres() > 0 ? v.fuel() / v.tankLitres() : 1;
+        double battery = v.batteryFe() > 0 ? (double) v.energy() / v.batteryFe() : 1;
+        double hp = v.health() / v.maxHealth();
+        String engine = !v.drivable() ? "static" : v.flooded() ? "flooded" : v.fuel() <= 0 ? "no_fuel" : v.engineRunning() ? "running" : "off";
+        boolean jamming = v instanceof Jammer j && j.switchedOn(), auto = v instanceof SrAirDefence ad && ad.auto();
+        float a = DETAILS.update(java.util.List.of(seat, engine, (int) (fuel * 10), (int) (battery * 10), (int) Math.round(hp * 100), jamming, auto));
+
+        int right = g.guiWidth() - 10, y = g.guiHeight() - 12;
+        // speed, the one big number
         if (v.drivable()) {
             double moved = Math.sqrt(Mth.square(v.getX() - v.xo) + Mth.square(v.getZ() - v.zo)) * 20 * 3.6;
             speedShown += (moved - speedShown) * 0.2;
-            String spd = String.format("%3d km/h", Math.round(speedShown));
-            g.drawString(font, spd, x + 5, ry, Ui.TEXT, false);
+            float sa = Math.max(a, (float) Mth.clamp((speedShown - 0.5) / 2, 0, 1));
+            Ui.textRight(g, font, "km/h", right, y, Ui.HUD_DIM, sa);
+            Ui.bigRight(g, font, Long.toString(Math.round(speedShown)), right - font.width("km/h") - 4, y - 4, Ui.HUD_TEXT, sa);
             double heading = (v.getYRot() + 180 + 360) % 360;
-            String hd = String.format("%03d° %s", Math.round(heading) % 360, compassPoint(heading));
-            g.drawString(font, hd, x + pw - 5 - font.width(hd), ry, Ui.DIM, false);
-            ry += 12;
+            y -= 12;
+            Ui.textRight(g, font, String.format("%03d %s", Math.round(heading) % 360, compassPoint(heading)), right, y, Ui.HUD_DIM, sa);
+            y -= 14;
         }
-        // engine state
-        Component engine;
-        int ec;
-        if (!v.drivable()) { engine = Component.translatable("hud.steelrain.engine_static"); ec = Ui.FAINT; }
-        else if (v.flooded()) { engine = Component.translatable("hud.steelrain.engine_flooded"); ec = Ui.RED; }
-        else if (v.fuel() <= 0) { engine = Component.translatable("hud.steelrain.engine_no_fuel"); ec = Ui.RED; }
-        else if (v.engineRunning()) { engine = Component.translatable("hud.steelrain.engine_running"); ec = Ui.GREEN; }
-        else { engine = Component.translatable("hud.steelrain.engine_off"); ec = Ui.FAINT; }
-        int cx = x + 5 + Ui.chip(g, font, x + 5, ry, engine, ec) + 4;
-        if (v instanceof SrAirDefence ad) Ui.chip(g, font, cx, ry, Component.translatable(ad.auto() ? "hud.steelrain.auto_chip_on" : "hud.steelrain.auto_chip_off"), ad.auto() ? Ui.GREEN : Ui.FAINT);
-        if (v instanceof Jammer j) Ui.chip(g, font, cx, ry, Component.translatable(j.switchedOn() ? "hud.steelrain.jamming_on" : "hud.steelrain.jamming_off"), j.switchedOn() ? Ui.AMBER : Ui.FAINT);
-        ry += 14;
+        // warnings stay up; the rest fades
+        String warn = switch (engine) {
+            case "flooded" -> Component.translatable("hud.steelrain.engine_flooded").getString();
+            case "no_fuel" -> Component.translatable("hud.steelrain.engine_no_fuel").getString();
+            default -> null;
+        };
+        if (warn != null) { Ui.textRight(g, font, warn, right, y, Ui.blink() ? Ui.RED : 0xFFB04040, 1); y -= 10; }
         if (v.tankLitres() > 0) {
-            double f = v.fuel() / v.tankLitres();
-            Ui.meter(g, font, x + 5, ry, pw - 10, Ui.ICON_FUEL, f, Math.round(v.fuel()) + " L", Ui.level(f));
-            ry += 11;
+            boolean low = fuel < 0.2;
+            Ui.textRight(g, font, "FUEL  " + Math.round(v.fuel()) + " L", right, y, low ? Ui.AMBER : Ui.HUD_TEXT, low ? 1 : a);
+            y -= 10;
         }
         if (v.batteryFe() > 0) {
-            double f = (double) v.energy() / v.batteryFe();
-            Ui.meter(g, font, x + 5, ry, pw - 10, Ui.ICON_BOLT, f, v.energy() / 1000 + "k FE", f > 0.2 ? Ui.CYAN : Ui.RED);
-            ry += 11;
+            boolean low = battery < 0.2;
+            Ui.textRight(g, font, "BATT  " + Math.round(battery * 100) + "%", right, y, low ? Ui.AMBER : Ui.HUD_TEXT, low ? 1 : a);
+            y -= 10;
         }
-        double hp = v.health() / v.maxHealth();
-        Ui.meter(g, font, x + 5, ry, pw - 10, Ui.ICON_HEART, hp, Math.round(hp * 100) + "%", Ui.level(hp));
-        // keys, along the bottom edge of the panel
-        String keys = v.seats().length > 1 ? "Z " + Component.translatable("hud.steelrain.key_seat").getString() : "";
-        if (!keys.isEmpty()) g.drawString(font, keys, x + 5, y + ph - 10, Ui.FAINT, false);
+        boolean hurt = hp < 0.35;
+        Ui.textRight(g, font, "HULL  " + Math.round(hp * 100) + "%", right, y, hurt ? Ui.RED : hp < 0.6 ? Ui.AMBER : Ui.HUD_TEXT, hurt ? 1 : a);
+        y -= 10;
+        if (jamming) { Ui.textRight(g, font, Component.translatable("hud.steelrain.jamming_on").getString(), right, y, Ui.AMBER, Math.max(a, 0.55f)); y -= 10; }
+        if (auto) { Ui.textRight(g, font, Component.translatable("hud.steelrain.auto_chip_on").getString(), right, y, Ui.GREEN, Math.max(a, 0.55f)); y -= 10; }
+        if (warn == null && v.drivable()) {
+            Ui.textRight(g, font, Component.translatable("hud.steelrain.engine_" + engine).getString(), right, y, Ui.HUD_DIM, a);
+            y -= 10;
+        }
+        y -= 3;
+        String seatName = Component.translatable("hud.steelrain.seat_" + (seat == 0 && v.drivable() ? "driver" : "passenger")).getString();
+        Ui.textRight(g, font, Ui.upper(v.getName()).getString() + "  ·  " + seatName, right, y, Ui.HUD_DIM, a);
     }
 
     private static String compassPoint(double deg) {

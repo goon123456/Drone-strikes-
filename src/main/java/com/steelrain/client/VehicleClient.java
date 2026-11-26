@@ -34,6 +34,7 @@ public final class VehicleClient {
             if (v instanceof com.steelrain.entity.vehicle.SrGun g && g.isGunner(player)) send(v, com.steelrain.entity.vehicle.SrGun.ACTION_NEXT_SHELL);
             if (v instanceof com.steelrain.entity.vehicle.SrAirDefence ad && ad.isGunner(player)) send(v, com.steelrain.entity.vehicle.SrAirDefence.ACTION_BELT);
         }
+        while (ClientSetup.RANGE_TABLE.consumeClick()) ArtilleryHud.table = !ArtilleryHud.table;
         while (ClientSetup.AUTO_MODE.consumeClick()) {
             if (v instanceof com.steelrain.entity.vehicle.SrAirDefence) send(v, com.steelrain.entity.vehicle.SrAirDefence.ACTION_AUTO);
         }

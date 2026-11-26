@@ -155,6 +155,93 @@ public final class Ui {
         g.drawString(font, value, x + w - font.width(value), y, TEXT, false);
     }
 
+    // ------------------------------------------------------------------ bare HUD text
+
+    /** Off-white for HUD text over the world, and a dimmer grey for secondary details. */
+    public static final int HUD_TEXT = 0xFFF0F0EA, HUD_DIM = 0xFFB4B8B4;
+
+    /** A colour with its alpha scaled by {@code alpha} (0..1). */
+    public static int fade(int colour, float alpha) {
+        int a = (int) (((colour >>> 24) & 0xFF) * Mth.clamp(alpha, 0, 1));
+        return (a << 24) | (colour & 0xFFFFFF);
+    }
+
+    /**
+     * Bare text with a soft shadow, as over the world in a modern shooter: no box behind it. Nothing is drawn when it
+     * is nearly transparent, because the font draws very low alphas as fully opaque.
+     */
+    public static void text(GuiGraphics g, Font font, String s, int x, int y, int colour, float alpha) {
+        if (alpha < 0.04f || s.isEmpty()) return;
+        g.drawString(font, s, x, y, fade(colour, alpha), true);
+    }
+
+    /** {@link #text} lined up on its right edge. */
+    public static void textRight(GuiGraphics g, Font font, String s, int right, int y, int colour, float alpha) {
+        text(g, font, s, right - font.width(s), y, colour, alpha);
+    }
+
+    /** {@link #text} centred on {@code cx}. */
+    public static void textCentre(GuiGraphics g, Font font, String s, int cx, int y, int colour, float alpha) {
+        text(g, font, s, cx - font.width(s) / 2, y, colour, alpha);
+    }
+
+    /** Larger text (1.5x) lined up on its right edge, for the one number that matters most (speed, rounds). */
+    public static void bigRight(GuiGraphics g, Font font, String s, int right, int y, int colour, float alpha) {
+        if (alpha < 0.04f) return;
+        g.pose().pushPose();
+        g.pose().translate(right - font.width(s) * 1.5f, y, 0);
+        g.pose().scale(1.5f, 1.5f, 1);
+        g.drawString(font, s, 0, 0, fade(colour, alpha), true);
+        g.pose().popPose();
+    }
+
+    /**
+     * Shows a group of readouts fully for a few seconds after anything in it changes, then fades them away, so the
+     * screen is clear while nothing is happening. Pass the values that matter as the state each frame.
+     */
+    public static final class Fader {
+        private static final long HOLD_MS = 3500, FADE_MS = 900;
+        private Object last = new Object();
+        private long at;
+
+        public float update(Object state) {
+            if (!java.util.Objects.equals(state, last)) {
+                last = state;
+                at = net.minecraft.Util.getMillis();
+            }
+            long t = net.minecraft.Util.getMillis() - at;
+            return t < HOLD_MS ? 1 : Mth.clamp(1 - (t - HOLD_MS) / (float) FADE_MS, 0, 1);
+        }
+
+        /** Show everything again now, as on getting in. */
+        public void wake() { last = new Object(); }
+    }
+
+    /**
+     * A bare compass tape centred on a bearing: ticks every 5 degrees, numbers every 30, fading out towards its
+     * ends, with a small caret and the exact bearing below the centre.
+     */
+    public static void compassBare(GuiGraphics g, Font font, int cx, int y, int w, double bearing, float alpha) {
+        if (alpha < 0.04f) return;
+        double perDeg = 2.0;
+        int first = (int) Math.floor((bearing - w / 2.0 / perDeg) / 5) * 5;
+        for (int d = first; d <= bearing + w / 2.0 / perDeg; d += 5) {
+            double off = (d - bearing) * perDeg;
+            if (Math.abs(off) > w / 2.0) continue;
+            int x = cx + (int) Math.round(off);
+            float edge = alpha * (float) Mth.clamp((1 - Math.abs(off) / (w / 2.0)) * 2.5, 0, 1);
+            int norm = Math.floorMod(d, 360);
+            boolean major = norm % 30 == 0;
+            g.fill(x, y + 10, x + 1, y + (major ? 15 : 13), fade(major ? HUD_TEXT : 0xB0F0F0EA, edge));
+            if (major) {
+                String label = switch (norm) { case 0 -> "N"; case 90 -> "E"; case 180 -> "S"; case 270 -> "W"; default -> Integer.toString(norm / 10); };
+                text(g, font, label, x - font.width(label) / 2 + 1, y, norm % 90 == 0 ? AMBER : HUD_TEXT, edge);
+            }
+        }
+        g.fill(cx, y + 16, cx + 1, y + 18, fade(AMBER, alpha));
+        textCentre(g, font, String.format("%05.1f", bearing), cx + 1, y + 20, AMBER, alpha);
+    }
+
     /** Fraction 0..1 of a slow pulse, for blinking warnings. */
     public static boolean blink() { return (System.currentTimeMillis() / 300) % 2 == 0; }
 
