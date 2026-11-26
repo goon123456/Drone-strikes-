@@ -734,12 +734,7 @@ def pair(c, x, y, z, w, h, d):
     return [(c, x, y, z, w, h, d), (c, -x - w, y, z, w, h, d)]
 
 import gen_vehicles as GV
-
-def vehicle_texture():
-    GV.texture(f"{A}/textures/bedrock/vehicle/steelrain_vehicles.png", save)
-
-def cube(c):
-    return {k: v for k, v in c.items() if k != "_sem"}
+import vehicle_kit as VK
 
 def piv(p):
     return [round(p[0] * 16, 3), round(p[1] * 16, 3), round(-p[2] * 16, 3)]
@@ -747,20 +742,23 @@ def piv(p):
 def sbw_vehicle(name, base, turret, barrel, turret_pivot, barrel_pivot, data):
     # The shapes come from gen_vehicles.py; the box lists passed in here are only the old placeholder models.
     m = GV.MODELS[name]()
+    tex, tw, th = VK.bake(m, name)
+    save(Image.fromarray(tex), f"{A}/textures/bedrock/vehicle/{name}.png")
+    cubes = lambda lst: [VK.to_bedrock(c) for c in lst]
     bones = [{"name": "root", "pivot": [0, 0, 0]},
-             {"name": "base", "parent": "root", "pivot": [0, 0, 0], "cubes": [cube(b) for b in m["base"]]}]
+             {"name": "base", "parent": "root", "pivot": [0, 0, 0], "cubes": cubes(m["base"])}]
     for extra in m["bones"]:
-        bones.append({**extra, "cubes": [cube(b) for b in extra["cubes"]]})
+        bones.append({"name": extra["name"], "parent": extra["parent"], "pivot": piv(extra["pivot"]), "cubes": cubes(extra["cubes"])})
     if turret_pivot is not None:
-        bones += [{"name": "turret", "parent": "root", "pivot": piv(turret_pivot), "cubes": [cube(b) for b in m["turret"]]},
-                  {"name": "barrel", "parent": "turret", "pivot": piv(barrel_pivot), "cubes": [cube(b) for b in m["barrel"]]}]
+        bones += [{"name": "turret", "parent": "root", "pivot": piv(turret_pivot), "cubes": cubes(m["turret"])},
+                  {"name": "barrel", "parent": "turret", "pivot": piv(barrel_pivot), "cubes": cubes(m["barrel"])}]
     write(f"{A}/models/bedrock/vehicle/{name}.geo.json", {"format_version": "1.12.0", "minecraft:geometry": [{
-        "description": {"identifier": f"geometry.{name}", "texture_width": 256, "texture_height": 256,
+        "description": {"identifier": f"geometry.{name}", "texture_width": tw, "texture_height": th,
                         "visible_bounds_width": 16, "visible_bounds_height": 8, "visible_bounds_offset": [0, 3, 0]},
         "bones": bones}]})
     write(f"{A}/sbw/vehicles/{name}.json", {"Models": [{
         "Model": f"{MOD}:models/bedrock/vehicle/{name}.geo.json",
-        "Texture": f"{MOD}:textures/bedrock/vehicle/steelrain_vehicles.png"}]})
+        "Texture": f"{MOD}:textures/bedrock/vehicle/{name}.png"}]})
     full = {"MaxEnergy": 2000000, "KeepChunkLoaded": False,
             **({"TurretPos": list(turret_pivot),
                 "BarrelPos": [round(barrel_pivot[i] - turret_pivot[i], 3) for i in range(3)]} if turret_pivot is not None else {}),
@@ -796,7 +794,6 @@ def gunner_seat(pos, cam, hide=True):
             **({"CameraPos": {"Transform": "Turret", "UseFixedCameraPos": True, "Position": cam, "Direction": "Barrel"}} if cam else {})}
 
 def sbw_vehicles():
-    vehicle_texture()
     wheels8 = lambda zs: [b for z in zs for b in pair(TY, 0.9, 0, z, 0.4, 1.2, 1.2)]
 
     # ZU-23-2: towed twin 23 mm. Static, one exposed gunner, no lead computer.

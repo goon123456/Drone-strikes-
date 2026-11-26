@@ -2,7 +2,7 @@
   "Models": [
     {
       "Model": "steelrain:models/bedrock/vehicle/zu_23_2.geo.json",
-      "Texture": "steelrain:textures/bedrock/vehicle/steelrain_vehicles.png"
+      "Texture": "steelrain:textures/bedrock/vehicle/zu_23_2.png"
     }
   ]
 }
