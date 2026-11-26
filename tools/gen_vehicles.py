@@ -10,36 +10,67 @@ from vehicle_kit import *
 
 
 # ---------------------------------------------------------------- anti-aircraft
+def _jack(x, z, top, mat=STEEL_D):
+    """A screw jack: dished foot, threaded leg, collar and a cranked handle."""
+    c = [lathe(mat, "y", x, z, [(0.0, 0.0), (0.0, 0.2), (0.03, 0.2), (0.07, 0.07), (0.1, 0.05), (0.1, 0.0)])]
+    c += rod_y(STEEL, x, z, 0.08, top - 0.08, 0.06) + rod_y(mat, x, z, top - 0.14, 0.14, 0.12)
+    c += rod_x(STEEL, x - 0.14, 0.28, top - 0.03, z, 0.025)
+    return c
+
+
 def zu_23_2():
     """ZU-23-2 in firing position: wheels swung up off the ground, gun on three jacks. Pivots (0,.5,0) / (0,1.15,0)."""
-    base = [B(STEEL_D, -0.9, 0.22, -0.18, 1.8, 0.14, 0.36),                       # axle beam
-            B(STEEL_D, -0.16, 0.2, -1.2, 0.32, 0.14, 2.6),                        # trail
-            B(OLIVE_D, -0.42, 0.3, -0.42, 0.84, 0.2, 0.84)]                       # turntable ring
-    base += rod_y(OLIVE_D, 0, 0, 0.3, 0.2, 0.9)
-    for (x, z) in ((0, 1.35), (-0.85, -0.3), (0.85, -0.3)):                       # three jack pads
-        base += rod_y(STEEL_D, x, z, 0, 0.05, 0.34) + rod_y(STEEL, x, z, 0.05, 0.22, 0.08)
-    # road wheels tilted outwards, clear of the ground
+    # carriage: a low delta-shaped frame, the towing trail, and the turntable race
+    base = [tower(OLIVE_D, 0.2, [(-0.95, -0.42), (0.95, -0.42), (0.34, 1.2), (-0.34, 1.2)], 0.34, [(-0.9, -0.38), (0.9, -0.38), (0.3, 1.12), (-0.3, 1.12)]),
+            hull(OLIVE_D, -0.12, 0.12, [(-1.75, 0.22), (-1.75, 0.32), (-0.4, 0.36), (-0.4, 0.2)], plain=True),      # trail
+            B(STEEL_D, -0.07, 0.2, -1.95, 0.14, 0.1, 0.22, plain=True)]                                             # towing eye
+    base += [lathe(STEEL_D, "y", 0, 0, [(0.34, 0.0), (0.34, 0.5), (0.42, 0.5), (0.46, 0.46), (0.5, 0.46), (0.5, 0.0)])]
+    base += _jack(0, 1.32, 0.34) + _jack(-0.86, -0.34, 0.34) + _jack(0.86, -0.34, 0.34)
     for sx in (1, -1):
-        base += [B(TYRE, sx * 1.02 - 0.11, 0.22, -0.4, 0.22, 0.8, 0.8, roll=-sx * 28, pivot=(sx * 0.9, 0.3, 0))]
-        base += [B(STEEL_D, sx * 1.02 - 0.13, 0.42, -0.2, 0.26, 0.4, 0.4, roll=-sx * 28, pivot=(sx * 0.9, 0.3, 0))]
-    turret = [B(OLIVE, -0.5, 0.5, -0.45, 1.0, 0.12, 0.95)]                         # platform
-    turret += P(OLIVE, 0.36, 0.62, -0.3, 0.1, 0.72, 0.62)                          # trunnion cheeks
-    turret += P(OLIVE_D, 0.5, 0.72, -0.25, 0.42, 0.5, 0.75)                        # ammunition boxes
-    turret += P(OLIVE, 0.52, 1.22, -0.2, 0.38, 0.04, 0.65)
-    turret += P(BLACK, 0.24, 0.62, -1.0, 0.36, 0.08, 0.38)                         # two gunners' seats
-    turret += P(BLACK, 0.24, 0.7, -1.06, 0.36, 0.4, 0.07)
-    turret += P(STEEL_D, 0.38, 0.5, -0.95, 0.08, 0.14, 0.5)
-    turret += [B(STEEL_D, -0.06, 0.62, -0.6, 0.12, 0.62, 0.12),                    # sight column
-               B(BLACK, -0.14, 1.24, -0.72, 0.28, 0.16, 0.3), B(GLASS, -0.08, 1.28, -0.42, 0.16, 0.08, 0.02)]
-    turret += P(STEEL, 0.16, 0.8, -0.72, 0.05, 0.05, 0.3)                          # hand wheels
-    barrel = []
+        # road wheels on their swing arms, tipped outwards clear of the ground
+        w = wheel(sx * 0.98 - (0.0 if sx > 0 else 0.2), 0.2, 0.62, 0.0, 0.8, OLIVE_D)[0]
+        w["rot"], w["pivot"] = (0, 0, -sx * 26), (sx * 0.9, 0.3, 0)
+        base += [w, B(STEEL_D, sx * 0.9 - 0.05, 0.3, -0.06, 0.1, 0.36, 0.12, roll=-sx * 26, pivot=(sx * 0.9, 0.3, 0), plain=True)]
+        base += rod_x(STEEL_D, sx * 0.55 - (0.0 if sx > 0 else 0.4), 0.4, 0.3, 0.0, 0.1)
+        base += [B(OLIVE_D, sx * 0.62 - 0.12, 0.34, 0.5, 0.24, 0.16, 0.34, marks=[("top", "panel", 0.5, 0.5, 0.18, 0.26)])]   # tool boxes
+    # upper mount: platform, two trapezoid cradle cheeks, ammunition boxes with sloped lids and feed chutes
+    turret = [lathe(OLIVE, "y", 0, 0, [(0.5, 0.0), (0.5, 0.48), (0.56, 0.5), (0.6, 0.5), (0.6, 0.0)]),
+              B(OLIVE, -0.5, 0.56, -0.5, 1.0, 0.06, 0.95, plain=True)]
+    for sx in (1, -1):
+        x0, x1 = (0.34, 0.44) if sx > 0 else (-0.44, -0.34)
+        turret += [hull(OLIVE, x0, x1, [(-0.36, 0.62), (-0.24, 1.3), (0.12, 1.36), (0.36, 1.0), (0.4, 0.62)])]
+        turret += rod_x(STEEL_D, x0 - 0.02, 0.14, 1.15, 0.0, 0.2)                                    # trunnion cap
+        bx0, bx1 = (0.5, 0.94) if sx > 0 else (-0.94, -0.5)
+        side = "cap1" if sx > 0 else "cap0"
+        turret += [hull(OLIVE_D, bx0, bx1, [(-0.3, 0.7), (-0.3, 1.16), (-0.2, 1.24), (0.38, 1.24), (0.5, 1.12), (0.5, 0.7)],
+                        marks=[(side, "panel", 0.5, 0.5, 0.6, 0.36)])]
+        turret += [B(STEEL_D, sx * 0.72 - 0.16, 1.24, -0.12, 0.32, 0.02, 0.4, plain=True),            # lid strap and latches
+                   B(STEEL, sx * 0.95 - 0.015, 0.98, -0.1, 0.03, 0.06, 0.05, plain=True), B(STEEL, sx * 0.95 - 0.015, 0.98, 0.25, 0.03, 0.06, 0.05, plain=True),
+                   B(STEEL_D, sx * 0.4 - 0.08, 1.02, 0.02, 0.16, 0.12, 0.3, plain=True)]              # feed chute into the gun
+        # gunner's seat: pan, tilted back rest, post and foot rest
+        turret += [B(BLACK, sx * 0.42 - 0.17, 0.66, -1.02, 0.34, 0.06, 0.34), B(BLACK, sx * 0.42 - 0.17, 0.7, -1.08, 0.34, 0.4, 0.05, pitch=-12),
+                   B(STEEL_D, sx * 0.42 - 0.03, 0.56, -0.9, 0.06, 0.12, 0.06, plain=True), B(STEEL_D, sx * 0.42 - 0.12, 0.42, -0.6, 0.24, 0.03, 0.12, plain=True)]
+        turret += [B(STEEL_D, sx * 0.42 - 0.03, 0.56, -1.0, 0.06, 0.05, 0.5, plain=True)]
+    # sight: column, collimator box, ring sight for ground targets, eyepiece
+    turret += rod_y(STEEL_D, 0, -0.62, 0.62, 0.6, 0.08) + [B(BLACK, -0.13, 1.22, -0.78, 0.26, 0.18, 0.34), B(GLASS, -0.08, 1.26, -0.44, 0.16, 0.1, 0.01)]
+    turret += rod_z(BLACK, 0, 1.31, -0.92, 0.14, 0.07) + rod_z(STEEL_D, 0.2, 1.3, -0.7, 0.03, 0.2) + rod_z(STEEL_D, 0.2, 1.3, -0.45, 0.02, 0.12)
+    for sx in (1, -1):                                                                               # laying hand wheels
+        turret += rod_x(STEEL, sx * 0.2 - 0.015, 0.03, 0.86, -0.7, 0.26) + rod_x(STEEL_D, sx * 0.2 - 0.04, 0.08, 0.86, -0.7, 0.05)
+        turret += [B(BLACK, sx * 0.2 - 0.02, 0.95, -0.72, 0.07, 0.04, 0.04, plain=True)]
+    # the twin 23 mm guns: receivers on a cradle, barrels with conical flash hiders that kick back as they fire
+    barrel, recoil = [hull(OLIVE_D, -0.32, 0.32, [(-0.3, 1.0), (-0.3, 1.1), (0.45, 1.1), (0.55, 1.04), (0.55, 1.0)], plain=True)], []
     for sx in (0.18, -0.18):
-        barrel += [B(OLIVE_D, sx - 0.1, 1.03, -0.55, 0.2, 0.26, 1.15)]             # receiver
-        barrel += [B(STEEL_D, sx - 0.07, 1.09, 0.6, 0.14, 0.14, 0.35)]             # barrel sleeve
-        barrel += rod_z(STEEL_D, sx, 1.16, 0.95, 1.3, 0.075)
-        barrel += rod_z(BLACK, sx, 1.16, 2.25, 0.25, 0.14)                         # flash hider
-    barrel += [B(OLIVE_D, -0.3, 1.1, -0.2, 0.6, 0.1, 0.4), B(STEEL_D, -0.03, 1.29, -0.5, 0.06, 0.05, 0.9)]
-    return dict(base=base, turret=turret, barrel=barrel, bones=[])
+        barrel += [hull(OLIVE_D, sx - 0.1, sx + 0.1, [(-0.62, 1.05), (-0.62, 1.26), (-0.5, 1.3), (0.5, 1.3), (0.6, 1.24), (0.6, 1.05)],
+                        marks=[("s3", "panel", 0.4, 0.5, 0.12, 0.5)])]
+        barrel += [B(STEEL_D, sx - 0.04, 1.3, -0.3, 0.08, 0.04, 0.3, plain=True)]                     # top cover latch
+        barrel += rod_z(STEEL_D, sx, 1.17, 0.6, 0.4, 0.13)                                            # barrel jacket
+        barrel += rod_z(STEEL_D, sx + (0.07 if sx > 0 else -0.07), 1.1, 0.2, 0.9, 0.035)              # gas tube
+        recoil += [lathe(STEEL_D, "z", sx, 1.17, [(0.9, 0.0), (0.9, 0.04), (2.2, 0.034), (2.22, 0.05), (2.3, 0.05), (2.5, 0.085), (2.5, 0.06), (2.32, 0.03)])]
+        recoil += rod_z(STEEL, sx, 1.17, 1.45, 0.05, 0.1)
+        recoil += [B(STEEL_D, sx - 0.012, 1.2, 1.3, 0.024, 0.09, 0.3, plain=True)]                    # barrel-change handle
+    barrel += [B(STEEL_D, -0.03, 1.3, -0.5, 0.06, 0.05, 0.9, plain=True)]
+    bones = [{"name": "recoilLight", "parent": "barrel", "pivot": (0, 1.17, 0.9), "cubes": recoil}]
+    return dict(base=base, turret=turret, barrel=barrel, bones=bones)
 
 
 def gepard():
@@ -211,30 +242,49 @@ def pantsir():
 def patriot():
     """M901 Patriot launching station on its semi-trailer. Pivots (0,1.3,-1.0) / (0,1.9,-2.0)."""
     zs = [-3.5, -2.1]
-    base = [B(TAN_D, -1.2, 0.95, -4.6, 2.4, 0.3, 9.2),                             # trailer bed
-            B(TAN_D, -0.5, 0.7, -4.4, 1.0, 0.25, 5.0),
-            B(TAN, -1.15, 1.25, 2.6, 2.3, 1.25, 1.9),                              # generator and electronics
-            B(GRILLE, -0.9, 1.5, 4.5, 1.8, 0.8, 0.04), B(TAN_D, -1.17, 1.25, 3.4, 2.34, 1.25, 0.08),
-            B(TAN_D, -0.2, 0.3, 4.4, 0.4, 0.7, 0.4), B(STEEL_D, -0.3, 0.0, 4.3, 0.6, 0.3, 0.6),   # landing leg
-            B(TAN_D, -0.9, 1.25, -0.2, 1.8, 0.1, 2.6),
-            B(WHITE, 0.2, 2.5, 2.9, 0.08, 1.4, 0.08)]                              # data-link mast
-    for z in (1.4, -4.3):                                                          # four outriggers
-        base += P(TAN_D, 1.2, 0.9, z, 0.5, 0.14, 0.2) + P(TAN_D, 1.6, 0.15, z, 0.14, 0.9, 0.2) + P(STEEL_D, 1.42, 0.0, z - 0.15, 0.5, 0.15, 0.5)
-    base += mudguards(TAN_D, 0.9, 0.42, zs, 1.1)
-    turret = [B(TAN_D, -1.1, 1.3, -2.3, 2.2, 0.2, 2.6)]
-    turret += rod_y(TAN_D, 0, -1.0, 1.25, 0.3, 1.6)
-    turret += P(TAN, 0.95, 1.5, -2.3, 0.18, 0.75, 0.9)                              # elevation trunnions
-    barrel = [B(TAN_D, -1.05, 1.62, -4.1, 2.1, 0.12, 6.1),                         # launcher frame
-              B(TAN_D, -1.05, 1.7, -4.15, 2.1, 2.05, 0.14)]
-    barrel += P(STEEL_D, 0.5, 1.4, -1.6, 0.14, 0.14, 1.9, pitch=18, pivot=(0, 1.5, -1.6))   # elevating rams
+    # trailer: a deep frame with a raised gooseneck at the front, the power unit and its louvred generator
+    base = [hull(TAN_D, -1.2, 1.2, [(-4.6, 0.95), (-4.6, 1.25), (2.4, 1.25), (2.6, 1.32), (4.55, 1.32), (4.55, 1.1), (2.7, 1.1), (2.4, 0.95)]),
+            hull(TAN_D, -0.5, 0.5, [(-4.4, 0.68), (-4.4, 0.95), (0.8, 0.95), (0.5, 0.68)], plain=True),
+            hull(TAN, -1.15, 1.15, [(2.6, 1.32), (2.6, 2.5), (2.7, 2.6), (4.4, 2.6), (4.52, 2.48), (4.52, 1.32)],
+                 marks=[("cap0", "panel", 0.5, 0.5, 1.2, 0.8), ("cap1", "panel", 0.5, 0.5, 1.2, 0.8)]),
+            B(GRILLE, -0.9, 1.6, 4.5, 1.8, 0.8, 0.04), B(GRILLE, -1.17, 1.7, 3.5, 0.03, 0.6, 0.8), B(GRILLE, 1.14, 1.7, 3.5, 0.03, 0.6, 0.8),
+            B(TAN_D, -0.5, 2.6, 3.0, 0.6, 0.12, 0.6, plain=True),                                      # exhaust hood
+            B(TAN_D, -0.9, 1.25, -0.2, 1.8, 0.08, 2.6, plain=True)]                                    # walkway
+    base += rod_y(STEEL_D, -0.2, 3.3, 2.6, 0.35, 0.12)                                                 # exhaust pipe
+    base += rod_y(TAN_D, 0.7, 2.9, 2.6, 2.2, 0.07) + [B(WHITE, 0.62, 4.5, 2.86, 0.16, 0.5, 0.08), B(TAN_D, 0.55, 2.6, 2.8, 0.3, 0.1, 0.2, plain=True)]   # data-link mast
+    base += _jack(0, 4.2, 1.1, TAN_D)                                                                  # landing leg
+    for z in (1.5, -4.3):                                                                              # four outriggers on screw jacks
+        for sx in (1, -1):
+            base += [hull(TAN_D, min(sx * 1.2, sx * 1.75), max(sx * 1.2, sx * 1.75), [(z - 0.1, 0.95), (z - 0.1, 1.1), (z + 0.1, 1.1), (z + 0.1, 0.95)], plain=True)]
+            base += _jack(sx * 1.68, z, 0.98, TAN_D)
+    base += rod_x(BLACK, -1.3, 0.5, 1.15, 0.9, 0.5) + rod_x(STEEL_D, -1.34, 0.58, 1.15, 0.9, 0.12)     # cable reel
+    for i in range(4):                                                                                 # access ladder
+        base.append(B(STEEL_D, 1.22, 0.4 + i * 0.22, 2.0, 0.04, 0.03, 0.4, plain=True))
+    base += P(RED, 0.8, 1.02, -4.62, 0.25, 0.12, 0.03) + P(AMBER, 0.5, 1.02, -4.62, 0.16, 0.12, 0.03)
+    base += mudguards(TAN_D, 0.9, 0.42, zs, 1.1) + axles(zs, 0.9, 1.1, TAN_D)
+    # turntable and the two trunnion brackets the launcher tips up on
+    turret = [lathe(TAN_D, "y", 0, -1.0, [(1.25, 0.0), (1.25, 0.9), (1.32, 0.95), (1.5, 0.95), (1.5, 0.0)]),
+              B(TAN_D, -1.1, 1.3, -2.3, 2.2, 0.2, 2.6)]
+    for sx in (1, -1):
+        x0, x1 = (0.95, 1.13) if sx > 0 else (-1.13, -0.95)
+        turret += [hull(TAN, x0, x1, [(-2.4, 1.5), (-2.3, 2.2), (-1.8, 2.3), (-1.3, 1.5)])]
+        turret += rod_x(STEEL_D, x0 - 0.03, 0.24, 1.9, -2.0, 0.3)
+    # launcher: a welded frame carrying four ribbed canisters, lifted by two hydraulic rams
+    barrel = [B(TAN_D, -1.05, 1.62, -4.1, 2.1, 0.12, 6.1), B(TAN_D, -1.05, 1.7, -4.18, 2.1, 2.05, 0.14),
+              B(TAN_D, -0.04, 1.74, -4.0, 0.08, 1.98, 6.0, plain=True), B(TAN_D, -1.05, 2.7, -4.0, 2.1, 0.06, 6.0, plain=True)]
+    for sx in (1, -1):
+        ram = lathe(STEEL_D, "z", sx * 0.55, 1.48, [(-1.7, 0.0), (-1.7, 0.09), (-0.5, 0.09), (-0.5, 0.05), (0.4, 0.05), (0.4, 0.0)], pitch=16, pivot=(0, 1.5, -1.7))
+        barrel.append(ram)
     for sx in (-1.02, 0.04):
         for sy in (1.76, 2.76):
-            barrel += [B(TAN, sx, sy, -4.0, 0.98, 0.94, 6.0)]                      # canister
-            for z in (-3.6, -2.2, -0.8, 0.6, 1.7):                                 # stiffening frames
-                barrel += [B(TAN_D, sx - 0.02, sy - 0.02, z, 1.02, 0.98, 0.1)]
-            barrel += [B(TAN_D, sx + 0.07, sy + 0.07, 1.98, 0.84, 0.8, 0.04),       # front cover
-                       B(BLACK, sx + 0.3, sy + 0.3, 2.01, 0.38, 0.34, 0.02)]
-    return dict(base=base, turret=turret, barrel=barrel, bones=truck_wheels(zs, 0.9, 0.4, 1.1, TAN_D))
+            barrel += [B(TAN, sx, sy, -4.0, 0.98, 0.94, 6.0, marks=[("left", "digits:1 2", 0.2, 0.5, 0), ("right", "digits:3 4", 0.8, 0.5, 0)])]
+            for z in (-3.9, -2.6, -1.3, 0.0, 1.3, 1.86):                                               # stiffening frames
+                barrel += [B(TAN_D, sx - 0.025, sy - 0.025, z, 1.03, 0.99, 0.09, plain=True)]
+            for (dx, dy) in ((0.0, 0.0), (0.9, 0.0), (0.0, 0.86), (0.9, 0.86)):                         # corner posts
+                barrel += [B(TAN_D, sx + dx - 0.01, sy + dy - 0.01, -4.0, 0.1, 0.1, 6.0, plain=True)]
+            barrel += [B(TAN_D, sx + 0.07, sy + 0.07, 1.98, 0.84, 0.8, 0.04, marks=[("front", "hatch", 0.5, 0.5, 0.7, 0.66)]),   # front cover
+                       B(BLACK, sx + 0.07, sy + 0.07, -4.03, 0.84, 0.8, 0.03, plain=True)]             # blow-out rear cover
+    return dict(base=base, turret=turret, barrel=barrel, bones=truck_wheels(zs, 0.9, 0.4, 1.1, TAN_D, steer=0))
 
 
 # ---------------------------------------------------------------- artillery
@@ -279,22 +329,41 @@ def himars():
     return dict(base=base, turret=turret, barrel=barrel, bones=truck_wheels(zs, 0.85, 0.38, 1.0, US_D))
 
 
+def _bomb(x, z):
+    """A 120 mm mortar bomb standing on its tail."""
+    c = [lathe(OLIVE_D, "y", x, z, [(0.1, 0.0), (0.1, 0.02), (0.3, 0.025), (0.36, 0.05), (0.5, 0.06), (0.62, 0.05), (0.7, 0.025), (0.74, 0.012), (0.74, 0.0)])]
+    c += [B(STEEL_D, x - 0.05, 0.0, z - 0.004, 0.1, 0.14, 0.008, plain=True), B(STEEL_D, x - 0.004, 0.0, z - 0.05, 0.008, 0.14, 0.1, plain=True)]
+    c += rod_y(BRASS, x, z, 0.7, 0.05, 0.03)
+    return c
+
+
 def mortar_120():
     """120 mm mortar. Pivots (0,.1,-.1) / (0,.22,-.1)."""
-    base = rod_y(STEEL_D, 0, -0.1, 0, 0.08, 1.0) + rod_y(STEEL, 0, -0.1, 0.08, 0.08, 0.3)
-    base += [B(STEEL_D, -0.5, 0.0, -0.14, 1.0, 0.12, 0.08), B(STEEL_D, -0.04, 0.0, -0.6, 0.08, 0.12, 1.0)]   # baseplate ribs
-    base += [B(OLIVE_D, 0.55, 0, -0.5, 0.35, 0.3, 0.5), B(OLIVE, 0.57, 0.3, -0.48, 0.31, 0.03, 0.46)]        # ammunition box
+    # baseplate: a dished disc with spade ribs underneath and a socket for the ball of the tube
+    base = [lathe(STEEL_D, "y", 0, -0.1, [(0.0, 0.0), (0.0, 0.42), (0.03, 0.5), (0.07, 0.5), (0.1, 0.3), (0.13, 0.12), (0.13, 0.0)])]
+    for ang in (0, 60, 120):
+        base += [B(STEEL_D, -0.5, 0.0, -0.12, 1.0, 0.08, 0.04, yaw=ang, pivot=(0, 0, -0.1), plain=True)]
+    base += rod_x(STEEL, -0.36, 0.12, 0.09, -0.1, 0.03) + rod_x(STEEL, 0.24, 0.12, 0.09, -0.1, 0.03)    # carrying handles
+    # ammunition: an open crate of bombs and two set out ready
+    base += [hull(OLIVE_D, 0.55, 0.95, [(-0.6, 0.0), (-0.6, 0.3), (0.0, 0.3), (0.0, 0.0)], marks=[("cap0", "digits:120", 0.5, 0.5, 0), ("cap1", "digits:120", 0.5, 0.5, 0)]),
+             B(OLIVE, 0.55, 0.3, -0.62, 0.4, 0.03, 0.2, pitch=55, pivot=(0, 0.3, -0.6), plain=True),
+             B(BLACK, 0.58, 0.28, -0.56, 0.34, 0.02, 0.52, plain=True)]
+    base += rod_x(STEEL_D, 0.95, 0.03, 0.2, -0.3, 0.1)
+    base += _bomb(-0.7, -0.5) + _bomb(-0.86, -0.34)
+    # bipod: two legs with spiked feet, a spreader chain bar, the elevating screw and cross-levelling gear
     turret = []
-    # bipod: two splayed legs meeting at a collar on the tube, with a cross-levelling bar
     for sx in (1, -1):
-        turret += [B(STEEL, sx * 0.02 - 0.025, 0.0, 0.62, 0.05, 1.05, 0.05, roll=-sx * 22, pivot=(sx * 0.02, 1.0, 0.64))]
-        turret += [B(STEEL_D, sx * 0.4 - 0.08, 0.0, 0.56, 0.16, 0.03, 0.16)]
-    turret += [B(STEEL, -0.22, 0.55, 0.63, 0.44, 0.04, 0.04), B(STEEL_D, -0.07, 0.92, 0.56, 0.14, 0.14, 0.16)]
-    barrel = rod_z(OLIVE_D, 0, 0.22, -0.1, 1.7, 0.17)
-    barrel += rod_z(STEEL_D, 0, 0.22, -0.16, 0.14, 0.24)                            # breech cap
-    barrel += rod_z(STEEL_D, 0, 0.22, 1.5, 0.1, 0.21)                               # muzzle band
-    barrel += rod_z(STEEL_D, 0, 0.22, 0.72, 0.12, 0.22)                             # bipod collar
-    barrel += [B(BLACK, 0.1, 0.24, 0.5, 0.1, 0.18, 0.12), B(GLASS, 0.12, 0.42, 0.54, 0.06, 0.04, 0.04)]      # sight
+        turret += [lathe(STEEL, "y", sx * 0.02, 0.64, [(0.0, 0.0), (0.03, 0.03), (0.06, 0.022), (1.02, 0.02), (1.02, 0.0)], roll=-sx * 22, pivot=(sx * 0.02, 1.0, 0.64))]
+        turret += rod_y(STEEL_D, sx * 0.4, 0.64, 0.0, 0.03, 0.14)
+    turret += rod_x(STEEL_D, -0.24, 0.48, 0.5, 0.64, 0.02) + rod_y(STEEL_D, 0, 0.64, 0.86, 0.3, 0.05) + rod_y(STEEL, 0, 0.64, 0.6, 0.3, 0.03)
+    turret += rod_x(STEEL, -0.2, 0.4, 0.96, 0.62, 0.035) + rod_x(BLACK, 0.2, 0.05, 0.96, 0.62, 0.08) + rod_z(BLACK, 0.0, 0.76, 0.66, 0.05, 0.08)
+    turret += [B(STEEL_D, -0.08, 0.9, 0.56, 0.16, 0.12, 0.14, plain=True)]
+    # tube: ball breech, reinforced base, long barrel with a flared muzzle, and the clamp the bipod grips
+    barrel = [lathe(OLIVE_D, "z", 0, 0.22, [(-0.22, 0.0), (-0.2, 0.05), (-0.14, 0.07), (-0.1, 0.11), (0.1, 0.11), (0.14, 0.085), (1.48, 0.085),
+                                            (1.5, 0.1), (1.6, 0.1), (1.6, 0.068), (1.3, 0.066)])]
+    barrel += rod_z(STEEL_D, 0, 0.22, 0.7, 0.14, 0.2) + rod_z(STEEL_D, 0, 0.22, 0.2, 0.04, 0.19)
+    barrel += [B(STEEL_D, 0.09, 0.22, 0.42, 0.05, 0.05, 0.2, plain=True), B(BLACK, 0.12, 0.26, 0.44, 0.1, 0.16, 0.1), B(GLASS, 0.14, 0.42, 0.47, 0.06, 0.04, 0.04)]
+    barrel += rod_y(BLACK, 0.17, 0.49, 0.42, 0.08, 0.03)
     return dict(base=base, turret=turret, barrel=barrel, bones=[])
 
 
@@ -343,26 +412,49 @@ def m109():
 def tomahawk_launcher():
     """Trailer launcher: a container that tips up to vertical about its rear end. Pivot (0,1.2,-3.9)."""
     zs = [-3.7, -2.5]
-    base = [B(US_D, -1.2, 0.9, -4.5, 2.4, 0.3, 9.0),                               # trailer bed
-            B(US_D, -0.45, 0.6, -4.4, 0.9, 0.3, 6.0),
-            B(US, -1.1, 1.2, 3.5, 2.2, 1.2, 0.95),                                 # power unit
-            B(GRILLE, -0.8, 1.45, 4.44, 1.6, 0.7, 0.04),
-            B(US_D, -0.12, 0.6, 4.2, 0.24, 0.3, 0.6),                              # kingpin
-            B(STEEL_D, -1.2, 0.95, -4.56, 2.4, 0.2, 0.08)]
-    base += P(STEEL_D, 0.8, 0.0, 3.1, 0.2, 0.9, 0.2) + P(STEEL_D, 0.7, 0.0, 3.0, 0.4, 0.08, 0.4)   # landing legs
-    base += P(US_D, 1.2, 0.2, -4.4, 0.16, 0.8, 0.16) + P(STEEL_D, 1.08, 0.0, -4.52, 0.4, 0.08, 0.4)
-    base += P(RED, 0.8, 1.0, -4.6, 0.25, 0.12, 0.03)
-    base += mudguards(US_D, 0.85, 0.4, zs, 1.0)
-    barrel = [B(US, -1.1, 1.2, -3.9, 2.2, 1.9, 7.3)]                               # the container
-    for z in (-3.9, -2.7, -1.5, -0.3, 0.9, 2.1, 3.25):                             # frames and corrugation
-        barrel += [B(US_D, -1.14, 1.18, z, 2.28, 1.94, 0.14)]
-    barrel += P(US_D, 1.1, 2.1, -3.8, 0.03, 0.1, 7.1) + P(US_D, 1.1, 1.6, -3.8, 0.03, 0.1, 7.1) + P(US_D, 1.1, 2.6, -3.8, 0.03, 0.1, 7.1)
+    # trailer: a low bed with a raised gooseneck, the power unit on it, landing legs and rear stabilisers
+    base = [hull(US_D, -1.2, 1.2, [(-4.5, 0.9), (-4.5, 1.2), (3.3, 1.2), (3.5, 1.3), (4.5, 1.3), (4.5, 1.08), (3.55, 1.08), (3.3, 0.9)]),
+            hull(US_D, -0.45, 0.45, [(-4.4, 0.62), (-4.4, 0.9), (1.8, 0.9), (1.5, 0.62)], plain=True),
+            hull(US, -1.1, 1.1, [(3.5, 1.3), (3.5, 2.3), (3.6, 2.4), (4.36, 2.4), (4.46, 2.3), (4.46, 1.3)],
+                 marks=[("cap0", "panel", 0.5, 0.5, 0.6, 0.7), ("cap1", "panel", 0.5, 0.5, 0.6, 0.7)]),
+            B(GRILLE, -0.8, 1.5, 4.45, 1.6, 0.7, 0.04), B(US_D, -0.5, 2.4, 3.7, 0.5, 0.1, 0.5, plain=True),
+            B(STEEL_D, -1.2, 0.95, -4.56, 2.4, 0.2, 0.08, marks=[("rear", "hazard", 0.5, 0.5, 2.0, 0.12)])]
+    base += rod_y(STEEL_D, -0.25, 3.95, 2.4, 0.4, 0.1)                                                 # exhaust
+    base += rod_y(STEEL_D, 0, 4.2, 0.78, 0.3, 0.16)                                                    # kingpin
+    for sx in (1, -1):
+        base += _jack(sx * 0.9, 3.1, 1.08, US_D) + _jack(sx * 1.28, -4.3, 0.9, US_D)
+        base += [B(US_D, sx * 1.2 - (0.0 if sx > 0 else 0.16), 0.75, -4.4, 0.16, 0.16, 0.2, plain=True)]
+        base += rod_z(STEEL, sx * 0.95, 0.72, 0.2, 0.9, 0.24)                                           # air tanks
+        base += [B(US_D, sx * 0.95 - 0.25, 0.42, -1.2, 0.5, 0.46, 0.9, marks=[("left" if sx > 0 else "right", "panel", 0.5, 0.5, 0.7, 0.3)])]   # stowage lockers
+    base += P(RED, 0.8, 1.0, -4.6, 0.25, 0.12, 0.03) + P(AMBER, 0.5, 1.0, -4.6, 0.16, 0.12, 0.03)
+    base += mudguards(US_D, 0.85, 0.4, zs, 1.0) + axles(zs, 0.85, 1.0)
+    # the container: corrugated walls between a frame of corner posts and rails, doors with locking bars at the
+    # tail, and four armoured cell hatches at the end that points skywards
+    barrel = [B(US, -1.06, 1.24, -3.86, 2.12, 1.82, 7.22, plain=True)]
+    for (dx, dy) in ((-1.1, 1.2), (0.98, 1.2), (-1.1, 2.98), (0.98, 2.98)):                             # corner posts and castings
+        barrel += [B(US_D, dx, dy, -3.9, 0.12, 0.12, 7.3, plain=True),
+                   B(STEEL_D, dx - 0.01, dy - 0.01, -3.92, 0.14, 0.14, 0.18, plain=True), B(STEEL_D, dx - 0.01, dy - 0.01, 3.24, 0.14, 0.14, 0.18, plain=True)]
+    for z in (-3.9, 3.28):
+        barrel += [B(US_D, -1.1, 1.2, z, 2.2, 0.12, 0.12, plain=True), B(US_D, -1.1, 2.98, z, 2.2, 0.12, 0.12, plain=True)]
+        barrel += P(US_D, 0.98, 1.2, z, 0.12, 1.9, 0.12, plain=True)
+    n = 30
+    for i in range(n):                                                                                 # corrugation on both walls and the roof
+        z = -3.72 + i * (6.9 / (n - 1))
+        barrel += P(US, 1.06, 1.34, z - 0.045, 0.035, 1.62, 0.09, plain=True)
+        barrel += [B(US, -0.96, 3.06, z - 0.045, 1.92, 0.035, 0.09, plain=True)]
+    for sx in (1, -1):                                                                                 # tail doors
+        barrel += [B(US_D, sx * 0.52 - 0.5, 1.34, -3.9, 1.0, 1.62, 0.04, marks=[("rear", "panel", 0.5, 0.5, 0.86, 1.4)])]
+        for off in (0.25, 0.42):
+            barrel += rod_y(STEEL, sx * off, -3.93, 1.3, 1.7, 0.03)
+            barrel += [B(STEEL_D, sx * off - 0.05, 2.0, -3.96, 0.1, 0.04, 0.03, plain=True)]
     for i in range(2):
-        for j in range(2):                                                         # four cell hatches at the top end
-            barrel += [B(STEEL, -0.95 + i * 1.0, 1.35 + j * 0.85, 3.4, 0.9, 0.75, 0.04),
-                       B(STEEL_D, -0.85 + i * 1.0, 1.45 + j * 0.85, 3.43, 0.7, 0.55, 0.02)]
-    barrel += P(STEEL, 0.7, 1.25, -2.9, 0.12, 0.12, 2.6, pitch=-12, pivot=(0, 1.3, -1.6))   # hydraulic rams
-    return dict(base=base, turret=[], barrel=barrel, bones=truck_wheels(zs, 0.85, 0.38, 1.0, US_D))
+        for j in range(2):                                                                             # four cell hatches
+            cx, cy = -0.5 + i * 1.0, 1.7 + j * 0.86
+            barrel += [B(STEEL_D, cx - 0.44, cy - 0.38, 3.38, 0.88, 0.76, 0.06, marks=[("front", "hatch", 0.5, 0.5, 0.74, 0.62)]),
+                       B(STEEL, cx - 0.4, cy + 0.34, 3.44, 0.2, 0.06, 0.04, plain=True), B(STEEL, cx + 0.2, cy + 0.34, 3.44, 0.2, 0.06, 0.04, plain=True)]
+    for sx in (1, -1):                                                                                 # erecting rams
+        barrel.append(lathe(STEEL_D, "z", sx * 0.72, 1.3, [(-2.9, 0.0), (-2.9, 0.09), (-1.4, 0.09), (-1.4, 0.05), (-0.2, 0.05), (-0.2, 0.0)], pitch=-10, pivot=(0, 1.3, -1.6)))
+    return dict(base=base, turret=[], barrel=barrel, bones=truck_wheels(zs, 0.85, 0.38, 1.0, US_D, steer=0))
 
 
 def iskander_launcher():
@@ -401,44 +493,65 @@ def iskander_launcher():
 # ---------------------------------------------------------------- electronic warfare
 def jammer():
     """Field EW station: an equipment shelter on jacks with a tall telescopic aerial mast."""
-    base = [B(US, -1.4, 0.35, -1.4, 2.8, 2.2, 2.8),                                # shelter
-            B(US_D, -1.45, 0.3, -1.45, 2.9, 0.1, 2.9), B(US_D, -1.45, 2.5, -1.45, 2.9, 0.1, 2.9),
-            B(US_D, -0.45, 0.5, -1.44, 0.9, 1.8, 0.05), B(STEEL, 0.25, 1.3, -1.47, 0.08, 0.2, 0.04),   # door and handle
-            B(GRILLE, -1.44, 1.6, -0.5, 0.05, 0.6, 1.0),                           # air conditioner
-            B(STEEL_D, -1.7, 1.5, -0.6, 0.28, 0.8, 1.2),
-            B(STEEL_D, 0.6, 2.6, 0.5, 0.6, 0.3, 0.6),                              # roof boxes
-            B(BLACK, 1.42, 0.6, 0.2, 0.06, 0.9, 0.9),                              # cable panel
-            B(STEEL_D, 0.9, 0.0, -2.1, 0.6, 0.5, 0.5), B(GRILLE, 0.95, 0.1, -2.12, 0.5, 0.3, 0.03)]   # generator
-    for sx in (1.2, -1.4):
-        for sz in (1.2, -1.4):
-            base += [B(STEEL_D, sx, 0.0, sz, 0.2, 0.35, 0.2), B(STEEL_D, sx - 0.1, 0.0, sz - 0.1, 0.4, 0.06, 0.4)]
-    # mast in three telescoping sections
-    base += rod_y(STEEL_D, 0, 0, 2.6, 2.4, 0.3) + rod_y(STEEL, 0, 0, 5.0, 2.2, 0.22) + rod_y(STEEL_D, 0, 0, 7.2, 1.6, 0.14)
-    for a in (0, 90):                                                              # guy-wire collars and cross arms
-        base += [B(STEEL_D, -1.5, 7.0 + a / 90 * 1.1, -0.04, 3.0, 0.08, 0.08, yaw=a)]
-    for (x, z, yaw) in ((1.45, 0, 0), (-1.45, 0, 0), (0, 1.45, 90), (0, -1.45, 90)):
-        base += [B(RADOME, x - 0.06, 6.55 + (1.1 if yaw else 0), z - 0.3, 0.12, 0.95, 0.6, yaw=yaw)]   # panel aerials
-    base += rod_y(RADOME, 0, 0, 8.8, 0.5, 0.36)
-    base += [B(RED, -0.07, 9.3, -0.07, 0.14, 0.14, 0.14)]
-    for (x, z) in ((0.5, 0.5), (-0.5, 0.5), (0.5, -0.5), (-0.5, -0.5)):
-        base += [B(STEEL_D, x - 0.02, 8.2, z - 0.02, 0.04, 0.9, 0.04)]             # whip aerials
+    # shelter with chamfered roof edges, skids, a door with a porthole, air conditioner and cable entry
+    base = [hull(US, -1.4, 1.4, [(-1.4, 0.35), (-1.4, 2.4), (-1.25, 2.55), (1.25, 2.55), (1.4, 2.4), (1.4, 0.35)],
+                 marks=[("cap1", "panel", 0.3, 0.55, 0.9, 1.4), ("cap0", "vent", 0.72, 0.4, 0.8, 0.5), ("s0", "hatch", 0.5, 0.52, 0.9, 1.8)]),
+            B(US_D, -1.3, 2.55, -1.3, 2.6, 0.04, 2.6, plain=True)]
+    base += P(US_D, 1.0, 0.2, -1.5, 0.2, 0.15, 3.0, plain=True)                                         # skids
+    base += rod_z(GLASS, 0.0, 1.9, -1.43, 0.03, 0.24) + [B(STEEL, 0.3, 1.3, -1.44, 0.06, 0.18, 0.04, plain=True)]
+    base += [hull(STEEL_D, -1.72, -1.4, [(-0.6, 1.5), (-0.6, 2.2), (-0.5, 2.3), (0.5, 2.3), (0.6, 2.2), (0.6, 1.5)]),   # air conditioner
+             B(GRILLE, -1.74, 1.6, -0.45, 0.03, 0.55, 0.9), B(BLACK, 1.4, 0.6, 0.2, 0.05, 0.9, 0.9, plain=True)]
+    for i in range(5):
+        base += rod_x(STEEL, 1.44, 0.05, 0.75 + i * 0.16, 0.65, 0.07)                                   # cable sockets
+    base += [hull(STEEL_D, 0.9, 1.5, [(-2.15, 0.0), (-2.15, 0.45), (-2.05, 0.52), (-1.65, 0.52), (-1.6, 0.45), (-1.6, 0.0)]),   # generator
+             B(GRILLE, 0.95, 0.1, -2.17, 0.5, 0.3, 0.03)]
+    base += rod_y(STEEL_D, 1.2, -1.85, 0.52, 0.5, 0.06)
+    base += rod_x(BLACK, -1.2, 0.5, 0.3, -1.9, 0.5) + rod_x(STEEL_D, -1.24, 0.58, 0.3, -1.9, 0.1)       # cable drum
+    for (x, z) in ((1.25, 1.25), (-1.25, 1.25), (1.25, -1.25), (-1.25, -1.25)):
+        base += _jack(x * 1.12, z * 1.12, 0.4, US_D)
+    for i in range(6):                                                                                 # roof ladder
+        base.append(B(STEEL_D, -1.0, 0.5 + i * 0.32, 1.4, 0.4, 0.03, 0.04, plain=True))
+    base += [B(STEEL_D, -1.02, 0.4, 1.4, 0.04, 2.2, 0.04, plain=True), B(STEEL_D, -0.62, 0.4, 1.4, 0.04, 2.2, 0.04, plain=True)]
+    # mast: a base turret and four telescoping sections with collars, then the aerial head
+    base += [lathe(STEEL_D, "y", 0, 0, [(2.55, 0.0), (2.55, 0.3), (2.8, 0.26), (2.8, 0.17), (4.6, 0.17), (4.6, 0.2), (4.7, 0.2), (4.7, 0.13),
+                                         (6.3, 0.13), (6.3, 0.16), (6.4, 0.16), (6.4, 0.09), (7.8, 0.09), (7.8, 0.12), (7.9, 0.12), (7.9, 0.06),
+                                         (8.8, 0.06), (8.8, 0.0)])]
+    for k, a in enumerate((0, 90)):                                                                    # cross arms with panel aerials
+        y = 7.0 + k * 1.1
+        base += [B(STEEL_D, -1.5, y, -0.04, 3.0, 0.08, 0.08, yaw=a, plain=True)]
+    for (x, z, yaw, y) in ((1.45, 0, 0, 6.55), (-1.45, 0, 0, 6.55), (0, 1.45, 90, 7.65), (0, -1.45, 90, 7.65)):
+        base += [B(RADOME, x - 0.06, y, z - 0.3, 0.12, 0.95, 0.6, yaw=yaw), B(STEEL_D, x - 0.08, y + 0.4, z - 0.05, 0.16, 0.14, 0.1, yaw=yaw, plain=True)]
+    base += [lathe(RADOME, "y", 0, 0, [(8.8, 0.0), (8.8, 0.2), (9.0, 0.2), (9.12, 0.17), (9.22, 0.1), (9.26, 0.0)])]   # omni dome
+    base += [B(RED, -0.05, 9.26, -0.05, 0.1, 0.1, 0.1, plain=True)]
+    for (x, z) in ((0.5, 0.5), (-0.5, 0.5), (0.5, -0.5), (-0.5, -0.5)):                                 # whip aerials on spring bases
+        base += [lathe(STEEL_D, "y", x, z, [(2.59, 0.0), (2.59, 0.05), (2.75, 0.03), (2.75, 0.012), (4.4, 0.008), (4.4, 0.0)])]
     return dict(base=base, turret=[], barrel=[], bones=[])
 
 
 def trench_jammer():
-    """Dugout jammer: a rugged case on short legs with a cluster of stub aerials."""
-    base = [B(OLIVE_D, -0.36, 0.08, -0.3, 0.72, 0.5, 0.6),
-            B(OLIVE, -0.38, 0.5, -0.32, 0.76, 0.1, 0.64),                          # lid
-            B(BLACK, -0.38, 0.44, -0.33, 0.76, 0.03, 0.66),
-            B(STEEL_D, -0.15, 0.6, -0.04, 0.3, 0.05, 0.08),                        # carry handle
-            B(STEEL, -0.3, 0.3, -0.33, 0.08, 0.1, 0.03), B(STEEL, 0.22, 0.3, -0.33, 0.08, 0.1, 0.03),   # latches
-            B(GRILLE, 0.36, 0.2, -0.2, 0.03, 0.2, 0.4),
-            B(BLACK, -0.6, 0.0, -0.2, 0.2, 0.22, 0.4), B(RED, -0.55, 0.22, -0.1, 0.04, 0.04, 0.04)]   # battery
+    """Dugout jammer: a rugged ribbed case on short legs with a cluster of stub aerials."""
+    # moulded case with chamfered edges, stiffening ribs, a gasket line, latches and a carrying handle
+    base = [hull(OLIVE_D, -0.36, 0.36, [(-0.3, 0.12), (-0.3, 0.46), (-0.26, 0.5), (0.26, 0.5), (0.3, 0.46), (0.3, 0.12), (0.26, 0.08), (-0.26, 0.08)], plain=True),
+            hull(OLIVE, -0.38, 0.38, [(-0.32, 0.5), (-0.32, 0.56), (-0.27, 0.61), (0.27, 0.61), (0.32, 0.56), (0.32, 0.5)], plain=True),
+            B(BLACK, -0.375, 0.485, -0.315, 0.75, 0.02, 0.63, plain=True)]
+    for x in (-0.24, -0.08, 0.08, 0.24):                                                               # ribs round the body
+        base += [B(OLIVE_D, x - 0.02, 0.1, -0.315, 0.04, 0.38, 0.63, plain=True)]
+    for x in (-0.2, 0.2):
+        base += [B(STEEL, x - 0.04, 0.4, -0.33, 0.08, 0.14, 0.03, plain=True), B(STEEL_D, x - 0.03, 0.44, -0.34, 0.06, 0.04, 0.02, plain=True)]
+    base += rod_x(BLACK, -0.14, 0.28, 0.66, 0.0, 0.03) + [B(STEEL_D, -0.16, 0.6, -0.02, 0.03, 0.07, 0.04, plain=True), B(STEEL_D, 0.13, 0.6, -0.02, 0.03, 0.07, 0.04, plain=True)]
+    base += [B(GRILLE, 0.36, 0.2, -0.2, 0.02, 0.2, 0.4), B(BLACK, -0.38, 0.22, 0.05, 0.02, 0.14, 0.2, plain=True)]
+    base += rod_x(STEEL, -0.41, 0.03, 0.34, 0.1, 0.05) + rod_x(RED, -0.41, 0.03, 0.34, 0.2, 0.03)        # power socket, status lamp
     for (x, z) in ((0.3, 0.24), (-0.3, 0.24), (0.3, -0.24), (-0.3, -0.24)):
-        base += [B(STEEL_D, x - 0.03, 0.0, z - 0.03, 0.06, 0.08, 0.06)]
-    for i, (x, z, hgt) in enumerate(((0.25, 0.18, 0.9), (-0.25, 0.18, 0.7), (0.25, -0.18, 0.55), (-0.25, -0.18, 1.2), (0, 0.2, 0.45))):
-        base += rod_y(BLACK, x, z, 0.6, 0.12, 0.07) + rod_y(BLACK if i % 2 else STEEL_D, x, z, 0.72, hgt, 0.035)
-    base += [B(RED, -0.27, 1.92, -0.2, 0.04, 0.04, 0.04)]
+        base += rod_y(BLACK, x, z, 0.0, 0.08, 0.07)
+    # battery with terminals and the lead across to the case
+    base += [hull(BLACK, -0.82, -0.56, [(-0.2, 0.0), (-0.2, 0.2), (-0.17, 0.23), (0.17, 0.23), (0.2, 0.2), (0.2, 0.0)], plain=True)]
+    base += rod_y(RED, -0.76, -0.1, 0.23, 0.04, 0.03) + rod_y(STEEL, -0.62, -0.1, 0.23, 0.04, 0.03) + rod_x(BLACK, -0.6, 0.24, 0.27, -0.1, 0.02)
+    # aerials: a threaded base, a spring, then a stub of its own length for each band
+    for i, (x, z, hgt) in enumerate(((0.25, 0.18, 0.9), (-0.25, 0.18, 0.7), (0.25, -0.18, 0.55), (-0.25, -0.18, 1.2), (0, 0.2, 0.45), (0, -0.2, 0.35))):
+        base += [lathe(BLACK, "y", x, z, [(0.61, 0.0), (0.61, 0.04), (0.66, 0.04), (0.67, 0.03), (0.74, 0.03), (0.76, 0.022),
+                                           (0.76 + hgt * 0.7, 0.018), (0.76 + hgt, 0.012), (0.76 + hgt, 0.0)])]
+        base += rod_y(STEEL, x, z, 0.66, 0.02, 0.07)
+    base += rod_y(RED, -0.25, -0.18, 1.96, 0.03, 0.03)
     return dict(base=base, turret=[], barrel=[], bones=[])
 
 
