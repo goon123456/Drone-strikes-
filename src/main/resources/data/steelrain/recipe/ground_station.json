@@ -21,13 +21,7 @@
     }
   },
   "result": {
-    "id": "superbwarfare:container",
-    "count": 1,
-    "components": {
-      "minecraft:block_entity_data": {
-        "id": "superbwarfare:container",
-        "EntityType": "steelrain:ground_station"
-      }
-    }
+    "id": "steelrain:ground_station",
+    "count": 1
   }
 }

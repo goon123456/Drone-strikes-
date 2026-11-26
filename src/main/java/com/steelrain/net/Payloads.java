@@ -74,18 +74,18 @@ public final class Payloads {
      * AircraftType ordinal of the drone a station has in the air (-1 if none), with its position in ax / az.
      */
     public record Entry(BlockPos pos, Optional<UUID> vehicle, String name, boolean station, boolean second, int ammo, int ammo2,
-                        int fuel, int minRange, int maxRange, int busy, boolean reachable, int aircraft, int ax, int az) {
+                        int fuel, int minRange, int maxRange, int busy, boolean reachable, int aircraft, int ax, int az, boolean manual) {
         Entry(FriendlyByteBuf b) {
             this(b.readBlockPos(), b.readOptional(buf -> buf.readUUID()), b.readUtf(), b.readBoolean(), b.readBoolean(),
                     b.readVarInt(), b.readVarInt(), b.readVarInt(), b.readVarInt(), b.readVarInt(), b.readVarInt(),
-                    b.readBoolean(), b.readVarInt(), b.readInt(), b.readInt());
+                    b.readBoolean(), b.readVarInt(), b.readInt(), b.readInt(), b.readBoolean());
         }
         void write(FriendlyByteBuf b) {
             b.writeBlockPos(pos); b.writeOptional(vehicle, (buf, u) -> buf.writeUUID(u)); b.writeUtf(name);
             b.writeBoolean(station); b.writeBoolean(second);
             b.writeVarInt(ammo); b.writeVarInt(ammo2); b.writeVarInt(fuel);
             b.writeVarInt(minRange); b.writeVarInt(maxRange); b.writeVarInt(busy); b.writeBoolean(reachable);
-            b.writeVarInt(aircraft); b.writeInt(ax); b.writeInt(az);
+            b.writeVarInt(aircraft); b.writeInt(ax); b.writeInt(az); b.writeBoolean(manual);
         }
     }
 
@@ -299,7 +299,7 @@ public final class Payloads {
         return new Entry(pos, vehicle, l.nameKey(), l.aircraftStation(), l.hasSecondAmmo(), l.ammoCount(), l.secondCount(),
                 l.energyK(), l.minRange(), l.maxRangeNow(), l.busyTicks(), inRange(player, l.launcherPos()),
                 air == null ? -1 : air.type().ordinal(),
-                air == null ? 0 : air.blockPosition().getX(), air == null ? 0 : air.blockPosition().getZ());
+                air == null ? 0 : air.blockPosition().getX(), air == null ? 0 : air.blockPosition().getZ(), l.manual());
     }
 
     public static void sendLaptop(ServerPlayer player, boolean open, @Nullable Component message) {
@@ -311,7 +311,7 @@ public final class Payloads {
                 if (player.serverLevel().getEntity(id) instanceof Launcher l && l instanceof net.minecraft.world.entity.Entity e && e.isAlive()) {
                     entries.add(entry(player, e.blockPosition(), Optional.of(id), l));
                 } else {
-                    entries.add(new Entry(BlockPos.ZERO, Optional.of(id), "", false, false, 0, 0, 0, 0, 0, 0, false, -1, 0, 0));
+                    entries.add(new Entry(BlockPos.ZERO, Optional.of(id), "", false, false, 0, 0, 0, 0, 0, 0, false, -1, 0, 0, false));
                 }
             }
             List<BlockPos> links = LaptopItem.links(laptop);
@@ -323,7 +323,7 @@ public final class Payloads {
                 } else if (loaded) {
                     kept.remove(pos); // the emplacement is gone: forget the link
                 } else {
-                    entries.add(new Entry(pos, Optional.empty(), "", false, false, 0, 0, 0, 0, 0, 0, false, -1, 0, 0));
+                    entries.add(new Entry(pos, Optional.empty(), "", false, false, 0, 0, 0, 0, 0, 0, false, -1, 0, 0, false));
                 }
             }
             if (kept.size() != links.size()) laptop.set(ModRegistry.LINKS.get(), List.copyOf(kept));

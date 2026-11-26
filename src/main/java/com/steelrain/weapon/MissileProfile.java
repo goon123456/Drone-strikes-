@@ -43,6 +43,9 @@ public record MissileProfile(
     /** One big missile in place of six rockets: inertial guidance, so jammers do not bother it. */
     public static final MissileProfile ATACMS = new MissileProfile("atacms", FlightMode.BALLISTIC,
             3.4, 8f, 6, 110f, 16, false, 16f, true, false, 0, 1.0, true);
+    /** 120 mm mortar bomb. Unguided, like every shell fired from a hand-laid gun. */
+    public static final MissileProfile MORTAR_SHELL = new MissileProfile("mortar_shell", FlightMode.BALLISTIC,
+            3.0, 3f, 1, 30f, 6, false, 100f, false, false, 0, 0, false);
     /** Cluster submunition. */
     public static final MissileProfile BOMBLET = new MissileProfile("bomblet", FlightMode.DROP,
             0, 2.2f, 0, 22f, 5, false, 100f, false, false, 0, 0, false);

@@ -1,5 +1,12 @@
 package com.steelrain;
 
+import com.steelrain.block.WeaponBlock;
+import com.steelrain.block.WeaponBlockEntity;
+import com.steelrain.block.WeaponBlockItem;
+import com.steelrain.block.WeaponMenu;
+import com.steelrain.block.WeaponPartBlock;
+import com.steelrain.block.WeaponPartBlockEntity;
+import com.steelrain.weapon.WeaponType;
 import com.steelrain.entity.FpvDroneEntity;
 import com.steelrain.entity.InterceptorEntity;
 import com.steelrain.entity.MissileEntity;
@@ -44,6 +51,9 @@ import java.util.function.Supplier;
 public final class ModRegistry {
     public static final String MODID = "steelrain";
 
+    public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(MODID);
+    public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES = DeferredRegister.create(Registries.BLOCK_ENTITY_TYPE, MODID);
+    public static final DeferredRegister<MenuType<?>> MENUS = DeferredRegister.create(Registries.MENU, MODID);
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(MODID);
     public static final DeferredRegister<EntityType<?>> ENTITIES = DeferredRegister.create(Registries.ENTITY_TYPE, MODID);
     public static final DeferredRegister<CreativeModeTab> TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MODID);
@@ -113,6 +123,7 @@ public final class ModRegistry {
     public static final DeferredItem<Item> SHELL_CLUSTER = simple("shell_cluster", 32);
     public static final DeferredItem<Item> SHELL_SMOKE = simple("shell_smoke", 32);
     public static final DeferredItem<Item> SHELL_INCENDIARY = simple("shell_incendiary", 32);
+    public static final DeferredItem<Item> MORTAR_SHELL = simple("mortar_shell", 32);
     public static final DeferredItem<Item> ATACMS_MISSILE = simple("atacms_missile", 1);
     public static final DeferredItem<Item> AMMO_30MM_AP = simple("ammo_30mm_ap", 16);
     public static final DeferredItem<Item> AMMO_35MM_AP = simple("ammo_35mm_ap", 16);
@@ -141,6 +152,36 @@ public final class ModRegistry {
     public static final DeferredItem<Item> MAVIC = ITEMS.register("mavic",
             () -> new FpvDroneItem(new Item.Properties().stacksTo(1), 1));
 
+    // ---- weapon blocks ----
+    public static final Map<WeaponType, DeferredBlock<WeaponBlock>> WEAPON_BLOCKS = new EnumMap<>(WeaponType.class);
+    static {
+        for (WeaponType type : WeaponType.values()) {
+            DeferredBlock<WeaponBlock> block = BLOCKS.register(type.id, () -> new WeaponBlock(type,
+                    BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GREEN).strength(4f, 12f)
+                            .sound(SoundType.METAL).noOcclusion().requiresCorrectToolForDrops()
+                            .pushReaction(net.minecraft.world.level.material.PushReaction.BLOCK)
+                            .isSuffocating((st, l, p) -> false).isViewBlocking((st, l, p) -> false)));
+            WEAPON_BLOCKS.put(type, block);
+            ITEMS.register(type.id, () -> new WeaponBlockItem(block.get(), new Item.Properties().stacksTo(1)));
+        }
+    }
+
+    /** Invisible filler that makes the rest of a full-size weapon solid and clickable. */
+    public static final DeferredBlock<WeaponPartBlock> WEAPON_PART = BLOCKS.register("weapon_part",
+            () -> new WeaponPartBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GREEN).strength(4f, 12f)
+                    .sound(SoundType.METAL).noOcclusion().noLootTable()
+                    .pushReaction(net.minecraft.world.level.material.PushReaction.BLOCK)
+                            .isSuffocating((st, l, p) -> false).isViewBlocking((st, l, p) -> false)));
+    public static final Supplier<BlockEntityType<WeaponPartBlockEntity>> WEAPON_PART_BE = BLOCK_ENTITIES.register("weapon_part",
+            () -> BlockEntityType.Builder.of(WeaponPartBlockEntity::new, WEAPON_PART.get()).build(null));
+
+    public static final Supplier<BlockEntityType<WeaponBlockEntity>> WEAPON_BE = BLOCK_ENTITIES.register("weapon",
+            () -> BlockEntityType.Builder.of(WeaponBlockEntity::new,
+                    WEAPON_BLOCKS.values().stream().map(DeferredBlock::get).toArray(Block[]::new)).build(null));
+
+    public static final Supplier<MenuType<WeaponMenu>> WEAPON_MENU = MENUS.register("weapon",
+            () -> IMenuTypeExtension.create((id, inv, buf) -> new WeaponMenu(id, inv, buf.readBlockPos())));
+
     // ---- entities ----
     private static final Map<String, MissileProfile> PROFILE_BY_NAME = new HashMap<>();
     private static final Map<String, DeferredHolder<EntityType<?>, EntityType<MissileEntity>>> TYPE_BY_NAME = new HashMap<>();
@@ -157,6 +198,7 @@ public final class ModRegistry {
     public static final DeferredHolder<EntityType<?>, EntityType<MissileEntity>> SHELL_SMOKE_ENTITY = missile(MissileProfile.SHELL_SMOKE, 0.4f, 0.4f);
     public static final DeferredHolder<EntityType<?>, EntityType<MissileEntity>> SHELL_INCENDIARY_ENTITY = missile(MissileProfile.SHELL_INCENDIARY, 0.4f, 0.4f);
     public static final DeferredHolder<EntityType<?>, EntityType<MissileEntity>> ATACMS = missile(MissileProfile.ATACMS, 0.8f, 0.8f);
+    public static final DeferredHolder<EntityType<?>, EntityType<MissileEntity>> MORTAR_SHELL_ENTITY = missile(MissileProfile.MORTAR_SHELL, 0.3f, 0.3f);
     public static final DeferredHolder<EntityType<?>, EntityType<MissileEntity>> BOMBLET = missile(MissileProfile.BOMBLET, 0.25f, 0.25f);
     /** Smoke screen left by a smoke shell. */
     public static final DeferredHolder<EntityType<?>, EntityType<com.steelrain.entity.SmokeCloudEntity>> SMOKE = ENTITIES.register("smoke_cloud",
@@ -207,10 +249,10 @@ public final class ModRegistry {
     public static final Map<String, DeferredHolder<EntityType<?>, EntityType<com.steelrain.entity.StrikeVehicle>>> STRIKE = new java.util.LinkedHashMap<>();
     static {
         strike("m109", 3.2f, 3.2f);
+        strike("mortar_120", 0.9f, 1.0f);
         strike("himars", 2.6f, 3.2f);
         strike("tomahawk_launcher", 2.6f, 3.2f);
         strike("iskander_launcher", 3.1f, 3.3f);
-        strike("shahed_launcher", 2.4f, 1.8f);
     }
 
     private static void strike(String name, float width, float height) {
@@ -222,8 +264,6 @@ public final class ModRegistry {
     // ---- ground station, catapult and jammers ----
     public static final Map<String, DeferredHolder<EntityType<?>, EntityType<com.steelrain.entity.SupportVehicle>>> SUPPORT = new java.util.LinkedHashMap<>();
     static {
-        support("ground_station", 2.6f, 2.8f);
-        support("orlan_catapult", 1.0f, 1.2f);
         support("jammer", 2.8f, 2.8f);
         support("trench_jammer", 0.8f, 1.0f);
         support("krasukha", 2.8f, 3.4f);
@@ -296,6 +336,9 @@ public final class ModRegistry {
     }
 
     public static void register(IEventBus bus) {
+        BLOCKS.register(bus);
+        BLOCK_ENTITIES.register(bus);
+        MENUS.register(bus);
         ITEMS.register(bus);
         ENTITIES.register(bus);
         TABS.register(bus);

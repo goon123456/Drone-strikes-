@@ -16,6 +16,9 @@ public interface Launcher {
 
     default boolean hasSecondAmmo() { return false; }
 
+    /** Laid and fired by a gunner: the laptop only works out the firing solution. */
+    default boolean manual() { return false; }
+
     int ammoCount();
 
     default int secondCount() { return 0; }

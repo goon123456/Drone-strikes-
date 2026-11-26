@@ -33,11 +33,11 @@ import java.util.UUID;
 public class StrikeVehicle extends VehicleEntity implements Launcher {
     public enum Kind {
         //        min   max   FE/shot cooldown aim  elevation muzzleHeight muzzleLength
-        M109(40, 600, 12_500, 40, 45, 45f, 2.4, 5.0),
+        M109(40, 600, 0, 0, 0, 0f, 2.4, 5.0),
+        MORTAR(30, 400, 0, 0, 0, 0f, 1.0, 1.7),
         HIMARS(60, 1200, 25_000, 12, 50, 50f, 2.4, 3.6),
         TOMAHAWK(100, 6000, 125_000, 60, 70, 85f, 2.2, 7.0),
-        ISKANDER(150, 8000, 250_000, 100, 80, 88f, 2.8, 7.5),
-        SHAHED(100, 4000, 0, 60, 0, 18f, 1.4, 3.0);
+        ISKANDER(150, 8000, 250_000, 100, 80, 88f, 2.8, 7.5);
 
         final int minRange, maxRange, energyPerShot, cooldown, aimTicks;
         final float elevation;
@@ -54,8 +54,17 @@ public class StrikeVehicle extends VehicleEntity implements Launcher {
             this.muzzleLength = muzzleLength;
         }
 
-        /** Only the turreted artillery pieces can swing round; the others fire over their own nose or tail. */
-        boolean traverses() { return this == M109 || this == HIMARS; }
+        /** Only the HIMARS pod swings round on a laptop order; the missile launchers fire over their own nose. */
+        boolean traverses() { return this == HIMARS; }
+
+        /** Laid and fired by a gunner in the seat. */
+        public boolean manual() { return this == M109 || this == MORTAR; }
+
+        /** Muzzle velocity (blocks per tick) of each propellant charge. */
+        public double[] charges() { return this == MORTAR ? new double[]{2.0, 3.0, 4.5} : new double[]{3.0, 4.2, 5.5}; }
+
+        public double minElevation() { return this == MORTAR ? 45 : -3; }
+        public double maxElevation() { return this == MORTAR ? 85 : 70; }
     }
 
     private final Kind kind;
@@ -73,7 +82,7 @@ public class StrikeVehicle extends VehicleEntity implements Launcher {
             case "himars" -> Kind.HIMARS;
             case "tomahawk_launcher" -> Kind.TOMAHAWK;
             case "iskander_launcher" -> Kind.ISKANDER;
-            case "shahed_launcher" -> Kind.SHAHED;
+            case "mortar_120" -> Kind.MORTAR;
             default -> Kind.M109;
         };
     }
@@ -87,7 +96,7 @@ public class StrikeVehicle extends VehicleEntity implements Launcher {
             case HIMARS -> s.is(ModRegistry.GMLRS_ROCKET.get()) || s.is(ModRegistry.ATACMS_MISSILE.get());
             case TOMAHAWK -> s.is(ModRegistry.TOMAHAWK_MISSILE.get());
             case ISKANDER -> s.is(ModRegistry.ISKANDER_MISSILE.get());
-            case SHAHED -> s.is(ModRegistry.SHAHED_136.get());
+            case MORTAR -> s.is(ModRegistry.MORTAR_SHELL.get());
         };
     }
 
@@ -105,7 +114,7 @@ public class StrikeVehicle extends VehicleEntity implements Launcher {
             case HIMARS -> MissileProfile.GMLRS;
             case TOMAHAWK -> MissileProfile.TOMAHAWK;
             case ISKANDER -> MissileProfile.ISKANDER;
-            case SHAHED -> MissileProfile.SHAHED;
+            case MORTAR -> MissileProfile.MORTAR_SHELL;
         });
     }
 
@@ -115,14 +124,17 @@ public class StrikeVehicle extends VehicleEntity implements Launcher {
 
     // ---- Launcher ----
 
+    public Kind kind() { return kind; }
+    @Override public boolean manual() { return kind.manual(); }
     @Override public String nameKey() { return getType().getDescriptionId(); }
     @Override public int energyK() { return kind.energyPerShot == 0 ? 0 : getEnergy() / 1000; }
     @Override public int minRange() { return kind.minRange; }
-    @Override public int busyTicks() { return cooldown + aimLeft + salvoLeft * kind.cooldown; }
+    @Override public int busyTicks() { return cooldown + aimLeft + salvoLeft * kind.cooldown + (pod <= 0 ? reload : 0); }
     @Override public Vec3 launcherPos() { return position(); }
 
     @Override
     public int ammoCount() {
+        if (kind == Kind.HIMARS) return pod;
         int n = 0;
         for (int i = 0; i < getContainerSize(); i++) {
             if (accepts(getItem(i))) n += getItem(i).getCount();
@@ -132,8 +144,7 @@ public class StrikeVehicle extends VehicleEntity implements Launcher {
 
     @Override
     public int maxRangeNow() {
-        int slot = ammoSlot();
-        int base = slot >= 0 && getItem(slot).is(ModRegistry.ATACMS_MISSILE.get()) ? 3000 : kind.maxRange;
+        int base = kind == Kind.HIMARS && podAtacms ? 3000 : kind.maxRange;
         return (int) Math.round(base * Config.RANGE_MULTIPLIER.get());
     }
 
@@ -141,8 +152,13 @@ public class StrikeVehicle extends VehicleEntity implements Launcher {
     @Override
     public Component tryLaunch(ServerPlayer player, int x, int z, int count) {
         if (isWreck()) return Component.translatable("message.steelrain.no_signal");
+        if (kind.manual()) return solution(x, z);
         if (salvoLeft > 0 || cooldown > 0) return Component.translatable("message.steelrain.busy");
-        if (ammoSlot() < 0) return Component.translatable("message.steelrain.no_ammo");
+        if (kind == Kind.HIMARS && pod <= 0) {
+            return reload > 0 ? Component.translatable("message.steelrain.reloading", (reload + 19) / 20)
+                    : Component.translatable("message.steelrain.no_ammo");
+        }
+        if (ammoCount() <= 0) return Component.translatable("message.steelrain.no_ammo");
         if (!charged(kind.energyPerShot)) return Component.translatable("message.steelrain.no_fuel", kind.energyPerShot);
         double dx = x + 0.5 - getX(), dz = z + 0.5 - getZ();
         double dist = Math.sqrt(dx * dx + dz * dz);
@@ -156,6 +172,80 @@ public class StrikeVehicle extends VehicleEntity implements Launcher {
         aimLeft = kind.aimTicks;
         if (level() instanceof ServerLevel sl) FlyingWeaponEntity.preload(sl, getX(), getZ());
         return null;
+    }
+
+    /**
+     * The numbers a gun crew needs for a target: compass bearing, and for each charge that can reach it the
+     * elevation and time of flight. Worked out from where the gun stands and how high the target is.
+     */
+    private Component solution(int x, int z) {
+        double dx = x + 0.5 - getX(), dz = z + 0.5 - getZ();
+        double d = Math.sqrt(dx * dx + dz * dz);
+        if (d < kind.minRange) return Component.translatable("message.steelrain.too_close", kind.minRange);
+        double targetY = level().hasChunk(x >> 4, z >> 4)
+                ? level().getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, x, z) : getY();
+        double dy = targetY - (getY() + kind.muzzleHeight);
+        double bearing = (Math.toDegrees(Math.atan2(dx, -dz)) + 360) % 360;
+        StringBuilder sb = new StringBuilder();
+        double[] charges = kind.charges();
+        for (int i = 0; i < charges.length; i++) {
+            double e = elevationFor(kind, charges[i], d, dy);
+            if (Double.isNaN(e)) continue;
+            double tof = d / (charges[i] * Math.cos(Math.toRadians(e))) / 20.0;
+            if (sb.length() > 0) sb.append("   ");
+            sb.append(String.format("C%d %.1f\u00B0 %.0fs", i + 1, e, tof));
+        }
+        if (sb.length() == 0) return Component.translatable("message.steelrain.too_far", (int) d);
+        return Component.translatable("message.steelrain.solution", String.format("%.1f", bearing), (int) d, sb.toString());
+    }
+
+    /**
+     * Elevation in degrees that lands a shell {@code d} blocks away and {@code dy} blocks higher, or NaN if this
+     * charge cannot do it within the gun's elevation limits. Howitzers use the flat trajectory when they can;
+     * mortars only fire high.
+     */
+    public static double elevationFor(Kind kind, double v, double d, double dy) {
+        double g = MissileEntity.GRAVITY;
+        double disc = v * v * v * v - g * (g * d * d + 2 * dy * v * v);
+        if (disc < 0) return Double.NaN;
+        double root = Math.sqrt(disc);
+        double low = Math.toDegrees(Math.atan((v * v - root) / (g * d)));
+        double high = Math.toDegrees(Math.atan((v * v + root) / (g * d)));
+        if (low >= kind.minElevation() && low <= kind.maxElevation()) return low;
+        if (high >= kind.minElevation() && high <= kind.maxElevation()) return high;
+        return Double.NaN;
+    }
+
+    // ---- HIMARS pod: six rockets or one ATACMS, then a timed reload from the inventory ----
+
+    public static final int POD_SIZE = 6;
+    private static final int RELOAD_TICKS = 20 * 30;
+    private int pod;
+    private boolean podAtacms;
+    private int reload;
+
+    private void podTick() {
+        if (pod > 0 || salvoLeft > 0) return;
+        if (reload > 0) {
+            if (--reload > 0) return;
+            // The fresh pod is in place: take its contents out of the inventory.
+            int slot = ammoSlot();
+            if (slot < 0) return;
+            if (getItem(slot).is(ModRegistry.ATACMS_MISSILE.get())) {
+                removeItem(slot, 1);
+                pod = 1;
+                podAtacms = true;
+            } else {
+                podAtacms = false;
+                for (int i = 0; i < getContainerSize() && pod < POD_SIZE; i++) {
+                    if (getItem(i).is(ModRegistry.GMLRS_ROCKET.get())) pod += removeItem(i, POD_SIZE - pod).getCount();
+                }
+            }
+            level().playSound(null, blockPosition(), SoundEvents.IRON_DOOR_CLOSE, SoundSource.NEUTRAL, 2f, 0.7f);
+        } else if (ammoSlot() >= 0) {
+            reload = RELOAD_TICKS;
+            level().playSound(null, blockPosition(), SoundEvents.PISTON_EXTEND, SoundSource.NEUTRAL, 2f, 0.6f);
+        }
     }
 
     /** Direction the launcher has to point in to fire: at the target for turreted guns, straight ahead for the rest. */
@@ -174,7 +264,9 @@ public class StrikeVehicle extends VehicleEntity implements Launcher {
     public void baseTick() {
         super.baseTick();
         if (!(level() instanceof ServerLevel level) || isWreck()) return;
+        if (kind.manual()) return; // the gunner lays and fires it through Superb Warfare's own controls
         if (cooldown > 0) cooldown--;
+        if (kind == Kind.HIMARS) podTick();
         if (salvoLeft > 0) {
             // Lay the launcher first (turret swings round, container or missile raises), then fire the salvo.
             if (kind.aimTicks > 0) turretAutoAimFromVector(layDirection());
@@ -198,16 +290,23 @@ public class StrikeVehicle extends VehicleEntity implements Launcher {
     }
 
     private boolean fireOne(ServerLevel level) {
-        int slot = ammoSlot();
-        if (slot < 0 || !charged(kind.energyPerShot)) return false;
-        ItemStack round = removeItem(slot, 1);
+        ItemStack round;
+        if (kind == Kind.HIMARS) {
+            if (pod <= 0 || !charged(kind.energyPerShot)) return false;
+            pod--;
+            round = new ItemStack(podAtacms ? ModRegistry.ATACMS_MISSILE.get() : ModRegistry.GMLRS_ROCKET.get());
+        } else {
+            int slot = ammoSlot();
+            if (slot < 0 || !charged(kind.energyPerShot)) return false;
+            round = removeItem(slot, 1);
+        }
         if (Config.REQUIRE_ENERGY.get() && kind.energyPerShot > 0) consumeEnergy(kind.energyPerShot);
         Vec3 dir = layDirection();
         Vec3 muzzle = position().add(0, kind.muzzleHeight, 0).add(dir.scale(kind.muzzleLength));
         MissileEntity.launch(level, profileOf(round), muzzle, salvoX, salvoZ, salvoOwner, salvoOwnerName, salvoLeft <= 1,
                 kind == Kind.TOMAHAWK ? new Vec3(0, 1, 0) : dir);
         cooldown = kind.cooldown;
-        boolean gun = kind == Kind.M109;
+        boolean gun = false;
         level.playSound(null, blockPosition(), gun ? SoundEvents.GENERIC_EXPLODE.value() : SoundEvents.FIREWORK_ROCKET_LAUNCH,
                 SoundSource.NEUTRAL, 6f, gun ? 1.6f : 0.6f);
         level.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, muzzle.x, muzzle.y, muzzle.z, 20, 0.5, 0.3, 0.5, 0.03);
@@ -236,6 +335,9 @@ public class StrikeVehicle extends VehicleEntity implements Launcher {
         tag.putInt("SrCooldown", cooldown);
         tag.putInt("SrSalvo", salvoLeft);
         tag.putInt("SrAim", aimLeft);
+        tag.putInt("SrPod", pod);
+        tag.putBoolean("SrPodAtacms", podAtacms);
+        tag.putInt("SrReload", reload);
         tag.putDouble("SrX", salvoX);
         tag.putDouble("SrZ", salvoZ);
         if (salvoOwner != null) tag.putUUID("SrOwner", salvoOwner);
@@ -248,6 +350,9 @@ public class StrikeVehicle extends VehicleEntity implements Launcher {
         cooldown = tag.getInt("SrCooldown");
         salvoLeft = tag.getInt("SrSalvo");
         aimLeft = tag.getInt("SrAim");
+        pod = tag.getInt("SrPod");
+        podAtacms = tag.getBoolean("SrPodAtacms");
+        reload = tag.getInt("SrReload");
         salvoX = tag.getDouble("SrX");
         salvoZ = tag.getDouble("SrZ");
         salvoOwner = tag.hasUUID("SrOwner") ? tag.getUUID("SrOwner") : null;

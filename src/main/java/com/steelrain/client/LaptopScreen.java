@@ -58,7 +58,7 @@ public class LaptopScreen extends Screen {
         if (selected >= entries.size()) selected = Math.max(0, entries.size() - 1);
         data.message().ifPresent(m -> {
             message = m;
-            messageTicks = 100;
+            messageTicks = 400;
         });
     }
 
@@ -159,9 +159,9 @@ public class LaptopScreen extends Screen {
         boolean ok = e != null && known(e);
         launchButton.active = ok && hasTarget && e.reachable();
         boolean airborne = e != null && e.aircraft() >= 0 && e.reachable();
-        launchButton.setMessage(Component.translatable(airborne ? "gui.steelrain.retask" : "gui.steelrain.launch"));
+        launchButton.setMessage(Component.translatable(airborne ? "gui.steelrain.retask" : ok && e.manual() ? "gui.steelrain.solution" : "gui.steelrain.launch"));
         cameraButton.visible = recallButton.visible = ok && e.station();
-        minusButton.visible = plusButton.visible = ok && !e.station();
+        minusButton.visible = plusButton.visible = ok && !e.station() && !e.manual();
         cameraButton.active = recallButton.active = airborne;
     }
 
@@ -381,7 +381,7 @@ public class LaptopScreen extends Screen {
                     : Component.translatable("gui.steelrain.ready");
             g.drawString(font, status, rx, ry + 66, !cur.reachable() || (cur.busy() > 0 && cur.aircraft() < 0) ? red
                     : cur.aircraft() >= 0 ? 0xFF40E0FF : green, false);
-            if (!cur.station()) {
+            if (!cur.station() && !cur.manual()) {
                 g.drawString(font, Component.translatable("gui.steelrain.rounds"), rx, top + 107, dim, false);
                 String n = Integer.toString(count);
                 g.drawString(font, n, rx + 39 - font.width(n) / 2, top + 122, white, false);

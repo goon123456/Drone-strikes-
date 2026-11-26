@@ -32,6 +32,12 @@ public class MissileEntity extends FlyingWeaponEntity {
     private double apex;
     private boolean jammed;
     private double driftAngle;
+    /** Downward acceleration of an unguided shell, blocks per tick squared. Range tables are built on this. */
+    public static final double GRAVITY = 0.05;
+
+    // Unguided flight: fired from a gun a player laid by hand. Pure kinematics from the muzzle, nothing steers it.
+    private boolean free;
+    private Vec3 freeVelocity = Vec3.ZERO;
     private boolean announce = true;
     private boolean launched;
 
@@ -119,18 +125,34 @@ public class MissileEntity extends FlyingWeaponEntity {
 
     @Override
     protected void serverTick(ServerLevel level) {
-        if (!launched) { // e.g. created with /summon: it has no target, so it must not fly anywhere
-            discard();
-            return;
+        if (!launched) {
+            // Superb Warfare fires its weapons by creating the projectile and giving it a velocity: that is a shell
+            // leaving a hand-laid gun. Anything else (e.g. /summon) has no business flying anywhere.
+            if (getDeltaMovement().lengthSqr() < 0.01) {
+                discard();
+                return;
+            }
+            launched = true;
+            free = true;
+            freeVelocity = getDeltaMovement();
+            start = position();
+            age = 0;
+            Player gunner = level.getNearestPlayer(this, 12);
+            if (gunner != null) setOwner(gunner.getUUID(), gunner.getGameProfile().getName());
+            level.playSound(null, blockPosition(), net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE.value(),
+                    net.minecraft.sounds.SoundSource.NEUTRAL, 5f, 1.5f);
+            level.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, getX(), getY(), getZ(), 14, 0.3, 0.3, 0.3, 0.03);
         }
         age++;
         if (jam > 0) drift();
-        if (profile == MissileProfile.SHELL_CLUSTER && age >= flightTicks - 9) {
+        if (profile == MissileProfile.SHELL_CLUSTER && (free
+                ? freeVelocity.y - GRAVITY * age < 0 && getY() - groundAt(getX(), getZ()) < 24
+                : age >= flightTicks - 9)) {
             burst(level);
             return;
         }
         Vec3 pos = position();
-        Vec3 next = switch (profile.mode()) {
+        Vec3 next = free ? freeStep(pos) : switch (profile.mode()) {
             case BALLISTIC -> ballisticStep(pos);
             case CRUISE -> cruiseStep(pos);
             case DIRECT -> directStep(pos);
@@ -163,7 +185,16 @@ public class MissileEntity extends FlyingWeaponEntity {
         }
     }
 
+    /** Exact projectile motion, so a shell lands where the range table says it will. */
+    private Vec3 freeStep(Vec3 pos) {
+        Vec3 next = start.add(freeVelocity.scale(age)).add(0, -0.5 * GRAVITY * age * age, 0);
+        Vec3 d = next.subtract(pos);
+        if (d.lengthSqr() > 1e-6) dir = d;
+        return next;
+    }
+
     private int flightLimit() {
+        if (free) return 2400;
         return profile.mode() == MissileProfile.FlightMode.BALLISTIC ? flightTicks + 400 : 20 * 60 * 12;
     }
 
@@ -295,6 +326,8 @@ public class MissileEntity extends FlyingWeaponEntity {
         apex = tag.getDouble("Apex");
         jammed = tag.getBoolean("Jammed");
         launched = tag.getBoolean("Launched");
+        free = tag.getBoolean("Free");
+        freeVelocity = new Vec3(tag.getDouble("FVX"), tag.getDouble("FVY"), tag.getDouble("FVZ"));
     }
 
     @Override
@@ -309,5 +342,7 @@ public class MissileEntity extends FlyingWeaponEntity {
         tag.putDouble("Apex", apex);
         tag.putBoolean("Jammed", jammed);
         tag.putBoolean("Launched", launched);
+        tag.putBoolean("Free", free);
+        tag.putDouble("FVX", freeVelocity.x); tag.putDouble("FVY", freeVelocity.y); tag.putDouble("FVZ", freeVelocity.z);
     }
 }

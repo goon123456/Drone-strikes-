@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "steelrain:shahed_launcher",
+    "steelrain:ground_station",
+    "steelrain:orlan_catapult",
+    "steelrain:weapon_part"
+  ]
+}

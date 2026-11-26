@@ -12,7 +12,9 @@ and tube artillery, and defend your base with air defence and jammers.
 The idea was inspired by the *Iron Drone* mod. All code, models and textures here are original.
 
 ## Built on Superb Warfare
-Every Steel Rain vehicle is a real Superb Warfare vehicle. There are no placed multiblock emplacements any more.
+Steel Rain's ground vehicles (air defence, artillery, missile launchers, jammers) are real Superb Warfare
+vehicles. The drone and aircraft launch sites (UAV Ground Station, Orlan Catapult, Shahed Launch Rail) are placed
+full-size emplacements, and the drones and aircraft themselves are Steel Rain's own.
 
 - **Getting one**: each comes packed in an SBW **container** (craftable; also in the Steel Rain and SBW vehicle
   creative tabs). Place it and open it with an SBW **crowbar**. Sneak + crowbar packs the vehicle up again.
@@ -183,33 +185,58 @@ remote camera. If the copy is hit you are thrown out of the drone and take the d
   pick it up (it keeps its charge), and craft it together with a Drone Battery to recharge. If you let go of it in
   the air it settles to the ground by itself. Battery 360 s.
 
-### SBW strike vehicles
-The **M109** (tracked), **HIMARS** and **Iskander-M launcher** (wheeled) can be driven; the **Tomahawk launcher**
-and **Shahed launch rail** are static. Like the air defence vehicles they come in SBW containers.
+### Hand-laid artillery: M109 and 120 mm mortar
+These two are aimed and fired by a gunner, Arma Reforger style. Nothing guides the shell: it leaves the barrel
+at the charge's muzzle velocity and falls under gravity.
 
-- Put ammunition in the vehicle's SBW inventory (sneak + right-click). It fires whatever it finds there.
-- Right-click the vehicle with a **Field Laptop** to link it, then use Fire Control as before. Links follow the
-  vehicle when it moves.
-- On a fire order the launcher lays itself first: the M109 turret and HIMARS pod swing onto the target, the
-  Tomahawk container and Iskander missile raise. Then it fires the salvo.
-- Energy per round: M109 12.5k, HIMARS 25k, Tomahawk 125k, Iskander 250k FE. The Shahed rail needs none.
+- **Crew**: the **120 mm Mortar** (static, new) has one seat. The **M109** has a driver's seat and a gunner's
+  seat; the gunner controls the turret.
+- **Gun sight**: while seated you see the barrel's compass **bearing** (0 = north, 90 = east) and **elevation**,
+  and a **range table** giving the elevation each charge needs for a distance on level ground.
+- **Charges**: switch weapon to pick Charge 1, 2 or 3. More charge means more range and a flatter, faster shot.
+  M109 reaches about 180 / 350 / 600 blocks, the mortar about 80 / 180 / 400.
+- The mortar only fires high (45 to 85 degrees). The M109 uses a flat trajectory where it can (-3 to 70 degrees).
+- **Shells** come from the vehicle's inventory: mortar bombs for the mortar; HE, cluster, smoke or incendiary
+  155 mm shells for the M109 (switch ammo type the SBW way).
+- **Field Laptop**: link the gun, pick a target, press **SOLUTION**. The laptop cannot fire these guns; it gives
+  the bearing, the range, and for every charge that can reach, the elevation and time of flight, corrected for
+  the height difference between gun and target. Dial it in and fire. A recon drone over the target lets you see
+  where the rounds land and correct.
 
-### SBW support vehicles
-- **UAV Ground Station** (static): put a Reaper, Bayraktar or Global Hawk in its inventory, plus Hellfires for the
-  Reaper. Link it to a Field Laptop by right-clicking it. The runway is the strip straight ahead of the direction
-  the station faces. Launch energy: Reaper 250k, Bayraktar 375k, Global Hawk 1M FE.
-- **Orlan Catapult** (static): put an Orlan-10 in it and link it the same way. Needs no energy.
+### Laptop-fired launchers: HIMARS, Tomahawk, Iskander
+The **HIMARS** and **Iskander-M launcher** (wheeled) can be driven; the **Tomahawk launcher** is static.
+
+- Put ammunition in the vehicle's SBW inventory (sneak + right-click).
+- Right-click the vehicle with a **Field Laptop** to link it, then use Fire Control. Links follow the vehicle.
+- On a fire order the launcher lays itself first (HIMARS pod swings onto the target, Tomahawk container and
+  Iskander missile raise), then fires.
+- **HIMARS pod**: it fires from a pod of 6 GMLRS rockets or 1 ATACMS. When the pod is empty it takes 30 seconds
+  to load the next one from the inventory; the laptop shows the countdown. The first pod also has to be loaded.
+- Energy per round: HIMARS 25k, Tomahawk 125k, Iskander 250k FE.
+
+### Jammers (SBW vehicles)
 - **EW Jammer**, **Trench Jammer** (static) and **Krasukha-4** (drivable): sneak + right-click with an empty hand
   switches them on or off; whoever does so becomes the owner, and the owner's and their team's drones are left
   alone. They draw 500 FE a second (Krasukha 2500).
-- **Jammer Dome**: right-click **any Superb Warfare vehicle** with it, including SBW's own tanks and aircraft, to
-  give it a small jamming bubble that draws a trickle of that vehicle's energy.
+- **Jammer Dome**: right-click **any Superb Warfare vehicle** with it to give it a small jamming bubble that
+  draws a trickle of that vehicle's energy.
+
+### Drone and aircraft launch sites (placed emplacements)
+The **UAV Ground Station**, **Orlan Catapult** and **Shahed Launch Rail** are placed from a single item and
+occupy their full footprint; breaking any part removes the whole thing and gives the item back.
+
+- Right-click to open the inventory, or right-click holding the aircraft, drone or missiles to load by hand.
+  What is loaded is shown: the aircraft parked at the start of the runway, the Orlan or Shahed on its rail.
+- Right-click with a **Field Laptop** to link, then launch from Fire Control.
+- The Ground Station needs energy (Reaper 250k, Bayraktar 375k, Global Hawk 1M FE): put an SBW Charging Station
+  next to any block of it or connect an FE cable. The catapult and rail are worked by hand and need none.
 
 ### Ammunition
 Everything a vehicle fires has to be crafted and loaded. A slot holds one kind at a time; empty it to switch.
 
 | Weapon | Ammunition |
 | --- | --- |
+| 120 mm Mortar | **Mortar bomb** |
 | M109 | **HE shell** (crater), **Cluster shell** (bursts overhead into 12 bomblets), **Smoke shell** (a minute-long screen that hides whatever is under it from recon drones), **Incendiary shell** (sets the area alight) |
 | HIMARS | 6 **GMLRS** rockets (range 1200), or 1 **ATACMS** (range 3000, big warhead, cannot be jammed, worth a Patriot) |
 | Gepard, Pantsir cannons, ZU-23-2 | **HE** belts (each shell bursts and hurts things within 2.5 blocks) or **AP** belts (no burst, 80% more damage on a direct hit) |
@@ -268,7 +295,7 @@ python3 tools/gen_assets.py   # regenerate textures, models, recipes and languag
 ## Known limits
 - Vehicle models are simple generated shapes in SBW's Blockbench format, each with one plain hit box. A model
   rework is planned.
-- A loaded Iskander, Shahed, Orlan or parked aircraft is not drawn on its vehicle; aircraft appear when launched.
+- A loaded Iskander is not drawn on its launcher.
 - The Pantsir's missiles only fire in automatic mode.
 - A fitted Jammer Dome is not drawn.
 - There are no custom sounds yet.

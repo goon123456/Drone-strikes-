@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "  I",
+    " I ",
+    "NBN"
+  ],
+  "key": {
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "N": {
+      "item": "minecraft:iron_nugget"
+    },
+    "B": {
+      "item": "minecraft:iron_block"
+    }
+  },
+  "result": {
+    "id": "superbwarfare:container",
+    "count": 1,
+    "components": {
+      "minecraft:block_entity_data": {
+        "id": "superbwarfare:container",
+        "EntityType": "steelrain:mortar_120"
+      }
+    }
+  }
+}

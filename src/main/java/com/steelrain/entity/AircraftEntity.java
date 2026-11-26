@@ -1,11 +1,14 @@
 package com.steelrain.entity;
 
 import com.steelrain.ModRegistry;
+import com.steelrain.block.WeaponBlockEntity;
 import com.steelrain.util.Blast;
 import com.steelrain.util.Recon;
 import com.steelrain.weapon.AircraftType;
 import com.steelrain.weapon.MissileProfile;
+import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtUtils;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -31,8 +34,7 @@ public class AircraftEntity extends FlyingWeaponEntity {
     public enum Phase { ROLL, OUTBOUND, ATTACK, ORBIT, RETURN, FINAL, ROLLOUT, CHUTE }
 
     private final AircraftType type;
-    @Nullable private UUID stationId;
-    private Vec3 home = Vec3.ZERO;
+    private BlockPos home = BlockPos.ZERO;
     private Vec3 runwayStart = Vec3.ZERO;
     private Vec3 forward = new Vec3(0, 0, 1);
     private double targetX, targetZ;
@@ -60,16 +62,15 @@ public class AircraftEntity extends FlyingWeaponEntity {
     public double targetX() { return targetX; }
     public double targetZ() { return targetZ; }
 
-    public static AircraftEntity launch(ServerLevel level, AircraftType type, SupportVehicle station, double tx, double tz,
+    public static AircraftEntity launch(ServerLevel level, AircraftType type, WeaponBlockEntity station, double tx, double tz,
                                         int hellfires, @Nullable UUID owner, @Nullable String ownerName) {
         AircraftEntity a = new AircraftEntity(ModRegistry.AIRCRAFT.get(type).get(), level);
         a.setOwner(owner, ownerName);
-        a.stationId = station.getUUID();
-        a.home = station.position();
+        a.home = station.getBlockPos();
         a.targetX = tx;
         a.targetZ = tz;
         a.hellfires = hellfires;
-        a.forward = station.forward();
+        a.forward = Vec3.atLowerCornerOf(station.facing().getNormal());
         Vec3 from;
         if (type.runway > 0) {
             a.runwayStart = station.runwayStart();
@@ -78,23 +79,17 @@ public class AircraftEntity extends FlyingWeaponEntity {
             a.speed = 0;
             a.dir = a.forward;
         } else {
-            from = station.catapultMuzzle();
+            from = station.muzzle();
             a.phase = Phase.OUTBOUND;
             a.speed = type.speed;
-            a.dir = station.catapultDirection();
-            level.playSound(null, station.blockPosition(), SoundEvents.FIREWORK_ROCKET_LAUNCH, SoundSource.NEUTRAL, 3f, 1.2f);
+            a.dir = station.aimDirection();
+            level.playSound(null, station.getBlockPos(), SoundEvents.FIREWORK_ROCKET_LAUNCH, SoundSource.BLOCKS, 3f, 1.2f);
         }
         a.setPos(from);
         a.faceAlong(a.dir);
         preload(level, from.x, from.z);
         level.addFreshEntity(a);
         return a;
-    }
-
-    /** The ground station or catapult this aircraft belongs to, if it still exists. */
-    @Nullable
-    private SupportVehicle station() {
-        return stationId != null && level() instanceof ServerLevel sl && sl.getEntity(stationId) instanceof SupportVehicle s && s.isAlive() ? s : null;
     }
 
     /** Where the aircraft sits before take-off and stops after landing. */
@@ -190,7 +185,7 @@ public class AircraftEntity extends FlyingWeaponEntity {
     }
 
     private void chute(ServerLevel level, Vec3 pos) {
-        Vec3 top = home.add(0, 1.5, 0);
+        Vec3 top = Vec3.atBottomCenterOf(home).add(0, 1.5, 0);
         Vec3 next = new Vec3(Mth.lerp(0.1, pos.x, top.x), pos.y - 0.3, Mth.lerp(0.1, pos.z, top.z));
         keepChunksLoaded(level, next, Vec3.ZERO);
         if (next.y <= top.y + 0.5 || blockHit(pos, next) != null) {
@@ -241,8 +236,8 @@ public class AircraftEntity extends FlyingWeaponEntity {
             }
             case RETURN -> {
                 if (type.runway == 0) {
-                    desired = terrainFollowing(dir, home.x, home.z, 30, type.speed);
-                    if (flat(pos, home.x, home.z) < 6) {
+                    desired = terrainFollowing(dir, home.getX() + 0.5, home.getZ() + 0.5, 30, type.speed);
+                    if (flat(pos, home.getX() + 0.5, home.getZ() + 0.5) < 6) {
                         setPhase(Phase.CHUTE);
                         return;
                     }
@@ -331,13 +326,12 @@ public class AircraftEntity extends FlyingWeaponEntity {
                 Mth.floor(pos.x), Mth.floor(pos.y), Mth.floor(pos.z), phase);
         discard();
         Blast.detonate(level, pos, 3f, 0, 20f, 5, true, this, ownerPlayer());
-        if (station() != null) station().aircraftLost();
+        if (level.getBlockEntity(home) instanceof WeaponBlockEntity station) station.aircraftLost();
         tell("message.steelrain.aircraft_lost");
     }
 
     private void dock(ServerLevel level) {
-        SupportVehicle station = station();
-        if (station != null) {
+        if (level.getBlockEntity(home) instanceof WeaponBlockEntity station && station.type().launchesAircraft()) {
             station.dock(type, hellfires);
         } else {
             spawnAtLocation(new ItemStack(type.item().get()));
@@ -349,7 +343,7 @@ public class AircraftEntity extends FlyingWeaponEntity {
 
     @Override
     public void shotDown() {
-        if (station() != null) station().aircraftLost();
+        if (level().getBlockEntity(home) instanceof WeaponBlockEntity station) station.aircraftLost();
         tell("message.steelrain.aircraft_lost");
         super.shotDown();
     }
@@ -363,8 +357,7 @@ public class AircraftEntity extends FlyingWeaponEntity {
     @Override
     protected void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
-        stationId = tag.hasUUID("Station") ? tag.getUUID("Station") : null;
-        home = new Vec3(tag.getDouble("HX"), tag.getDouble("HY"), tag.getDouble("HZ"));
+        home = NbtUtils.readBlockPos(tag, "Home").orElse(BlockPos.ZERO);
         runwayStart = new Vec3(tag.getDouble("RX"), tag.getDouble("RY"), tag.getDouble("RZ"));
         forward = new Vec3(tag.getDouble("FX"), 0, tag.getDouble("FZ"));
         targetX = tag.getDouble("TX");
@@ -381,8 +374,7 @@ public class AircraftEntity extends FlyingWeaponEntity {
     @Override
     protected void addAdditionalSaveData(CompoundTag tag) {
         super.addAdditionalSaveData(tag);
-        if (stationId != null) tag.putUUID("Station", stationId);
-        tag.putDouble("HX", home.x); tag.putDouble("HY", home.y); tag.putDouble("HZ", home.z);
+        tag.put("Home", NbtUtils.writeBlockPos(home));
         tag.putDouble("RX", runwayStart.x); tag.putDouble("RY", runwayStart.y); tag.putDouble("RZ", runwayStart.z);
         tag.putDouble("FX", forward.x); tag.putDouble("FZ", forward.z);
         tag.putDouble("TX", targetX); tag.putDouble("TZ", targetZ);

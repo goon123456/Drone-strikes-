@@ -22,6 +22,7 @@ public class SteelRain {
         ModRegistry.register(modBus);
         container.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
         modBus.addListener(RegisterPayloadHandlersEvent.class, Payloads::register);
+        modBus.addListener(net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent.class, SteelRain::capabilities);
         NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.EntityInteract.class, SteelRain::fitDome);
         NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.event.tick.EntityTickEvent.Post.class, SteelRain::domeTick);
         modBus.addListener(EntityAttributeCreationEvent.class,
@@ -49,6 +50,16 @@ public class SteelRain {
         });
     }
 
+    /** Hoppers and power cables can connect to any block of an emplacement. */
+    private static void capabilities(net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent event) {
+        var items = net.neoforged.neoforge.capabilities.Capabilities.ItemHandler.BLOCK;
+        var power = net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.BLOCK;
+        event.registerBlockEntity(items, ModRegistry.WEAPON_BE.get(), (be, side) -> be.items);
+        event.registerBlockEntity(power, ModRegistry.WEAPON_BE.get(), (be, side) -> be.energyPort);
+        event.registerBlockEntity(items, ModRegistry.WEAPON_PART_BE.get(), (part, side) -> part.coreEntity() == null ? null : part.coreEntity().items);
+        event.registerBlockEntity(power, ModRegistry.WEAPON_PART_BE.get(), (part, side) -> part.coreEntity() == null ? null : part.coreEntity().energyPort);
+    }
+
     private static final String DOME = "SteelRainDome", DOME_OWNER = "SteelRainDomeOwner", DOME_NAME = "SteelRainDomeOwnerName";
 
     /** A Jammer Dome can be fitted to any Superb Warfare vehicle by right-clicking it. */
@@ -59,7 +70,7 @@ public class SteelRain {
         e.setCancellationResult(net.minecraft.world.InteractionResult.sidedSuccess(e.getLevel().isClientSide));
         if (e.getLevel().isClientSide) return;
         net.minecraft.nbt.CompoundTag data = v.getPersistentData();
-        if (data.getBoolean(DOME) || v instanceof com.steelrain.entity.SupportVehicle s && s.kind().ordinal() >= 2) {
+        if (data.getBoolean(DOME) || v instanceof com.steelrain.entity.SupportVehicle) {
             e.getEntity().displayClientMessage(net.minecraft.network.chat.Component.translatable("message.steelrain.dome_refused"), true);
             return;
         }

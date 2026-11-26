@@ -31,6 +31,7 @@ public final class ClientSetup {
         e.registerEntityRenderer(ModRegistry.SHELL_CLUSTER_ENTITY.get(), c -> new EntityModelRenderer<>(c, Models.SHELL, 0.2f, 1f));
         e.registerEntityRenderer(ModRegistry.SHELL_SMOKE_ENTITY.get(), c -> new EntityModelRenderer<>(c, Models.SHELL, 0.2f, 1f));
         e.registerEntityRenderer(ModRegistry.SHELL_INCENDIARY_ENTITY.get(), c -> new EntityModelRenderer<>(c, Models.SHELL, 0.2f, 1f));
+        e.registerEntityRenderer(ModRegistry.MORTAR_SHELL_ENTITY.get(), c -> new EntityModelRenderer<>(c, Models.SHELL, 0.15f, 1f));
         e.registerEntityRenderer(ModRegistry.ATACMS.get(), c -> new EntityModelRenderer<>(c, Models.ATACMS, 0.4f, 1f));
         e.registerEntityRenderer(ModRegistry.BOMBLET.get(), c -> new EntityModelRenderer<>(c, Models.GRENADE, 0.12f, 1f));
         e.registerEntityRenderer(ModRegistry.SMOKE.get(), net.minecraft.client.renderer.entity.NoopRenderer::new);
@@ -49,12 +50,18 @@ public final class ClientSetup {
         ModRegistry.SUPPORT.values().forEach(v -> e.registerEntityRenderer(v.get(),
                 com.atsuishio.superbwarfare.client.renderer.entity.BasicVehicleRenderer::new));
         e.registerEntityRenderer(ModRegistry.OPERATOR_BODY.get(), OperatorBodyRenderer::new);
+        e.registerBlockEntityRenderer(ModRegistry.WEAPON_BE.get(), c -> new WeaponRenderer());
     }
 
     /** With Curios installed, backpacks worn in the back slot are drawn on the player. */
     @SubscribeEvent
     public static void setup(net.neoforged.fml.event.lifecycle.FMLClientSetupEvent e) {
         if (com.steelrain.util.Gear.CURIOS) e.enqueueWork(CuriosClient::register);
+    }
+
+    @SubscribeEvent
+    public static void screens(net.neoforged.neoforge.client.event.RegisterMenuScreensEvent e) {
+        e.register(ModRegistry.WEAPON_MENU.get(), WeaponScreen::new);
     }
 
     @SubscribeEvent
@@ -65,6 +72,7 @@ public final class ClientSetup {
     @SubscribeEvent
     public static void guiLayers(RegisterGuiLayersEvent e) {
         e.registerAboveAll(ResourceLocation.fromNamespaceAndPath(ModRegistry.MODID, "fpv_hud"), FpvClient::renderHud);
+        e.registerAboveAll(ResourceLocation.fromNamespaceAndPath(ModRegistry.MODID, "gun_sight"), ArtilleryHud::render);
     }
 
     private ClientSetup() {}

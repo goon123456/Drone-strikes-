@@ -34,6 +34,122 @@ def noisy(colour, size=16, amount=10, seed=0):
     return img
 
 
+# ---------------------------------------------------------------- block textures
+OLIVE, OLIVE_D, STEEL, STEEL_D = (92, 104, 62), (66, 76, 46), (150, 154, 158), (62, 66, 70)
+
+def block_textures():
+    t = {}
+    t["olive"] = noisy(OLIVE, seed=1)
+    t["olive_dark"] = noisy(OLIVE_D, seed=2)
+    t["steel"] = noisy(STEEL, seed=3)
+    t["steel_dark"] = noisy(STEEL_D, seed=4)
+    t["white"] = noisy((215, 216, 210), seed=5, amount=6)
+    t["tan"] = noisy((184, 172, 140), seed=13, amount=8)
+    t["red"] = noisy((190, 40, 36), seed=6)
+    t["glass"] = noisy((40, 62, 86), seed=7, amount=5)
+    ImageDraw.Draw(t["glass"]).line([(2, 12), (12, 2)], fill=(90, 120, 150, 255))
+
+    p = noisy(OLIVE, seed=8)
+    d = ImageDraw.Draw(p)
+    d.rectangle([0, 0, 15, 15], outline=OLIVE_D + (255,))
+    d.line([(0, 8), (15, 8)], fill=OLIVE_D + (255,))
+    for xy in [(2, 2), (13, 2), (2, 13), (13, 13)]:
+        d.point(xy, fill=(120, 132, 84, 255))
+    t["panel"] = p
+
+    tr = noisy((38, 38, 36), seed=9, amount=5)
+    d = ImageDraw.Draw(tr)
+    for x in range(1, 16, 4):
+        d.line([(x, 0), (x, 15)], fill=(20, 20, 20, 255))
+    t["tracks"] = tr
+
+    tu = noisy(OLIVE_D, seed=10)
+    d = ImageDraw.Draw(tu)
+    for cy in (4, 11):
+        for cx in (3, 8, 13):
+            d.ellipse([cx - 2, cy - 2, cx + 1, cy + 1], fill=(24, 26, 22, 255), outline=(110, 120, 80, 255))
+    t["tubes"] = tu
+
+    pad = noisy((54, 56, 58), seed=11, amount=5)
+    d = ImageDraw.Draw(pad)
+    y = (224, 190, 50, 255)
+    d.rectangle([1, 1, 14, 14], outline=y)
+    d.line([(5, 4), (5, 11)], fill=y); d.line([(10, 4), (10, 11)], fill=y); d.line([(5, 7), (10, 7)], fill=y)
+    t["pad_top"] = pad
+
+    ra = noisy((100, 112, 96), seed=12, amount=5)
+    d = ImageDraw.Draw(ra)
+    for i in range(0, 16, 4):
+        d.line([(i, 0), (i, 15)], fill=(60, 70, 58, 255)); d.line([(0, i), (15, i)], fill=(60, 70, 58, 255))
+    t["radar"] = ra
+    for name, img in t.items():
+        save(img, f"{A}/textures/block/{name}.png")
+
+
+# ---------------------------------------------------------------- block models
+def el(tex, box, rot=None, up=None):
+    # Explicit UVs: parts reaching outside the block would otherwise sample neighbouring atlas sprites.
+    faces = {f: {"texture": "#" + tex, "uv": [0, 0, 16, 16]} for f in ("north", "south", "east", "west", "up", "down")}
+    if up:
+        faces["up"] = {"texture": "#" + up, "uv": [0, 0, 16, 16]}
+    e = {"from": box[:3], "to": box[3:], "faces": faces}
+    if rot:
+        e["rotation"] = {"origin": rot[0], "axis": "x", "angle": rot[1]}
+    return e
+
+def wheels(zs):
+    return [el("tracks", [1, 0, z, 15, 3, z + 3.5]) for z in zs]
+
+BLOCKS = {
+    "shahed_launcher": [
+        el("steel_dark", [1, 0, 1, 15, 2, 15]),
+        el("steel_dark", [7, 2, 3, 9, 9, 5]),
+        el("steel", [6, 3, -3, 10, 5, 16], ([8, 3, 16], 22.5)),
+        el("steel_dark", [5, 5, 10, 11, 6, 15], ([8, 3, 16], 22.5)),
+        el("red", [7, 5, -3, 9, 6, -2], ([8, 3, 16], 22.5)),
+    ],
+    "ground_station": [
+        el("steel_dark", [1, 0, 0, 15, 1, 16]),
+        el("tan", [2, 1, 1, 14, 10, 15]),
+        el("steel_dark", [6, 1, 0.8, 10, 8, 1]),
+        el("steel", [7.5, 10, 10, 8.5, 14, 11]),
+        el("white", [4, 12, 9, 12, 16, 10]),
+        el("red", [13, 10, 2, 14, 15, 3]),
+    ],
+    "orlan_catapult": [
+        el("steel_dark", [5, 0, 2, 11, 2, 14]),
+        el("steel_dark", [7, 2, 3, 9, 8, 5]),
+        el("steel", [7, 2, -2, 9, 3.5, 16], ([8, 2, 16], 22.5)),
+        el("white", [7, 3.5, 2, 9, 5.5, 11], ([8, 2, 16], 22.5)),
+        el("white", [1, 5, 5, 15, 5.6, 8], ([8, 2, 16], 22.5)),
+    ],
+}
+
+def block_models():
+    for name, elements in BLOCKS.items():
+        used = sorted({f["texture"][1:] for e in elements for f in e["faces"].values()})
+        textures = {t: f"{MOD}:block/{t}" for t in used}
+        textures["particle"] = f"{MOD}:block/olive"
+        write(f"{A}/models/block/{name}.json", {"parent": "minecraft:block/block", "textures": textures, "elements": elements})
+        write(f"{A}/models/item/{name}.json", {"parent": f"{MOD}:block/{name}"})
+        write(f"{A}/blockstates/{name}.json", {"variants": {
+            "facing=north": {"model": f"{MOD}:block/{name}"},
+            "facing=east": {"model": f"{MOD}:block/{name}", "y": 90},
+            "facing=south": {"model": f"{MOD}:block/{name}", "y": 180},
+            "facing=west": {"model": f"{MOD}:block/{name}", "y": 270},
+        }})
+        write(f"{D}/loot_table/blocks/{name}.json", {"type": "minecraft:block", "pools": [{
+            "rolls": 1, "entries": [{"type": "minecraft:item", "name": f"{MOD}:{name}"}],
+            "conditions": [{"condition": "minecraft:survives_explosion"}]}]})
+    # Invisible filler block of the full-size vehicles.
+    write(f"{A}/models/block/weapon_part.json", {"textures": {"particle": f"{MOD}:block/olive"}})
+    write(f"{A}/blockstates/weapon_part.json", {"variants": {"": {"model": f"{MOD}:block/weapon_part"}}})
+    write(f"{RES}/data/minecraft/tags/block/mineable/pickaxe.json",
+          {"replace": False, "values": [f"{MOD}:{n}" for n in BLOCKS] + [f"{MOD}:weapon_part"]})
+    write(f"{RES}/data/minecraft/tags/block/needs_stone_tool.json",
+          {"replace": False, "values": [f"{MOD}:{n}" for n in BLOCKS]})
+
+
 # ---------------------------------------------------------------- item icons
 def outlined(img, colour=(24, 24, 22, 255)):
     src = img.load()
@@ -274,6 +390,7 @@ def item_icons():
         d.line([(6, 11), (9, 11)], fill=c((184, 112, 64)))
         d.rectangle([6, 7, 9, 8], fill=c(band))
         return outlined(img)
+    icons["mortar_shell"] = shell((70, 74, 78))
     icons["shell_cluster"] = shell((230, 230, 224))
     icons["shell_smoke"] = shell((120, 190, 230))
     icons["shell_incendiary"] = shell((230, 80, 40))
@@ -353,6 +470,10 @@ def recipes():
             "type": "minecraft:crafting_shapeless", "category": "misc",
             "ingredients": [{"item": f"{MOD}:{gadget}"}, {"item": f"{MOD}:drone_battery"}],
             "result": {"id": f"{MOD}:{gadget}", "count": 1}})
+    shaped("ground_station", ["SSS", "CUC", "BBB"], {"S": MC + "smooth_stone", "C": "circuit_board", "U": "guidance_unit", "B": B})
+    shaped("orlan_catapult", ["  I", " I ", "IPI"], {"I": I, "P": MC + "piston"})
+    shaped("shahed_launcher", ["  I", " I ", "BPB"], {"I": I, "B": B, "P": MC + "piston"})
+    shaped("mortar_shell", [" I ", "ITI", " P "], {"I": N, "T": T, "P": P}, 4)
     # A fresh battery puts a used Mavic back to full charge.
     write(f"{D}/recipe/mavic_recharge.json", {
         "type": "minecraft:crafting_shapeless", "category": "misc",
@@ -396,9 +517,9 @@ def lang():
         "entity.steelrain.iskander_launcher": "Iskander-M Launcher",
         "entity.steelrain.himars": "M142 HIMARS",
         "entity.steelrain.m109": "M109 Howitzer",
-        "entity.steelrain.shahed_launcher": "Shahed Launch Rail",
-        "entity.steelrain.ground_station": "UAV Ground Station",
-        "entity.steelrain.orlan_catapult": "Orlan Catapult",
+        "block.steelrain.shahed_launcher": "Shahed Launch Rail",
+        "block.steelrain.ground_station": "UAV Ground Station",
+        "block.steelrain.orlan_catapult": "Orlan Catapult",
         "entity.steelrain.gepard": "Flakpanzer Gepard",
         "entity.steelrain.zu_23_2": "ZU-23-2",
         "entity.steelrain.pantsir": "Pantsir-S1",
@@ -420,6 +541,19 @@ def lang():
         "item.steelrain.ammo_30mm_ap": "30 mm AP Belt",
         "item.steelrain.ammo_35mm_ap": "35 mm AP Belt",
         "item.steelrain.ammo_23mm_ap": "23 mm AP Box",
+        "item.steelrain.mortar_shell": "120 mm Mortar Bomb",
+        "entity.steelrain.mortar_shell": "Mortar Bomb",
+        "entity.steelrain.mortar_120": "120 mm Mortar",
+        "weapon.steelrain.charge_1": "Charge 1",
+        "weapon.steelrain.charge_2": "Charge 2",
+        "weapon.steelrain.charge_3": "Charge 3",
+        "message.steelrain.solution": "Bearing %s°  range %s:  %s",
+        "message.steelrain.reloading": "Reloading pod: %ss",
+        "hud.steelrain.gun_bearing": "BEARING  %s°",
+        "hud.steelrain.gun_elevation": "ELEVATION  %s°",
+        "hud.steelrain.range_table": "RANGE TABLE (level ground)",
+        "gui.steelrain.solution": "SOLUTION",
+        "block.steelrain.weapon_part": "Emplacement",
         "item.steelrain.shell_cluster": "155 mm Cluster Shell",
         "item.steelrain.shell_smoke": "155 mm Smoke Shell",
         "item.steelrain.shell_incendiary": "155 mm Incendiary Shell",
@@ -750,15 +884,48 @@ def sbw_vehicles():
               "TurretTurnSpeed": [4, 3], "TurretPitchRange": [0, 60], "Seats": driver(0.55, 1.5, 2.3),
               "ContainerIcon": "superbwarfare:textures/gui/vehicle/type/land.png"})
 
+    def charges(velocities, muzzle, ammo):
+        """One Superb Warfare weapon per propellant charge: same gun, same shells, different muzzle velocity."""
+        first = {"DefaultFireMode": "Semi", "AvailableFireModes": "Semi",
+                 "Projectile": f"{MOD}:{ammo[0]}",
+                 "AmmoType": [f"{MOD}:{ammo[0]}"] + [{"Ammo": f"{MOD}:{a}", "Projectile": f"{MOD}:{a}"} for a in ammo[1:]],
+                 "RPM": 15, "Velocity": velocities[0], "Spread": 0.12, "ProjectileLife": 2400, "DefaultZoom": 1.5,
+                 "Crosshair": "@NoCross", "Name": f"weapon.{MOD}.charge_1",
+                 "Icon": "superbwarfare:textures/overlay/vehicle/weapon/icons/cannon_30mm_ap.png",
+                 "ShootPos": {"Transform": "Barrel", "Positions": [muzzle], "Directions": ["Barrel"]}}
+        out = {"Charge1": first}
+        for i, v in enumerate(velocities[1:], start=2):
+            out[f"Charge{i}"] = {"Template": "Charge1", "Velocity": v, "Name": f"weapon.{MOD}.charge_{i}"}
+        return out
+    SHELLS = ["shell_155mm", "shell_cluster", "shell_smoke", "shell_incendiary"]
+
+    # 120 mm mortar: baseplate, bipod and tube. High-angle fire only, laid by the crewman sitting beside it.
+    sbw_vehicle("mortar_120",
+        base=[(SD, -0.45, 0, -0.55, 0.9, 0.1, 0.9)],
+        turret=pair(ST, 0.28, 0.1, 0.55, 0.05, 0.9, 0.05) + [(ST, -0.3, 0.95, 0.55, 0.6, 0.05, 0.05)],
+        barrel=[(SD, -0.08, 0.14, -0.1, 0.16, 0.16, 1.7), (BK, -0.1, 0.12, 1.5, 0.2, 0.2, 0.12)],
+        turret_pivot=(0, 0.1, -0.1), barrel_pivot=(0, 0.22, -0.1),
+        data={"MaxHealth": 40, "Mass": 2, "EngineType": "Fixed", "Type": "Artillery", "HudType": "@Land", "MaxEnergy": 0,
+              "VehicleContainerType": "Mini", "TurretTurnSpeed": [6, 4], "TurretPitchRange": [45, 85],
+              "Seats": [{"HidePassenger": False, "Transform": "Turret", "Position": [0.7, -0.1, -0.5], "CanRotateHead": True,
+                         "MinPitch": 45, "MaxPitch": 85, "Weapons": ["Charge1", "Charge2", "Charge3"]}],
+              "Weapons": charges([2.0, 3.0, 4.5], [0, 0, 1.7], ["mortar_shell"]),
+              "ContainerIcon": "superbwarfare:textures/gui/vehicle/type/defense.png"})
+
     sbw_vehicle("m109",
         base=pair(TY, 1.05, 0, -3.0, 0.5, 1.0, 6.0) + [(OL, -1.5, 0.5, -3.1, 3.0, 1.2, 6.2), (OD, -1.4, 0.9, 3.1, 2.8, 0.6, 0.4)],
         turret=[(OLL, -1.4, 1.7, -2.8, 2.8, 1.25, 3.7), (OD, 0.5, 2.95, -2.1, 0.7, 0.3, 0.7), (OD, -1.3, 1.8, -3.1, 2.6, 0.8, 0.3)],
         barrel=[(OD, -0.4, 2.0, 0.8, 0.8, 0.6, 0.5), (SD, -0.12, 2.18, 1.3, 0.24, 0.24, 4.6),
                 (SD, -0.17, 2.13, 3.4, 0.34, 0.34, 0.6), (SD, -0.2, 2.1, 5.5, 0.4, 0.4, 0.5)],
         turret_pivot=(0, 1.7, -0.9), barrel_pivot=(0, 2.3, 0.9),
-        data={**TRACK, **LAID, "MaxHealth": 500, "Mass": 24, "Type": "Artillery",
+        # Hand-laid: seat 0 drives, seat 1 is the gunner who traverses, elevates and fires from the range table.
+        data={**TRACK, "HudType": "@Land", "VehicleContainerType": "Small", "MaxHealth": 500, "Mass": 24, "Type": "Artillery",
               "TerrainCompat": [[1.4, 0, 2.6], [-1.4, 0, 2.6], [1.4, 0, 0], [-1.4, 0, 0], [1.4, 0, -2.6], [-1.4, 0, -2.6]],
-              "TurretTurnSpeed": [3, 2], "TurretPitchRange": [-3, 65], "Seats": driver(0.7, 1.2, 2.0),
+              "TurretTurnSpeed": [3, 2], "TurretPitchRange": [-3, 70], "TurretControllerIndex": 1,
+              "Seats": driver(0.7, 1.2, 2.0) + [{"HidePassenger": True, "Transform": "Turret", "Position": [0, -0.3, 0],
+                        "CanRotateHead": False, "MinPitch": -3, "MaxPitch": 70, "Weapons": ["Charge1", "Charge2", "Charge3"],
+                        "CameraPos": {"Transform": "Turret", "UseFixedCameraPos": True, "Position": [0.9, 1.5, 1.2], "Direction": "Barrel"}}],
+              "Weapons": charges([3.0, 4.2, 5.5], [0, 0, 5.2], SHELLS),
               "ContainerIcon": "superbwarfare:textures/gui/vehicle/type/land.png"})
 
     sbw_vehicle("tomahawk_launcher",
@@ -785,29 +952,9 @@ def sbw_vehicles():
               "TurretTurnSpeed": [0.01, 1.2], "TurretYawRange": [0, 0], "TurretPitchRange": [0, 89], "Seats": driver(0.8, 2.3, 5.2),
               "ContainerIcon": "superbwarfare:textures/gui/vehicle/type/land.png"})
 
-    sbw_vehicle("shahed_launcher",
-        base=pair(SD, 0.9, 0, -2.5, 0.2, 0.2, 5.0) + [(SD, -1.1, 0.1, -2.2, 2.2, 0.15, 0.2), (SD, -1.1, 0.1, 2.0, 2.2, 0.15, 0.2),
-              (SD, -0.42, 1.7, 1.8, 0.84, 0.1, 0.12), (ST, -0.15, 0.4, -2.2, 0.3, 0.2, 4.6, 18, (0, 0.4, -2.2))]
-             + pair(SD, 0.3, 0.2, 1.8, 0.12, 1.6, 0.12),
-        turret=[], barrel=[], turret_pivot=None, barrel_pivot=None,
-        data={**LAID, "MaxHealth": 80, "Mass": 6, "EngineType": "Fixed", "Type": "Artillery", "MaxEnergy": 0, "Seats": [],
-              "VehicleContainerType": "Mini", "ContainerIcon": "superbwarfare:textures/gui/vehicle/type/defense.png"})
-
     # ---- ground station, catapult and jammers ----
     STATIC = {"EngineType": "Fixed", "Weapons": {}, "Seats": [], "HudType": "@Empty", "Type": "Defense",
               "ContainerIcon": "superbwarfare:textures/gui/vehicle/type/defense.png"}
-    sbw_vehicle("ground_station",
-        base=pair(SD, 1.0, 0, -2.8, 0.2, 0.2, 0.2) + pair(SD, 1.0, 0, 2.6, 0.2, 0.2, 0.2)
-             + [(SA, -1.2, 0.2, -3.0, 2.4, 2.5, 6.0), (SAD, -0.45, 0.3, -3.03, 0.9, 2.0, 0.04), (SAD, -1.22, 1.3, -2.5, 2.44, 0.15, 5.0),
-                (ST, -1.0, 1.4, 3.0, 0.9, 0.9, 0.4), (SD, -0.05, 2.7, 1.8, 0.1, 1.6, 0.1), (SD, 0.9, 2.7, -2.5, 0.05, 2.2, 0.05),
-                (WH, -0.9, 3.6, 1.7, 1.8, 1.4, 0.15, 30, (0, 4.3, 1.8))],
-        turret=[], barrel=[], turret_pivot=None, barrel_pivot=None,
-        data={**STATIC, "MaxHealth": 200, "Mass": 20, "VehicleContainerType": "Small"})
-    sbw_vehicle("orlan_catapult",
-        base=[(SD, -0.3, 0, -1.8, 0.6, 0.3, 0.15), (SD, -0.28, 1.1, 1.3, 0.56, 0.06, 0.08),
-              (ST, -0.08, 0.3, -1.8, 0.16, 0.12, 3.7, 15, (0, 0.3, -1.8))] + pair(SD, 0.2, 0, 1.3, 0.08, 1.15, 0.08),
-        turret=[], barrel=[], turret_pivot=None, barrel_pivot=None,
-        data={**STATIC, "MaxHealth": 40, "Mass": 2, "MaxEnergy": 0, "VehicleContainerType": "Mini"})
     sbw_vehicle("jammer",
         base=[(OL, -1.4, 0.2, -1.4, 2.8, 2.4, 2.8), (OD, -0.4, 0.3, -1.43, 0.8, 1.9, 0.04), (SD, -0.1, 2.6, -0.1, 0.2, 6.4, 0.2),
               (SD, -1.5, 7.0, -0.05, 3.0, 0.1, 0.1), (SD, -0.05, 8.2, -1.5, 0.1, 0.1, 3.0), (OD, -0.3, 7.8, -1.5, 0.6, 0.9, 0.12),
@@ -844,11 +991,9 @@ def sbw_vehicles():
     crate("pantsir", ["UOU", "MCM", "BBB"], {"U": "guidance_unit", "O": MC + "observer", "M": "electric_motor", "C": "circuit_board", "B": B})
     crate("tomahawk_launcher", ["IHI", "BCB", "BBB"], {"I": I, "H": MC + "hopper", "B": B, "C": "circuit_board"})
     crate("iskander_launcher", ["IPI", "BCB", "BMB"], {"I": I, "P": MC + "piston", "B": B, "C": "circuit_board", "M": "electric_motor"})
+    crate("mortar_120", ["  I", " I ", "NBN"], {"I": I, "N": N, "B": B})
     crate("himars", ["III", "MCM", "BBB"], {"I": I, "M": "electric_motor", "C": "circuit_board", "B": B})
     crate("m109", ["I  ", "BIC", "BMB"], {"I": I, "B": B, "C": "circuit_board", "M": "electric_motor"})
-    crate("shahed_launcher", ["  I", " I ", "BPB"], {"I": I, "B": B, "P": MC + "piston"})
-    crate("ground_station", ["SSS", "CUC", "BBB"], {"S": MC + "smooth_stone", "C": "circuit_board", "U": "guidance_unit", "B": B})
-    crate("orlan_catapult", ["  I", " I ", "IPI"], {"I": I, "P": MC + "piston"})
     crate("jammer", [" A ", "CUC", "BDB"], {"A": MC + "lightning_rod", "C": "circuit_board", "U": "guidance_unit", "B": B, "D": "drone_battery"})
     crate("trench_jammer", [" A ", "CDC", "III"], {"A": MC + "lightning_rod", "C": "circuit_board", "D": "drone_battery", "I": I})
     crate("krasukha", ["AUA", "CUC", "BBB"], {"A": MC + "lightning_rod", "U": "guidance_unit", "C": "circuit_board", "B": B})
@@ -857,5 +1002,5 @@ def sbw_vehicles():
 
 if __name__ == "__main__":
     sbw_vehicles()
-    item_icons(); entity_textures(); recipes(); tags(); lang()
+    block_textures(); block_models(); item_icons(); entity_textures(); recipes(); tags(); lang()
     print("assets generated")

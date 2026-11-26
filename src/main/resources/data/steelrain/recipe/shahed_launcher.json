@@ -18,13 +18,7 @@
     }
   },
   "result": {
-    "id": "superbwarfare:container",
-    "count": 1,
-    "components": {
-      "minecraft:block_entity_data": {
-        "id": "superbwarfare:container",
-        "EntityType": "steelrain:shahed_launcher"
-      }
-    }
+    "id": "steelrain:shahed_launcher",
+    "count": 1
   }
 }
