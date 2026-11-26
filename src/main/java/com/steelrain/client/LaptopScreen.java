@@ -6,7 +6,9 @@ import com.steelrain.net.Payloads;
 import com.steelrain.weapon.MissileProfile;
 import net.minecraft.Util;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.AbstractButton;
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.texture.DynamicTexture;
@@ -32,9 +34,9 @@ public class LaptopScreen extends Screen {
     private static final ResourceLocation MAP_TEXTURE = ResourceLocation.fromNamespaceAndPath(ModRegistry.MODID, "laptop_map");
     private static final int[] SCALES = {1, 2, 4, 8, 16, 32, 64};
     /** Printed field-manual palette: warm off-white ink, olive drab rules, one amber accent, muted alarms. */
-    private static final int P_BG = 0xFF0C0F0D, P_PLATE = 0xFF141916, P_RULE = 0xFF3A4439, P_TEXT = 0xFFD8D3BE,
-            P_DIM = 0xFF8E9283, P_FAINT = 0xFF555C52, P_AMBER = 0xFFD9A441, P_GO = 0xFF9BB56A, P_RED = 0xFFC0584A,
-            P_CYAN = 0xFF8FB3BF;
+    private static final int P_BG = 0xFF030805, P_PLATE = 0xFF06100A, P_RULE = 0xFF1F4A2B, P_TEXT = 0xFF8DF29A,
+            P_DIM = 0xFF4F9A60, P_FAINT = 0xFF2A5A36, P_AMBER = 0xFFF5C451, P_GO = 0xFF8DF29A, P_RED = 0xFFFF5F52,
+            P_CYAN = 0xFF6FE0F0, P_BEZEL = 0xFF101412, P_BEZEL_EDGE = 0xFF252B27;
 
     /** A plain plate: thin rule round a flat fill. No highlights, no corner marks. */
     private void plate(GuiGraphics g, int x, int y, int w, int h) {
@@ -114,6 +116,62 @@ public class LaptopScreen extends Screen {
         });
     }
 
+    /** The bezel keys step through the linked units; the map and mission follow. */
+    private void stepUnit(int by) {
+        if (entries.isEmpty()) return;
+        selected = Math.floorMod(selected + by, entries.size());
+        if (selected < listScroll) listScroll = selected;
+        if (selected >= listScroll + visibleCards()) listScroll = selected - visibleCards() + 1;
+        mapDirty = true;
+    }
+
+    /** Status lights in the bezel: link, ammunition, a fire solution, and aircraft in the air. */
+    private void drawLights(GuiGraphics g) {
+        boolean link = false, ammo = false, air = false;
+        for (Payloads.Entry e : entries) {
+            if (!known(e)) continue;
+            if (e.reachable()) link = true;
+            if (e.ammo() > 0 || e.manual()) ammo = true;
+            if (e.aircraft() >= 0) air = true;
+        }
+        String[] names = {"LINK", "RDY", "FIX", "AIR", "PWR"};
+        boolean[] on = {link, ammo, hasTarget, air, true};
+        int[] cols = {P_GO, P_GO, P_AMBER, P_CYAN, P_GO};
+        int x = left + w - 4, y = top + h + 15;
+        for (int i = names.length - 1; i >= 0; i--) {
+            x -= font.width(names[i]) + 14;
+            g.drawString(font, names[i], x + 9, y - 1, P_DIM, false);
+            g.fill(x, y, x + 5, y + 5, on[i] ? cols[i] : P_FAINT);
+            if (on[i]) g.fill(x - 1, y - 1, x + 6, y, (cols[i] & 0x00FFFFFF) | 0x50000000);
+        }
+    }
+
+    /** A hardware key in the bezel: a dark square with a bevel and a green legend, lit when pressed. */
+    private static final class BezelKey extends AbstractButton {
+        private final Runnable press;
+
+        BezelKey(int x, int y, int w, int h, Component text, Runnable press) {
+            super(x, y, w, h, text);
+            this.press = press;
+        }
+
+        @Override public void onPress() { press.run(); }
+
+        @Override
+        protected void renderWidget(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+            var font = net.minecraft.client.Minecraft.getInstance().font;
+            boolean hot = isHoveredOrFocused();
+            g.fill(getX(), getY(), getX() + width, getY() + height, 0xFF000000);
+            g.fill(getX(), getY(), getX() + width, getY() + height - 1, hot ? 0xFF3A5A40 : 0xFF2A3430);
+            g.fill(getX() + 1, getY() + 1, getX() + width - 1, getY() + height - 1, hot ? 0xFF1A2A1E : 0xFF141A16);
+            int c = hot ? P_TEXT : P_DIM;
+            g.drawString(font, getMessage(), getX() + (width - font.width(getMessage())) / 2, getY() + (height - 8) / 2, c, false);
+        }
+
+        @Override
+        protected void updateWidgetNarration(NarrationElementOutput out) { defaultButtonNarrationText(out); }
+    }
+
     private int scale() { return SCALES[scaleIndex]; }
 
     private void log(String text) {
@@ -159,7 +217,7 @@ public class LaptopScreen extends Screen {
     protected void init() {
         if (openedAt < 0) openedAt = Util.getMillis();
         w = Math.min(width - 12, 470);
-        h = Math.min(height - 12, 320);
+        h = Math.min(height - 46, 316);
         left = (width - w) / 2;
         top = (height - h) / 2;
         map = Math.max(96, Math.min(w - LIST_W - SIDE_W - GAP * 4, h - TOP_BAR - FOOT - GAP * 2 - 2));
@@ -189,6 +247,9 @@ public class LaptopScreen extends Screen {
             addRenderableWidget(box);
         }
         if (hasTarget) setBoxes();
+        int kx = left + 4, ky = top + h + 12;
+        addRenderableWidget(new BezelKey(kx, ky, 58, 12, Component.literal("<< UNIT"), () -> stepUnit(-1)));
+        addRenderableWidget(new BezelKey(kx + 62, ky, 58, 12, Component.literal("UNIT >>"), () -> stepUnit(1)));
         int by = top + h - FOOT - GAP - 1;
         launchButton = addRenderableWidget(new Ui.TabletButton(sx, by - 22, SIDE_W - 12, 20, Component.translatable("gui.steelrain.launch"), true, this::launch));
         cameraButton = addRenderableWidget(new Ui.TabletButton(sx, by - 40, (SIDE_W - 14) / 2, 14, Component.translatable("gui.steelrain.camera"), false,
@@ -536,15 +597,18 @@ public class LaptopScreen extends Screen {
         }
         renderBackground(g, mouseX, mouseY, partialTick);
         // tablet body: thick rubber bezel and the screen inside it
-        g.fill(left - 6, top - 6, left + w + 6, top + h + 6, 0xFF0B0D0C);
-        g.fill(left - 5, top - 5, left + w + 5, top + h + 5, 0xFF2A2E26);
-        g.fill(left - 2, top - 2, left + w + 2, top + h + 2, 0xFF050607);
+        g.fill(left - 8, top - 8, left + w + 8, top + h + 30, P_BEZEL_EDGE);
+        g.fill(left - 7, top - 7, left + w + 7, top + h + 29, P_BEZEL);
+        g.fill(left - 2, top - 2, left + w + 2, top + h + 2, 0xFF000000);
         g.fill(left, top, left + w, top + h, Ui.BG);
         drawTopBar(g);
         drawUnits(g);
         drawMap(g, mouseX, mouseY);
         drawMission(g);
         drawFooter(g);
+        drawLights(g);
+        // faint scan lines across the glass, as on a real display
+        for (int sy = top; sy < top + h; sy += 2) g.fill(left, sy, left + w, sy + 1, 0x1A000000);
         for (var r : renderables) r.render(g, mouseX, mouseY, partialTick);
         if (anim) {
             g.fill(left, top, left + w, top + h, ((int) ((1 - ease) * 200) << 24) | 0x0A0E10);
@@ -587,7 +651,7 @@ public class LaptopScreen extends Screen {
             Payloads.Entry e = entries.get(i);
             int cy = ly + (i - listScroll) * CARD_H;
             boolean sel = i == selected;
-            g.fill(x + 3, cy + 1, x + LIST_W - 3, cy + CARD_H - 1, sel ? Ui.PANEL_3 : Ui.PANEL_2);
+            g.fill(x + 3, cy + 1, x + LIST_W - 3, cy + CARD_H - 1, sel ? 0xFF0F2415 : P_PLATE);
             if (sel) g.fill(x + 3, cy + 1, x + 5, cy + CARD_H - 1, P_AMBER);
             int colour = statusColour(e);
             Ui.icon(g, x + 8, cy + 4, iconFor(e), sel ? P_AMBER : P_TEXT);
@@ -616,7 +680,7 @@ public class LaptopScreen extends Screen {
         int mx = mapLeft, my = mapTop;
         Ui.well(g, mx, my, map, map);
         // the terrain is printed in muted tones, so the coloured markers stand out from it
-        com.mojang.blaze3d.systems.RenderSystem.setShaderColor(0.66f, 0.70f, 0.60f, 1f);
+        com.mojang.blaze3d.systems.RenderSystem.setShaderColor(0.40f, 0.95f, 0.52f, 1f);
         g.blit(MAP_TEXTURE, mx, my, 0, 0f, 0f, map, map, map, map);
         com.mojang.blaze3d.systems.RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
         g.enableScissor(mx, my, mx + map, my + map);
@@ -629,11 +693,29 @@ public class LaptopScreen extends Screen {
             ring(g, cx, cz, cur.minRange(), 0xC0E5534B, true);
             if (hasTarget) line(g, cx, cz, targetX + 0.5, targetZ + 0.5, 0xE0F2B33D);
         }
+        // radar sweep: a fading wedge turning once every four seconds about the selected unit, or about you
+        double sx = 0, sz = 0, sr = 0;
+        if (curType) { sx = cur.pos().getX() + 0.5; sz = cur.pos().getZ() + 0.5; sr = Math.max(1, cur.maxRange()); }
+        else if (minecraft.player != null) { sx = minecraft.player.getX(); sz = minecraft.player.getZ(); sr = 96; }
+        if (sr > 0) {
+            double turn = (Util.getMillis() % 4000) / 4000.0 * 360;
+            for (int k = 0; k < 28; k++) {
+                double a = Math.toRadians(turn - k * 1.25);
+                int alpha = (int) (0x60 * (1 - k / 28.0));
+                line(g, sx, sz, sx + Math.sin(a) * sr, sz + Math.cos(a) * sr, (alpha << 24) | 0x7CF59A);
+            }
+            for (int d = 0; d < 360; d += 30) {
+                double a = Math.toRadians(d);
+                dot(g, sx + Math.sin(a) * sr, sz + Math.cos(a) * sr, d % 90 == 0 ? P_TEXT : P_FAINT, 1);
+            }
+        }
         // recon: what the drone can see and its contacts
+        int contacts = 0;
         for (ReconClient.Report report : ReconClient.fresh()) {
             Payloads.Markers mk = report.markers();
             ring(g, mk.x() + 0.5, mk.z() + 0.5, mk.radius(), 0xA04FC3F7, true);
             int[] d = mk.data();
+            contacts += d.length / 3;
             for (int i = 0; i + 2 < d.length; i += 3) {
                 int colour = switch (d[i + 2]) {
                     case 0 -> 0xFFFF4040;   // hostile mob
@@ -684,6 +766,10 @@ public class LaptopScreen extends Screen {
             g.drawString(font, c, tx, ty, P_TEXT, false);
         }
         g.disableScissor();
+        // the scope's readout, top left
+        String scope = (curType ? "UNIT" : "SELF") + "  CT " + contacts;
+        g.fill(mx + 3, my + 3, mx + 5 + font.width(scope), my + 12, 0xB0000000);
+        g.drawString(font, scope, mx + 4, my + 4, contacts > 0 ? P_AMBER : P_DIM, false);
         g.fill(mx - 1, my - 1, mx + map + 1, my, P_RULE);
         g.fill(mx - 1, my + map, mx + map + 1, my + map + 1, P_RULE);
         if (heightMode && heightMin <= heightMax && map >= 150) heightLegend(g, mx + map - 74, my + map - 16);
@@ -930,7 +1016,16 @@ public class LaptopScreen extends Screen {
             if (fresh) Ui.icon(g, lx, ly, Ui.ICON_WARN, P_AMBER);
             g.drawString(font, font.plainSubstrByWidth(last[idx], lw - (fresh ? 10 : 0)), lx + (fresh ? 10 : 0), ly, fresh ? P_AMBER : i == 0 ? P_DIM : P_FAINT, false);
         }
-        if (last.length == 0) g.drawString(font, font.plainSubstrByWidth(t("map_hint").getString(), lw), lx, y + 9, P_FAINT, false);
+        if (last.length == 0) {
+            // the hint on two lines, so each piece fits whole instead of being cut mid-word
+            String[] hint = t("map_hint").getString().trim().split("\\s{2,}");
+            if (hint.length >= 3) {
+                g.drawString(font, font.plainSubstrByWidth(hint[0] + "   " + hint[1], lw), lx, y + 5, P_FAINT, false);
+                g.drawString(font, font.plainSubstrByWidth(String.join("   ", java.util.Arrays.copyOfRange(hint, 2, hint.length)), lw), lx, y + 15, P_FAINT, false);
+            } else {
+                g.drawString(font, font.plainSubstrByWidth(t("map_hint").getString(), lw), lx, y + 9, P_FAINT, false);
+            }
+        }
     }
 
     @Override
