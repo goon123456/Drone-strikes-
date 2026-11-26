@@ -25,7 +25,7 @@ public class TomahawkLauncher extends SrErector {
     @Override public float tankLitres() { return 60; }
     @Override public int batteryFe() { return 600_000; }
     @Override protected int alternatorFe() { return 400; }
-    @Override protected Vec3[] seats() { return new Vec3[0]; }
+    @Override public Vec3[] seats() { return new Vec3[0]; }
     @Override public boolean drivable() { return false; }
     @Override protected double length() { return 9.0; }
     @Override protected double width() { return 2.6; }

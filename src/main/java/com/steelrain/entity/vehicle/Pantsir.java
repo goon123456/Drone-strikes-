@@ -18,7 +18,7 @@ public class Pantsir extends SrAirDefence {
     @Override public float maxHealth() { return 400; }
     @Override public float tankLitres() { return 200; }
     @Override public int batteryFe() { return 600_000; }
-    @Override protected Vec3[] seats() { return SEATS; }
+    @Override public Vec3[] seats() { return SEATS; }
     @Override protected double wheelbase() { return 5.4; }
     @Override protected double topSpeed() { return 0.65; }
     @Override protected double acceleration() { return 0.01; }

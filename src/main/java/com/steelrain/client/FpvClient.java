@@ -245,64 +245,80 @@ public final class FpvClient {
         if (mc.player == null || mc.options.hideGui) return;
         Font font = mc.font;
         int w = g.guiWidth(), h = g.guiHeight();
-        int green = 0xFF6CFF6C, red = 0xFFFF5555;
-        boolean blink = (mc.player.tickCount / 5) % 2 == 0;
-        Component zoomText = Component.translatable("hud.steelrain.zoom", String.format("%.1f", zoom));
+        boolean blink = Ui.blink();
 
         AircraftEntity aircraft = feed();
         if (aircraft != null) {
             AircraftType type = AircraftType.values()[Mth.clamp(feedType, 0, AircraftType.values().length - 1)];
             noise(g, w, h, aircraft.jamPercent());
-            frame(g, w, h, green);
-            if (aircraft.jamPercent() > 30) {
-                Component jammed = Component.translatable("hud.steelrain.jammed");
-                g.drawString(font, jammed, w / 2 - font.width(jammed) / 2, h / 2 - 30, blink ? red : 0xFFFFFFFF, true);
-            }
-            g.drawString(font, Component.translatable(type.translationKey()).append("  ● LIVE"), 18, 18, blink ? red : green, true);
-            g.drawString(font, Component.translatable("hud.steelrain.position",
-                    Mth.floor(aircraft.getX()), Mth.floor(aircraft.getZ())), 18, 30, green, true);
-            right(g, font, Component.translatable("hud.steelrain.altitude", (int) Math.round(aircraft.getY())), w, 18, green);
-            right(g, font, zoomText, w, 30, green);
-            Component hint = Component.translatable("hud.steelrain.feed_hint", ClientSetup.EXIT_DRONE.getTranslatedKeyMessage());
-            g.drawString(font, hint, w / 2 - font.width(hint) / 2, h - 26, 0xFFCCFFCC, true);
+            frame(g, w, h, Ui.GREEN);
+            int x = 18, y = 18;
+            Ui.hudBox(g, x, y, 150, 30);
+            g.drawString(font, Ui.upper(Component.translatable(type.translationKey())), x + 5, y + 4, Ui.TEXT, false);
+            Ui.chip(g, font, x + 150 - 34, y + 3, Component.literal("LIVE"), blink ? Ui.RED : 0xFFB04040);
+            g.drawString(font, Component.translatable("hud.steelrain.position", Mth.floor(aircraft.getX()), Mth.floor(aircraft.getZ())), x + 5, y + 17, Ui.DIM, false);
+            flight(g, font, w, (int) Math.round(aircraft.getY()), -1, -1, aircraft.jamPercent());
+            jammedWarning(g, font, w, h, aircraft.jamPercent());
+            hint(g, font, w, h, Component.translatable("hud.steelrain.feed_hint", ClientSetup.EXIT_DRONE.getTranslatedKeyMessage()));
             return;
         }
 
         FpvDroneEntity d = drone();
         if (d == null || !attached) return;
         noise(g, w, h, d.jamPercent());
-        frame(g, w, h, green);
-        int battery = Mth.clamp(d.battery() * 100 / maxBattery, 0, 100);
-        int dist = d.distance();
-        int signal = d.signal();
-
-        g.drawString(font, (d.mavic() ? "MAVIC" : d.fiber() ? "FPV FIBER" : "FPV") + "  \u25CF REC", 18, 18, blink ? red : green, true);
-        g.drawString(font, Component.translatable("hud.steelrain.battery", battery), 18, 30,
-                battery < 20 ? (blink ? red : 0xFFFFFFFF) : green, true);
+        frame(g, w, h, Ui.GREEN);
+        double battery = Mth.clamp(d.battery() / (double) maxBattery, 0, 1);
+        int x = 18, y = 18, pw = 150, rows = 2 + (d.mavic() ? 1 : 0);
+        Ui.hudBox(g, x, y, pw, 18 + rows * 12);
+        g.drawString(font, d.mavic() ? "MAVIC" : d.fiber() ? "FPV  FIBRE" : "FPV", x + 5, y + 4, Ui.TEXT, false);
+        Ui.chip(g, font, x + pw - 31, y + 3, Component.literal("REC"), blink ? Ui.RED : 0xFFB04040);
+        int ry = y + 17;
+        Ui.meter(g, font, x + 5, ry, pw - 10, Ui.ICON_BOLT, battery, Math.round(battery * 100) + "%",
+                battery < 0.2 && blink ? Ui.RED : Ui.level(battery));
+        ry += 12;
         if (d.fiber()) {
             int left = Math.max(0, d.cableLeft());
-            g.drawString(font, Component.translatable("hud.steelrain.cable", left), 18, 42,
-                    left < 30 ? (blink ? red : 0xFFFFFFFF) : 0xFF40C8FF, true);
+            Ui.meter(g, font, x + 5, ry, pw - 10, Ui.ICON_SIGNAL, Math.min(1, left / 1000.0), left + " m", left < 30 && blink ? Ui.RED : Ui.CYAN);
         } else {
-            g.drawString(font, Component.translatable("hud.steelrain.signal", signal), 18, 42,
-                    signal < 25 ? (blink ? red : 0xFFFFFFFF) : green, true);
-            if (d.jamPercent() > 30) {
-                Component jammed = Component.translatable("hud.steelrain.jammed");
-                g.drawString(font, jammed, w / 2 - font.width(jammed) / 2, h / 2 - 30, blink ? red : 0xFFFFFFFF, true);
-            }
+            double signal = d.signal() / 100.0;
+            Ui.meter(g, font, x + 5, ry, pw - 10, Ui.ICON_SIGNAL, signal, d.signal() + "%", d.signal() < 25 && blink ? Ui.RED : Ui.level(signal));
         }
         if (d.mavic()) {
-            g.drawString(font, Component.translatable(d.hasGrenade() ? "hud.steelrain.grenade_ready" : "hud.steelrain.grenade_none"),
-                    18, 54, d.hasGrenade() ? 0xFFFFD040 : 0xFF88AA88, true);
+            ry += 12;
+            Ui.chip(g, font, x + 5, ry, Component.translatable(d.hasGrenade() ? "hud.steelrain.grenade_ready" : "hud.steelrain.grenade_none"),
+                    d.hasGrenade() ? Ui.AMBER : Ui.FAINT);
         }
-        right(g, font, Component.translatable("hud.steelrain.altitude", (int) Math.round(d.getY())), w, 18, green);
-        right(g, font, Component.translatable("hud.steelrain.speed", String.format("%.1f", speed)), w, 30, green);
-        right(g, font, Component.translatable("hud.steelrain.distance", dist), w, 42, green);
-        right(g, font, zoomText, w, 54, green);
+        flight(g, font, w, (int) Math.round(d.getY()), speed, d.distance(), d.jamPercent());
+        jammedWarning(g, font, w, h, d.jamPercent());
+        hint(g, font, w, h, Component.translatable(d.mavic() ? "hud.steelrain.hint_mavic" : "hud.steelrain.hint",
+                ClientSetup.EXIT_DRONE.getTranslatedKeyMessage()));
+    }
 
-        Component hint = Component.translatable(d.mavic() ? "hud.steelrain.hint_mavic" : "hud.steelrain.hint",
-                ClientSetup.EXIT_DRONE.getTranslatedKeyMessage());
-        g.drawString(font, hint, w / 2 - font.width(hint) / 2, h - 26, 0xFFCCFFCC, true);
+    /** Altitude, speed, distance home and zoom, top right. */
+    private static void flight(GuiGraphics g, Font font, int w, int altitude, double spd, int dist, int jam) {
+        int pw = 110, x = w - 18 - pw, y = 18, rows = 2 + (spd >= 0 ? 1 : 0) + (dist >= 0 ? 1 : 0);
+        Ui.hudBox(g, x, y, pw, 6 + rows * 11);
+        int ry = y + 4;
+        Ui.field(g, font, x + 5, ry, pw - 10, Component.literal("ALT"), Component.literal(altitude + " m"), Ui.TEXT); ry += 11;
+        if (spd >= 0) { Ui.field(g, font, x + 5, ry, pw - 10, Component.literal("SPD"), Component.literal(String.format("%.1f m/s", spd)), Ui.TEXT); ry += 11; }
+        if (dist >= 0) { Ui.field(g, font, x + 5, ry, pw - 10, Component.literal("HOME"), Component.literal(dist + " m"), Ui.TEXT); ry += 11; }
+        Ui.field(g, font, x + 5, ry, pw - 10, Component.literal("ZOOM"), Component.literal(String.format("%.1fx", zoom)), Ui.AMBER);
+    }
+
+    private static void jammedWarning(GuiGraphics g, Font font, int w, int h, int jam) {
+        if (jam <= 30) return;
+        Component text = Component.translatable("hud.steelrain.jammed");
+        int bw = font.width(text) + 26, x = (w - bw) / 2, y = h / 2 - 44;
+        g.fill(x, y, x + bw, y + 16, Ui.blink() ? 0xC0601010 : 0xC0301010);
+        Ui.brackets(g, x, y, bw, 16, 4, Ui.RED);
+        Ui.icon(g, x + 6, y + 4, Ui.ICON_WARN, Ui.RED);
+        g.drawString(font, text, x + 18, y + 4, 0xFFFFD0D0, false);
+    }
+
+    private static void hint(GuiGraphics g, Font font, int w, int h, Component text) {
+        int bw = font.width(text) + 10, x = (w - bw) / 2, y = h - 32;
+        Ui.hudBox(g, x, y, bw, 13);
+        g.drawString(font, text, x + 5, y + 3, Ui.DIM, false);
     }
 
     private FpvClient() {}

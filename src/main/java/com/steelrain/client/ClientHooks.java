@@ -16,7 +16,7 @@ public final class ClientHooks {
         Minecraft mc = Minecraft.getInstance();
         if (mc.screen instanceof LaptopScreen screen) {
             screen.update(p);
-        } else if (p.open()) {
+        } else if (p.open() && !LaptopHold.deferOpen(p)) {
             mc.setScreen(new LaptopScreen(p));
         }
     }
@@ -38,6 +38,8 @@ public final class ClientHooks {
     public static void onCable(Payloads.Cable p) { CableClient.update(p); }
 
     public static void startLoop(com.steelrain.entity.FlyingWeaponEntity entity) { LoopSound.start(entity); }
+
+    public static void laptopRaised() { LaptopHold.raiseUp(); }
 
     public static void startVehicleSound(com.steelrain.entity.vehicle.SrVehicle v) { VehicleClient.startSound(v); }
 

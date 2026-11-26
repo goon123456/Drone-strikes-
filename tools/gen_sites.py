@@ -271,9 +271,50 @@ def jammer_pack():
     return _model(p)
 
 
+# ---------------------------------------------------------------- the Field Laptop, held in the hands
+def field_laptop():
+    """Rugged field laptop: a thick olive case with rubber corner bumpers, a carry handle at the front and a lid
+    on a hinge at the back (its own bone, "lid", closed flat; the renderer swings it open). The display is on the
+    inside of the lid and shows the fire-control map. Origin at the middle of the base, on the bottom."""
+    d, t = OLIVE_D, OLIVE
+    W, D, T = 0.36, 0.27, 0.034                                    # width, depth, base thickness
+    p = [B(t, -W / 2, 0, -D / 2, W, T, D, marks=[("bottom", "panel", 0.5, 0.5, 0.8, 0.8)])]
+    for x in (-W / 2 - 0.006, W / 2 - 0.024):                    # rubber bumpers at the four corners
+        for z in (-D / 2 - 0.006, D / 2 - 0.024):
+            p += [B(BLACK, x, -0.004, z, 0.03, T + 0.008, 0.03, plain=True)]
+    p += [B(BLACK, -W / 2 + 0.02, T, -D / 2 + 0.03, W - 0.04, 0.003, D * 0.5, plain=True)]          # keyboard bed
+    for r in range(4):                                                                             # key rows
+        for c in range(11):
+            p += [B(STEEL_D, -W / 2 + 0.03 + c * 0.0275, T + 0.003, -D / 2 + 0.035 + r * 0.03, 0.022, 0.003, 0.024, plain=True)]
+    p += [B(STEEL_D, -0.05, T + 0.002, D / 2 - 0.1, 0.1, 0.002, 0.06, plain=True)]                 # touch pad
+    p += [B(GREEN_LAMP, W / 2 - 0.04, T + 0.001, D / 2 - 0.03, 0.01, 0.002, 0.006, plain=True),     # power and link lamps
+          B(AMBER, W / 2 - 0.06, T + 0.001, D / 2 - 0.03, 0.01, 0.002, 0.006, plain=True)]
+    # carry handle folded against the front edge, on two pivots
+    p += [B(d, -0.09, 0.006, D / 2, 0.02, 0.02, 0.02, plain=True), B(d, 0.07, 0.006, D / 2, 0.02, 0.02, 0.02, plain=True),
+          bar(BLACK, (-0.08, 0.016, D / 2 + 0.03), (0.08, 0.016, D / 2 + 0.03), 0.014)]
+    p += [B(d, -W / 2 + 0.03, 0.012, -D / 2 - 0.004, 0.06, 0.012, 0.004, plain=True)]              # vents and ports at the back
+    # the lid, lying closed on the base: shell on top, display underneath facing down
+    L = 0.03
+    lid = [B(t, -W / 2, T, -D / 2, W, L, D, marks=[("top", "panel", 0.5, 0.5, 0.85, 0.85)])]
+    for x in (-W / 2 - 0.006, W / 2 - 0.024):
+        for z in (-D / 2 - 0.006, D / 2 - 0.024):
+            lid += [B(BLACK, x, T - 0.002, z, 0.03, L + 0.008, 0.03, plain=True)]
+    lid += [B(BLACK, -W / 2 + 0.012, T - 0.002, -D / 2 + 0.012, W - 0.024, 0.002, D - 0.024, plain=True)]     # bezel
+    lid += [B(SCREEN, -W / 2 + 0.024, T - 0.003, -D / 2 + 0.03, W - 0.048, 0.001, D - 0.07, plain=True)]      # display
+    # what is on the display: a map with a grid, unit markers and the fire-control panels
+    for i in range(1, 6):
+        lid += [B(SCREEN_LINE, -W / 2 + 0.024 + i * (W - 0.048) / 6, T - 0.0034, -D / 2 + 0.03, 0.0015, 0.0003, D - 0.07, plain=True)]
+    for i in range(1, 4):
+        lid += [B(SCREEN_LINE, -W / 2 + 0.024, T - 0.0034, -D / 2 + 0.03 + i * (D - 0.07) / 4, W - 0.048, 0.0003, 0.0015, plain=True)]
+    lid += [B(AMBER, 0.03, T - 0.0036, -0.01, 0.01, 0.0003, 0.01, plain=True), B(RED, -0.07, T - 0.0036, 0.03, 0.01, 0.0003, 0.01, plain=True),
+            B(GREEN_LAMP, 0.09, T - 0.0036, -0.05, 0.008, 0.0003, 0.008, plain=True)]
+    return dict(base=p, turret=[], barrel=[], bones=[{"name": "lid", "parent": "root", "pivot": (0, T, -D / 2), "cubes": lid}])
+
+
 #          model               builder          texels per metre
 MODELS = {"ground_station": (ground_station, 64), "orlan_catapult": (orlan_catapult, 160), "shahed_launcher": (shahed_launcher, 96),
-          "jammer_dome": (jammer_dome, 512), "fiber_pack": (fiber_pack, 512), "jammer_pack": (jammer_pack, 512)}
+          "jammer_dome": (jammer_dome, 512), "fiber_pack": (fiber_pack, 512), "jammer_pack": (jammer_pack, 512),
+          "field_laptop": (field_laptop, 1400)}
 
 
 if __name__ == "__main__":

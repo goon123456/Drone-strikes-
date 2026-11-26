@@ -26,7 +26,7 @@ public class IskanderLauncher extends SrErector {
     @Override public float tankLitres() { return 200; }
     @Override public int batteryFe() { return 800_000; }
     @Override protected int alternatorFe() { return 400; }
-    @Override protected Vec3[] seats() { return SEATS; }
+    @Override public Vec3[] seats() { return SEATS; }
     @Override protected double wheelbase() { return 7.2; }
     @Override protected double topSpeed() { return 0.6; }
     @Override protected double acceleration() { return 0.009; }

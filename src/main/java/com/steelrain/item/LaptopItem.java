@@ -67,6 +67,8 @@ public class LaptopItem extends Item {
         ItemStack stack = player.getItemInHand(hand);
         if (player instanceof ServerPlayer sp) {
             Payloads.sendLaptop(sp, true);
+        } else if (level.isClientSide) {
+            com.steelrain.client.ClientHooks.laptopRaised();   // bring it up to the eye while the server answers
         }
         return InteractionResultHolder.sidedSuccess(stack, level.isClientSide);
     }

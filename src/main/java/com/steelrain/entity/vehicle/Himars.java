@@ -66,7 +66,7 @@ public class Himars extends SrVehicle implements Launcher {
 
     /** Driver on the left of the cab, commander on the right. */
     private static final Vec3[] SEATS = {new Vec3(0.5, 0.75, 2.45), new Vec3(-0.5, 0.75, 2.45)};
-    @Override protected Vec3[] seats() { return SEATS; }
+    @Override public Vec3[] seats() { return SEATS; }
 
     // ------------------------------------------------------------------ Launcher
 

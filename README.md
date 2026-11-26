@@ -12,6 +12,26 @@ and tube artillery, and defend your base with air defence and jammers.
 
 The idea was inspired by the *Iron Drone* mod. All code, models and textures here are original.
 
+## Interface
+Every screen and HUD shares one look, a rugged military tablet: dark panels, olive headers, amber for things to
+act on, green for ready, red for trouble, cyan for aircraft and recon. All of it is drawn in code, so it stays
+sharp at any GUI scale and fits small windows.
+
+- **Field Laptop**: a 3D laptop held in both hands. Switch to it and the lid swings open; its display shows the
+  clock, your grid and the link state. Right-click raises it to your eye and opens **Fire Control**: units down
+  the left with their state, rounds and battery; a live map with grid, range rings, unit icons, recon contacts and
+  the line of fire; the fire mission on the right.
+- **Vehicle dashboard** (driver and crew): seat, speed and heading, engine state, fuel, battery, damage, and
+  automatic mode or jamming where it applies.
+- **Gun sights**: compass tape and elevation scale for where the gun points, a marker that turns green when the
+  gun is laid where you look. Artillery adds charge, shell, breech state with a loading bar, and a range table;
+  air defence adds radar state, target box, lead diamond, rounds, belts and missiles.
+- **FPV and camera feeds**: battery and signal or cable meters, altitude, speed, distance home, zoom, REC / LIVE
+  tag and a jamming warning.
+- **Notices**: Steel Rain's status messages (linked, refuelled, out of range, busy...) appear as short coloured
+  notices under the crosshair instead of plain text.
+- **Launch sites** open a loading panel in the same style, with an energy gauge where they need power.
+
 ## Vehicles
 All twelve vehicles are Steel Rain's own: HIMARS, M109, 120 mm mortar, Tomahawk and Iskander launchers, ZU-23-2,
 Gepard, Pantsir, Patriot, EW Jammer, Trench Jammer and Krasukha-4. The drone and aircraft launch sites (UAV

@@ -59,7 +59,7 @@ public class Jammer extends SrVehicle {
     @Override public int batteryFe() { return switch (kind) { case TRENCH_JAMMER -> 100_000; case KRASUKHA -> 800_000; default -> 200_000; }; }
     @Override protected int alternatorFe() { return kind == Kind.KRASUKHA ? 400 : 200; }
     @Override protected boolean hasPowerUnit() { return kind != Kind.TRENCH_JAMMER; }
-    @Override protected Vec3[] seats() { return kind == Kind.KRASUKHA ? KRASUKHA_SEATS : new Vec3[0]; }
+    @Override public Vec3[] seats() { return kind == Kind.KRASUKHA ? KRASUKHA_SEATS : new Vec3[0]; }
     @Override public boolean drivable() { return kind == Kind.KRASUKHA; }
     @Override protected double wheelbase() { return 6.2; }
     @Override public double wheelRadius() { return 0.6; }

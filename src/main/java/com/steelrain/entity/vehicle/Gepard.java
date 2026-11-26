@@ -17,7 +17,7 @@ public class Gepard extends SrAirDefence {
     @Override public float maxHealth() { return 500; }
     @Override public float tankLitres() { return 150; }
     @Override public int batteryFe() { return 400_000; }
-    @Override protected Vec3[] seats() { return SEATS; }
+    @Override public Vec3[] seats() { return SEATS; }
     @Override public boolean tracked() { return true; }
     @Override protected double topSpeed() { return 0.6; }
     @Override protected double reverseSpeed() { return 0.25; }

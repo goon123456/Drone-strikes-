@@ -91,6 +91,7 @@ public abstract class SrAirDefence extends SrVehicle {
     @Nullable protected abstract Item heBelt();
     @Nullable protected abstract Item apBelt();
     protected int roundsPerBelt() { return 50; }
+    public int beltSize() { return roundsPerBelt(); }
     /** Ticks to put the next belt on: the radar guns feed from big magazines almost without a pause. */
     protected int beltChangeTicks() { return 6; }
     public double minPitch() { return -8; }

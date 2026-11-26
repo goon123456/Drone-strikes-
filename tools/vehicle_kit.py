@@ -73,6 +73,9 @@ LIPO = _mat("lipo", (44, 58, 140), "flat")
 SPOOL = _mat("spool", (228, 228, 220), "flat")
 COPPER = _mat("copper", (184, 112, 64), "steel")
 YELLOW = _mat("yellow", (200, 168, 44), "flat")
+SCREEN = _mat("screen", (28, 54, 40), "lamp")                    # a lit display: dark map green
+SCREEN_LINE = _mat("screen_line", (110, 170, 110), "lamp")
+GREEN_LAMP = _mat("green_lamp", (90, 220, 90), "lamp")
 
 DUST = np.array([132, 120, 94], dtype=float)
 

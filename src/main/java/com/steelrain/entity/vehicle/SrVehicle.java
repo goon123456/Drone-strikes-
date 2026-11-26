@@ -107,7 +107,7 @@ public abstract class SrVehicle extends Entity implements OwnableEntity {
     public abstract int batteryFe();
 
     /** Seats in vehicle space (x left, y up, z forward, from the ground under the middle). Seat 0 drives. */
-    protected abstract Vec3[] seats();
+    public abstract Vec3[] seats();
 
     /** Tracked vehicles turn on the spot by running their tracks against each other. */
     public boolean tracked() { return false; }

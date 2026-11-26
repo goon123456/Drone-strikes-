@@ -77,6 +77,19 @@ public final class ClientSetup {
         e.register(ModRegistry.WEAPON_MENU.get(), WeaponScreen::new);
     }
 
+    /** The Field Laptop is drawn as its 3D model, lid and all. */
+    @SubscribeEvent
+    public static void itemRenderers(net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent e) {
+        e.registerItem(new net.neoforged.neoforge.client.extensions.common.IClientItemExtensions() {
+            private LaptopItemRenderer renderer;
+            @Override
+            public net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                if (renderer == null) renderer = new LaptopItemRenderer();
+                return renderer;
+            }
+        }, ModRegistry.FIELD_LAPTOP.get());
+    }
+
     @SubscribeEvent
     public static void keys(RegisterKeyMappingsEvent e) {
         e.register(EXIT_DRONE);
@@ -89,6 +102,7 @@ public final class ClientSetup {
     public static void guiLayers(RegisterGuiLayersEvent e) {
         e.registerAboveAll(ResourceLocation.fromNamespaceAndPath(ModRegistry.MODID, "fpv_hud"), FpvClient::renderHud);
         e.registerAboveAll(ResourceLocation.fromNamespaceAndPath(ModRegistry.MODID, "gun_sight"), ArtilleryHud::render);
+        e.registerAboveAll(ResourceLocation.fromNamespaceAndPath(ModRegistry.MODID, "vehicle_dashboard"), VehicleHud::render);
     }
 
     private ClientSetup() {}

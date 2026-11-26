@@ -63,6 +63,9 @@ public abstract class SrGun extends SrVehicle implements Launcher {
 
     protected abstract int reloadTicks();
 
+    /** Ticks a full reload takes, for the sight's progress bar. */
+    public int reloadTotal() { return reloadTicks(); }
+
     /** Rounds it takes, in the order the shell-type key steps through them. */
     public abstract List<Item> shells();
 

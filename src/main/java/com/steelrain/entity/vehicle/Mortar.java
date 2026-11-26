@@ -28,7 +28,7 @@ public class Mortar extends SrGun {
     @Override public float maxHealth() { return 40; }
     @Override public float tankLitres() { return 0; }
     @Override public int batteryFe() { return 0; }
-    @Override protected Vec3[] seats() { return SEATS; }
+    @Override public Vec3[] seats() { return SEATS; }
     @Override public boolean drivable() { return false; }
     @Override public float cameraDistance() { return 4f; }
     @Override public boolean hidesSeat(int seat) { return false; }

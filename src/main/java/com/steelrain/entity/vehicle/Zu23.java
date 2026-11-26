@@ -17,7 +17,7 @@ public class Zu23 extends SrAirDefence {
     @Override public float maxHealth() { return 120; }
     @Override public float tankLitres() { return 0; }
     @Override public int batteryFe() { return 100_000; }
-    @Override protected Vec3[] seats() { return SEATS; }
+    @Override public Vec3[] seats() { return SEATS; }
     @Override public boolean drivable() { return false; }
     @Override public float cameraDistance() { return 5f; }
     @Override public boolean hidesSeat(int seat) { return false; }
