@@ -36,9 +36,9 @@ public final class Models {
     public static final BoxModel PATRIOT_MISSILE = MunitionModels.patriotMissile();
     public static final BoxModel GRENADE = MunitionModels.grenade();
 
-    public static final BoxModel SHAHED = AirModels.shahed();
-    public static final BoxModel FPV = AirModels.fpv(false);
-    public static final BoxModel FIBER_FPV = AirModels.fpv(true);
+    public static final BoxModel SHAHED = BoxModel.load("shahed_136");
+    public static final BoxModel FPV = BoxModel.load("fpv_drone");
+    public static final BoxModel FIBER_FPV = BoxModel.load("fiber_fpv_drone");
 
     /** Tracer: a short bright streak along the direction of flight. */
     public static final BoxModel BULLET = new BoxModel()
@@ -67,13 +67,13 @@ public final class Models {
             .box(STEEL_D, -0.015, 0.28, 0.12, 0.03, 0.7, 0.03)
             .box(RED, -0.03, 0.1, 0.25, 0.06, 0.06, 0.02);
 
-    public static final BoxModel MAVIC = AirModels.mavic();
+    public static final BoxModel MAVIC = BoxModel.load("mavic");
 
     // ------------------------------------------------------------------ aircraft
 
     private static final Map<AircraftType, BoxModel> AIRCRAFT = new EnumMap<>(AircraftType.class);
     static {
-        for (AircraftType type : AircraftType.values()) AIRCRAFT.put(type, AirModels.of(type));
+        for (AircraftType type : AircraftType.values()) AIRCRAFT.put(type, BoxModel.load(type.id));
     }
 
     public static BoxModel aircraft(AircraftType type) { return AIRCRAFT.get(type); }

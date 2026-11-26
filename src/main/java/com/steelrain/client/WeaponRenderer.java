@@ -42,8 +42,8 @@ public class WeaponRenderer implements BlockEntityRenderer<WeaponBlockEntity> {
         if (be.loaded() >= 0) {
             Vec3 g = type.gunPivot();
             switch (type) {
-                case SHAHED_LAUNCHER -> cargo(pose, vc, light, g, type.fixedPitch(), 0.55, 2.3, Models.SHAHED);
-                case ORLAN_CATAPULT -> cargo(pose, vc, light, g, type.fixedPitch(), 0.3, 1.9, Models.aircraft(AircraftType.ORLAN));
+                case SHAHED_LAUNCHER -> cargo(pose, buffers, light, g, type.fixedPitch(), 0.55, 2.3, Models.SHAHED);
+                case ORLAN_CATAPULT -> cargo(pose, buffers, light, g, type.fixedPitch(), 0.3, 1.9, Models.aircraft(AircraftType.ORLAN));
                 case GROUND_STATION -> {
                     // The aircraft waits at the start of the runway in front of the station.
                     AircraftType aircraft = AircraftType.values()[Mth.clamp(be.loaded(), 0, AircraftType.values().length - 1)];
@@ -54,7 +54,7 @@ public class WeaponRenderer implements BlockEntityRenderer<WeaponBlockEntity> {
                     for (String name : new String[]{"gearN", "gearL", "gearR"}) {
                         if (parked.has(name)) { parked.get(name).xRot = 0; parked.get(name).visible = true; }
                     }
-                    parked.render(pose, vc, light);
+                    parked.render(pose, buffers.getBuffer(RenderType.entityCutoutNoCull(parked.texture())), light);
                     pose.popPose();
                 }
                 default -> { }
@@ -63,13 +63,13 @@ public class WeaponRenderer implements BlockEntityRenderer<WeaponBlockEntity> {
         pose.popPose();
     }
 
-    private static void cargo(PoseStack pose, VertexConsumer vc, int light, Vec3 pivot, float inclineDeg,
+    private static void cargo(PoseStack pose, MultiBufferSource buffers, int light, Vec3 pivot, float inclineDeg,
                               double up, double along, BoxModel model) {
         pose.pushPose();
         pose.translate(pivot.x, pivot.y, pivot.z);
         pose.mulPose(Axis.XP.rotationDegrees(-inclineDeg));
         pose.translate(0, up, along);
-        model.render(pose, vc, light);
+        model.render(pose, buffers.getBuffer(RenderType.entityCutoutNoCull(model.texture())), light);
         pose.popPose();
     }
 

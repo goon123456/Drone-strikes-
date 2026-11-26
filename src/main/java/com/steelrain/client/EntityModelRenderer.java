@@ -58,11 +58,11 @@ public class EntityModelRenderer<T extends Entity> extends EntityRenderer<T> {
                 model.get(name).visible = gear < 0.97f;
             }
         }
-        model.render(pose, buffers.getBuffer(RenderType.entityCutoutNoCull(Models.PAINT)), glow ? 0xF000F0 : light);
+        model.render(pose, buffers.getBuffer(RenderType.entityCutoutNoCull(model.texture())), glow ? 0xF000F0 : light);
         pose.popPose();
         super.render(entity, yaw, partialTick, pose, buffers, light);
     }
 
     @Override
-    public ResourceLocation getTextureLocation(T entity) { return Models.PAINT; }
+    public ResourceLocation getTextureLocation(T entity) { return model.texture(); }
 }

@@ -1020,9 +1020,23 @@ def sbw_vehicles():
     crate("patriot", ["UDU", "MCM", "BBB"], {"U": "guidance_unit", "D": MC + "diamond", "M": "electric_motor", "C": "circuit_board", "B": B})
 
 
+def aircraft():
+    """Aircraft and drones: a mesh file and a painted texture each, read by Steel Rain's own renderer."""
+    import gen_aircraft as GA
+    for name, (build, px) in GA.MODELS.items():
+        model = build()
+        tex, tw, th = VK.bake(model, name, px)
+        save(Image.fromarray(tex).convert("RGB"), f"{A}/textures/entity/aircraft/{name}.png")
+        path = f"{A}/models/aircraft/{name}.json"
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w") as f:
+            json.dump(GA.export(model, tw, th), f, separators=(",", ":"))
+
+
 if __name__ == "__main__":
     import gen_sounds
     gen_sounds.main()
     sbw_vehicles()
+    aircraft()
     block_textures(); block_models(); item_icons(); entity_textures(); recipes(); tags(); lang()
     print("assets generated")

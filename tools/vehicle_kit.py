@@ -53,6 +53,27 @@ WOOD = _mat("wood", (124, 92, 56), "flat")
 CANVAS = _mat("canvas", (86, 88, 66), "flat")
 BRASS = _mat("brass", (176, 148, 70), "steel")
 
+# aircraft finishes: smooth and clean, with fine panel lines instead of rivets and road dust
+AF_GREY = _mat("af_grey", (158, 164, 170), clean=True)          # US Air Force light grey: Reaper
+AF_DARK = _mat("af_dark", (112, 118, 124), clean=True)
+HAWK_GREY = _mat("hawk_grey", (104, 110, 118), clean=True)      # Global Hawk fuselage
+HAWK_WHITE = _mat("hawk_white", (222, 223, 218), clean=True)
+TB2_GREY = _mat("tb2_grey", (184, 188, 192), clean=True)
+TB2_DARK = _mat("tb2_dark", (134, 139, 144), clean=True)
+ORLAN_GREY = _mat("orlan_grey", (160, 164, 160), clean=True)
+SHAHED_WHITE = _mat("shahed_white", (212, 210, 198), clean=True)
+SHAHED_DARK = _mat("shahed_dark", (150, 148, 138), clean=True)
+CARBON = _mat("carbon", (40, 40, 44), "carbon")
+PLASTIC = _mat("plastic", (104, 106, 110), clean=True)          # Mavic shell
+PLASTIC_D = _mat("plastic_d", (66, 68, 72), clean=True)
+MUNITION = _mat("munition", (78, 86, 66), clean=True)
+ORANGE = _mat("orange", (214, 88, 44), "flat")
+CYAN = _mat("cyan", (64, 200, 255), "flat")
+LIPO = _mat("lipo", (44, 58, 140), "flat")
+SPOOL = _mat("spool", (228, 228, 220), "flat")
+COPPER = _mat("copper", (184, 112, 64), "steel")
+YELLOW = _mat("yellow", (200, 168, 44), "flat")
+
 DUST = np.array([132, 120, 94], dtype=float)
 
 
@@ -108,6 +129,35 @@ def hull(mat, x0, x1, profile, profile2=None, **opt):
 def tower(mat, y0, outline, y1, outline2=None, **opt):
     """A plan outline given as (x, z) points at height y0, rising to a second outline at y1: turrets, shelters."""
     return loft(mat, "y", y0, outline, y1, outline2, **opt)
+
+
+def skin(mat, sections, power=2.0, seg=24, **opt):
+    """A smooth body through a row of cross-sections along the vehicle: fuselages, pods, nacelles.
+    Each section is (z, centre x, centre y, width, height). `power` 2 gives ovals, higher gives squarer shapes."""
+    return dict(kind="skin", mat=mat, sections=list(sections), power=power, rot=(0, 0, 0), pivot=(0, 0, 0), opt=dict(opt, seg=seg))
+
+
+_FOIL = [(0.0, 0.0), (0.02, 0.45), (0.1, 0.85), (0.28, 1.0), (0.55, 0.8), (0.8, 0.42), (1.0, 0.06),
+         (1.0, -0.06), (0.8, -0.2), (0.55, -0.36), (0.28, -0.46), (0.1, -0.42), (0.02, -0.26)]
+
+
+def wing(mat, x0, y0, lead0, chord0, t0, x1, y1, lead1, chord1, t1, **opt):
+    """An aerofoil-section panel from a root to a tip: wings, tailplanes, fins, propeller blades. Each end is
+    given by where it is (x, y), where its leading edge is along z, its chord and its thickness."""
+    dx, dy = x1 - x0, y1 - y0
+    ln = math.hypot(dx, dy) or 1.0
+    nx, ny = -dy / ln, dx / ln                                # which way "up" is for this panel
+    if abs(dx) >= abs(dy):
+        sec = lambda x, y, lead, chord, t: [(y + ny * t * 0.5 * v + (x - x) * 0, lead - chord * f) for f, v in _FOIL]
+        return loft(mat, "x", x0, sec(x0, y0, lead0, chord0, t0), x1, sec(x1, y1, lead1, chord1, t1), plain=True, **opt)
+    sec = lambda x, y, lead, chord, t: [(x + nx * t * 0.5 * v, lead - chord * f) for f, v in _FOIL]
+    return loft(mat, "y", y0, sec(x0, y0, lead0, chord0, t0), y1, sec(x1, y1, lead1, chord1, t1), plain=True, **opt)
+
+
+def wings(mat, x0, y0, lead0, chord0, t0, x1, y1, lead1, chord1, t1, **opt):
+    """The same panel on both sides."""
+    return [wing(mat, x0, y0, lead0, chord0, t0, x1, y1, lead1, chord1, t1, **opt),
+            wing(mat, -x0, y0, lead0, chord0, t0, -x1, y1, lead1, chord1, t1, **opt)]
 
 
 def rod_z(mat, cx, cy, z0, length, dia, **opt):
@@ -732,8 +782,53 @@ def _loft_surfaces(part):
     return out
 
 
+def _skin_surfaces(part):
+    secs, n, seg = part["sections"], part["power"], part["opt"]["seg"]
+    ang = np.linspace(0, 2 * math.pi, seg + 1)
+    ca, sa = np.cos(ang), np.sin(ang)
+    e = 2.0 / n
+    ux, uy = np.sign(ca) * np.abs(ca) ** e, np.sign(sa) * np.abs(sa) ** e      # a "superellipse" outline
+    rows = np.array([[(cx + w / 2 * ux[k], cy + h / 2 * uy[k], z) for k in range(seg + 1)] for (z, cx, cy, w, h) in secs])
+    centres = np.array([(cx, cy, z) for (z, cx, cy, w, h) in secs])
+    # smooth normals from the slope of the surface both ways, pointed away from the body's centre line
+    dr = np.gradient(rows, axis=0)
+    dc = np.roll(rows, -1, axis=1) - np.roll(rows, 1, axis=1)
+    dc[:, 0] = rows[:, 1] - rows[:, -2]; dc[:, -1] = dc[:, 0]
+    nrm = np.cross(dc, dr)
+    ln = np.linalg.norm(nrm, axis=2, keepdims=True)
+    radial = rows - centres[:, None, :]
+    radial[..., 2] = 0
+    rl = np.linalg.norm(radial, axis=2, keepdims=True)
+    fallback = np.where(rl > 1e-9, radial / np.maximum(rl, 1e-9), np.array([0.0, 0.0, 1.0]))
+    nrm = np.where(ln > 1e-9, nrm / np.maximum(ln, 1e-9), fallback)
+    flip = (nrm * fallback).sum(axis=2, keepdims=True) < 0
+    nrm = np.where(flip, -nrm, nrm)
+    ends = np.array([0.0, 0.0, 1.0]) * (1 if secs[-1][0] > secs[0][0] else -1)
+    for r, sign in ((0, -1), (len(secs) - 1, 1)):                               # a section that closes to a point faces along the body
+        if secs[r][3] < 1e-6 and secs[r][4] < 1e-6:
+            nrm[r] = ends * sign
+    girth = max(math.pi * (3 * (w + h) / 2 - math.sqrt((3 * w / 2 + h / 2) * (w / 2 + 3 * h / 2))) for (_, _, _, w, h) in secs)
+    path = sum(math.dist(centres[i], centres[i + 1]) for i in range(len(secs) - 1))
+    faces = []
+    for r in range(len(secs) - 1):
+        for c in range(seg):
+            f = [(r, c), (r, c + 1), (r + 1, c + 1), (r + 1, c)]
+            if secs[r][3] < 1e-6: f = [(r, c), (r + 1, c + 1), (r + 1, c)]
+            elif secs[r + 1][3] < 1e-6: f = [(r, c), (r, c + 1), (r + 1, c)]
+            faces.append(f)
+    out = [_surface(part, rows, nrm, girth, path, "wall", faces=faces, wrap=True)]
+    for r, sign in ((0, -1), (len(secs) - 1, 1)):                               # flat ends where the body is cut off square
+        z, cx, cy, w, h = secs[r]
+        if w < 1e-6 or h < 1e-6:
+            continue
+        corners = [[(cx - w / 2, cy + h / 2, z), (cx + w / 2, cy + h / 2, z)], [(cx - w / 2, cy - h / 2, z), (cx + w / 2, cy - h / 2, z)]]
+        uv = [(0.5 + 0.5 * ux[k], 0.5 - 0.5 * uy[k]) for k in range(seg)]
+        out.append(_surface(part, corners, tuple(ends * sign), w, h, "cap", faces=[uv], mask=("poly", uv)))
+    return out
+
+
 def surfaces(part):
-    return {"box": _box_surfaces, "lathe": _lathe_surfaces, "loft": _loft_surfaces}[part["kind"]](part)
+    return {"box": _box_surfaces, "lathe": _lathe_surfaces, "loft": _loft_surfaces, "skin": _skin_surfaces}[part["kind"]](part)
 
 
 def _inside(poly, U, V):
@@ -753,9 +848,11 @@ def _inside(poly, U, V):
 _FONT = {"0": "111101101101111", "1": "010110010010111", "2": "111001111100111", "3": "111001111001111", "4": "101101111001001",
          "5": "111100111001111", "6": "111100111101111", "7": "111001001010010", "8": "111101111101111", "9": "111101111001111",
          "-": "000000111000000", "Y": "101101010010010", " ": "000000000000000",
-         "A": "010101111101101", "E": "111100110100111", "J": "001001001101010", "K": "101101110101101", "M": "101111111101101",
-         "S": "011100010001110", "T": "111010010010010", "W": "101101111111101", "P": "110101110100100", "R": "110101110101101",
-         "Z": "111001010100111", "U": "101101101101111", "N": "101111111111101", "L": "100100100100111", "O": "111101101101111"}
+         "A": "010101111101101", "B": "110101110101110", "C": "011100100100011", "D": "110101101101110", "E": "111100110100111",
+         "F": "111100110100100", "G": "011100101101011", "H": "101101111101101", "I": "111010010010111", "J": "001001001101010",
+         "K": "101101110101101", "L": "100100100100111", "M": "101111111101101", "N": "101111111111101", "O": "111101101101111",
+         "P": "110101110100100", "R": "110101110101101", "S": "011100010001110", "T": "111010010010010", "U": "101101101101111",
+         "V": "101101101101010", "W": "101101111111101", "X": "101101010101101", "Z": "111001010100111", ".": "000000000000010"}
 
 
 def _mark(img, wm, kind, cu, cv, size, size2=None):
@@ -799,6 +896,17 @@ def _mark(img, wm, kind, cu, cv, size, size2=None):
         step = max(2, int(k * 0.035))
         for r in range(int(cy - h2), int(cy + h2)):
             rect(cx - w2, r, cx + w2, r + 1, (22, 22, 24) if (r // step) % 2 == 0 else (74, 76, 74))
+    elif kind == "roundel":                                 # low-visibility star and bars
+        r = size * k / 2
+        yy, xx = np.mgrid[0:hp, 0:wp]
+        dxx, dyy = xx + 0.5 - cx, yy + 0.5 - cy
+        tone = np.array((70, 76, 84), dtype=np.uint8)
+        bar = (np.abs(dyy) < r * 0.36) & (np.abs(dxx) < r * 2.1) & (np.abs(dxx) > r * 0.95)
+        ring = np.abs(np.hypot(dxx, dyy) - r * 0.92) < max(1.0, r * 0.1)
+        ang = np.arctan2(dxx, -dyy)
+        star = np.hypot(dxx, dyy) < r * 0.8 * (0.38 / np.cos(((ang + math.pi / 5) % (2 * math.pi / 5)) - math.pi / 5))
+        img[bar | ring | star] = tone
+        img[(np.abs(dyy) < r * 0.1) & (np.abs(dxx) < r * 2.1) & (np.abs(dxx) > r * 0.95)] = (150, 154, 158)
     elif kind == "hazard":
         w2, h2 = size * k / 2, (size2 or size / 4) * k / 2
         step = max(2, int(k * 0.05))
@@ -937,6 +1045,11 @@ def paint(surf, wp, hp, seed):
         col[E < 0.01] *= 0.45
     elif kind == "flat":
         col += (g[..., None] - 0.5) * 9 + (fine[..., None] - 0.5) * 9
+    elif kind == "carbon":                                     # woven carbon fibre: a fine twill check
+        weave = (np.floor(um / 0.004) + np.floor(vm / 0.004)) % 4 < 2
+        col[weave] *= 1.35
+        col += (g[..., None] - 0.5) * 6
+        col[E < 0.002] *= 1.5
     else:                                                      # painted metal
         camo = spec.get("camo")
         if camo:
@@ -950,6 +1063,24 @@ def paint(surf, wp, hp, seed):
         col *= (0.96 + 0.08 * vnoise(X, Y, Z, 0.12, seed + 2))[..., None]
         col += (g[..., None] - 0.5) * 6 + (fine[..., None] - 0.5) * 7
         plain = opt.get("plain")
+        if spec.get("clean"):
+            # aircraft skin: flush panel lines at frames and ribs, a row of fasteners beside each, little dirt
+            if surf["w"] > 0.25 and surf["h"] > 0.25:
+                for coord, step in ((Z, 1.15), (X, 1.4)):
+                    ph = (coord / step) % 1
+                    col[(ph < 0.006 / step) & (E > 0.01)] *= 0.72
+                    near = (ph > 0.03 / step) & (ph < 0.045 / step) & (E > 0.01)
+                    col[near & (((um + vm) / 0.06) % 1 < 0.25)] *= 0.86
+            col[E < 0.006] *= 0.78
+            stain = vnoise(X, Y, Z, 0.5, seed + 3)
+            col = mix(col, col * 0.86, np.clip((stain - 0.55) * 2.2, 0, 1))
+            col = mix(col, (60, 58, 56), np.clip((0.02 - E) / 0.02, 0, 1) * 0.25 * vnoise(X, Y, Z, 0.15, seed + 8))
+            img = np.clip(col, 0, 255).astype(np.uint8)
+            if part["kind"] in ("box", "loft"):
+                for m in opt.get("marks", []):
+                    if ALIAS.get(m[0], m[0]) == surf["tag"]:
+                        _mark(img, surf["w"], *m[1:])
+            return img
         if surf["tag"] == "bevel":
             col *= 1.16                                        # edges rub bright
             col = mix(col, (70, 66, 60), (g > 0.82) * 0.8)

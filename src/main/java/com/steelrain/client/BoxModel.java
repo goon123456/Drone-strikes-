@@ -27,6 +27,8 @@ public final class BoxModel {
         public boolean visible = true;
         /** Each quad: 4 corners (12), normal (3), colour (3), texture size (2). */
         final List<float[]> quads = new ArrayList<>();
+        /** Textured faces loaded from a mesh file: four corners of x, y, z, normal x, y, z, u, v. */
+        final List<float[]> mesh = new ArrayList<>();
         final List<Group> children = new ArrayList<>();
         final float ax, ay, az;          // pivot in model space
 
@@ -35,6 +37,46 @@ public final class BoxModel {
             this.px = px; this.py = py; this.pz = pz;
             this.ax = ax; this.ay = ay; this.az = az;
         }
+    }
+
+    private net.minecraft.resources.ResourceLocation texture;
+
+    /** The texture this model is painted with: its own for a loaded mesh, the shared paint grain otherwise. */
+    public net.minecraft.resources.ResourceLocation texture() { return texture != null ? texture : Models.PAINT; }
+
+    /**
+     * Loads a mesh model made by tools/gen_aircraft.py from the mod's own files: bones with a pivot and a list
+     * of textured faces. Every bone hangs from the root and can be turned or hidden like a box-model group.
+     */
+    public static BoxModel load(String name) {
+        BoxModel model = new BoxModel();
+        model.texture = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(com.steelrain.ModRegistry.MODID, "textures/entity/aircraft/" + name + ".png");
+        String path = "/assets/" + com.steelrain.ModRegistry.MODID + "/models/aircraft/" + name + ".json";
+        try (var in = BoxModel.class.getResourceAsStream(path)) {
+            if (in == null) throw new java.io.FileNotFoundException(path);
+            var root = com.google.gson.JsonParser.parseReader(new java.io.InputStreamReader(in, java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();
+            for (var element : root.getAsJsonArray("bones")) {
+                var bone = element.getAsJsonObject();
+                String boneName = bone.get("name").getAsString();
+                var pivot = bone.getAsJsonArray("pivot");
+                float px = pivot.get(0).getAsFloat(), py = pivot.get(1).getAsFloat(), pz = pivot.get(2).getAsFloat();
+                if (!boneName.equals("root")) model.group(boneName, "root", px, py, pz);
+                Group group = model.groups.get(boneName);
+                for (var faceElement : bone.getAsJsonArray("faces")) {
+                    var face = faceElement.getAsJsonArray();
+                    float[] f = new float[32];
+                    for (int i = 0; i < 32; i++) f[i] = face.get(i).getAsFloat();
+                    for (int c = 0; c < 4; c++) {            // positions are stored relative to the bone's pivot
+                        f[c * 8] -= group.ax; f[c * 8 + 1] -= group.ay; f[c * 8 + 2] -= group.az;
+                    }
+                    group.mesh.add(f);
+                }
+            }
+        } catch (Exception e) {
+            com.mojang.logging.LogUtils.getLogger().error("Steel Rain: could not load model {}", name, e);
+        }
+        model.current = model.root;
+        return model;
     }
 
     private final Group root = new Group("root", 0, 0, 0, 0, 0, 0);
@@ -242,6 +284,12 @@ public final class BoxModel {
             vertex(p, m, vc, light, q, 3, q[18], q[19]);
             vertex(p, m, vc, light, q, 6, q[18], 0);
             vertex(p, m, vc, light, q, 9, 0, 0);
+        }
+        for (float[] f : g.mesh) {
+            for (int c = 0; c < 32; c += 8) {
+                vc.addVertex(m, f[c], f[c + 1], f[c + 2]).setColor(1f, 1f, 1f, 1f).setUv(f[c + 6], f[c + 7])
+                        .setOverlay(OverlayTexture.NO_OVERLAY).setLight(light).setNormal(p, f[c + 3], f[c + 4], f[c + 5]);
+            }
         }
         for (Group c : g.children) render(c, pose, vc, light);
         pose.popPose();

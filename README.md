@@ -301,10 +301,12 @@ python3 tools/gen_assets.py   # regenerate textures, models, recipes and languag
   jammer hums, a jammed video link hisses louder the worse it gets, and the fibre makes one of three snaps.
 
 ## Known limits
-- Drones, aircraft, missiles, shells and all ground vehicles have detailed models built from reference
-  photographs, in real-world paint. Propellers and rotors spin, landing gear retracts, aircraft bank in turns
-  and vehicle wheels turn when driving. Every vehicle still has one plain hit box. The three launch sites (Ground Station, Orlan Catapult, Shahed Launch Rail)
-  still have simple shapes.
+- Aircraft and drones (Reaper, TB2, Global Hawk, Orlan-10, Shahed-136, both FPV drones and the Mavic) are
+  textured meshes built with the same kit as the ground vehicles, in `tools/gen_aircraft.py`: smooth fuselage
+  skins through a row of cross-sections, aerofoil-section wings, tails and propeller blades, turned sensor
+  balls, real wheels on folding gear legs, weapons on pylons, markings. They are drawn by Steel Rain's own
+  renderer from `models/aircraft/*.json`. Propellers and rotors spin, landing gear retracts and aircraft bank.
+  Missiles and shells in flight, and the three launch sites, are still simple flat-coloured shapes.
 - Ground vehicles are true meshes (Superb Warfare's `poly_mesh` format), not boxes: turned wheels with dished
   rims, round barrels, masts and dishes, and bevelled plate edges. Shapes are in `tools/gen_vehicles.py`; the kit
   of parts, the mesh builder and the texture painter are in `tools/vehicle_kit.py`.
