@@ -60,6 +60,7 @@ public final class BoxModel {
         try (var in = BoxModel.class.getResourceAsStream(path)) {
             if (in == null) throw new java.io.FileNotFoundException(path);
             var root = com.google.gson.JsonParser.parseReader(new java.io.InputStreamReader(in, java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();
+            if (root.has("track")) model.track = root.getAsJsonObject("track");
             for (var element : root.getAsJsonArray("bones")) {
                 var bone = element.getAsJsonObject();
                 String boneName = bone.get("name").getAsString();
@@ -84,6 +85,9 @@ public final class BoxModel {
         model.current = model.root;
         return model;
     }
+
+    /** For tracked vehicles: one trip round the running gear, sampled evenly (links, length, y, z, rot). */
+    @javax.annotation.Nullable public com.google.gson.JsonObject track;
 
     private final Group root = new Group("root", 0, 0, 0, 0, 0, 0);
     private final Map<String, Group> groups = new HashMap<>();

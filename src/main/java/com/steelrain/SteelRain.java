@@ -61,6 +61,7 @@ public class SteelRain {
         event.registerBlockEntity(power, ModRegistry.WEAPON_PART_BE.get(), (part, side) -> part.coreEntity() == null ? null : part.coreEntity().energyPort);
         // our own vehicles take FE from any mod's chargers into their battery
         event.registerEntity(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ENTITY, ModRegistry.HIMARS.get(), (v, ctx) -> v.energyPort);
+        event.registerEntity(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ENTITY, ModRegistry.M109.get(), (v, ctx) -> v.energyPort);
     }
 
     private static final String DOME = "SteelRainDome", DOME_OWNER = "SteelRainDomeOwner", DOME_NAME = "SteelRainDomeOwnerName";

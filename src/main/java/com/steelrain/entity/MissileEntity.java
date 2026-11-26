@@ -56,6 +56,23 @@ public class MissileEntity extends FlyingWeaponEntity {
         return launch(level, profile, from, tx, tz, owner, ownerName, announce, null);
     }
 
+    /** A shell leaving a gun's muzzle: pure projectile motion from there, nothing steers it. */
+    public static MissileEntity shoot(ServerLevel level, MissileProfile profile, Vec3 from, Vec3 velocity,
+                                      @Nullable UUID owner, @Nullable String ownerName) {
+        MissileEntity m = new MissileEntity(ModRegistry.typeOf(profile), level);
+        m.setOwner(owner, ownerName);
+        m.launched = true;
+        m.free = true;
+        m.freeVelocity = velocity;
+        m.start = from;
+        m.dir = velocity;
+        m.setPos(from);
+        m.faceAlong(velocity);
+        preload(level, from.x, from.z);
+        level.addFreshEntity(m);
+        return m;
+    }
+
     /** Releases an unguided bomblet that keeps the carrier's velocity and falls. */
     public static MissileEntity drop(ServerLevel level, MissileProfile profile, Vec3 from, Vec3 velocity,
                                      @Nullable UUID owner, @Nullable String ownerName) {

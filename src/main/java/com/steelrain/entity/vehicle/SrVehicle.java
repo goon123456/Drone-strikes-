@@ -51,6 +51,13 @@ public abstract class SrVehicle extends Entity implements OwnableEntity {
     private static final EntityDataAccessor<Integer> ENERGY = SynchedEntityData.defineId(SrVehicle.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Float> TURRET_YAW = SynchedEntityData.defineId(SrVehicle.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Float> GUN_PITCH = SynchedEntityData.defineId(SrVehicle.class, EntityDataSerializers.FLOAT);
+    /** Who sits where: seat number to the rider's entity id, so every game agrees who drives and who aims. */
+    private static final EntityDataAccessor<CompoundTag> SEATS = SynchedEntityData.defineId(SrVehicle.class, EntityDataSerializers.COMPOUND_TAG);
+    /** Counts rounds fired, so every game can kick the gun back when it changes. */
+    private static final EntityDataAccessor<Integer> SHOTS = SynchedEntityData.defineId(SrVehicle.class, EntityDataSerializers.INT);
+
+    /** Actions a rider's game sends: change seat; the rest are for guns. */
+    public static final int ACTION_SWITCH_SEAT = 0;
 
     /** Litres of diesel one jerrycan holds. */
     public static final float JERRYCAN = 20f;
@@ -77,6 +84,11 @@ public abstract class SrVehicle extends Entity implements OwnableEntity {
     // client: what the renderer reads; each has a previous value for smooth frames
     public float turretYawO, gunPitchO, tiltPitch, tiltPitchO, tiltRoll, tiltRollO, wheelSpin, wheelSpinO, steerShown, steerShownO;
     public float leanPitch, leanPitchO, leanRoll, leanRollO;
+    // each side's track (distance run, blocks) and road wheels (turn, radians); differ when it turns
+    public float trackL, trackLO, trackR, trackRO, spinL, spinLO, spinR, spinRO;
+    /** Ticks since the gun last fired, for the barrel sliding back and running out. */
+    public int recoilAge = 1000;
+    private int shotsSeen = -1;
     private double lastSpeedSeen;
     private float lastYawSeen;
     private boolean soundStarted;
@@ -161,6 +173,8 @@ public abstract class SrVehicle extends Entity implements OwnableEntity {
         b.define(ENERGY, 0);
         b.define(TURRET_YAW, 0f);
         b.define(GUN_PITCH, 0f);
+        b.define(SEATS, new CompoundTag());
+        b.define(SHOTS, 0);
     }
 
     public float health() { return entityData.get(HEALTH); }
@@ -185,6 +199,9 @@ public abstract class SrVehicle extends Entity implements OwnableEntity {
     }
 
     public SimpleContainer inventory() { return inventory; }
+
+    /** Tells every game the gun has just fired. */
+    protected void markFired() { entityData.set(SHOTS, entityData.get(SHOTS) + 1); }
 
     /** The battery as any mod's energy cables and chargers see it: it takes power but never gives it out. */
     public final IEnergyStorage energyPort = new IEnergyStorage() {
@@ -219,7 +236,7 @@ public abstract class SrVehicle extends Entity implements OwnableEntity {
     @Nullable
     @Override
     public LivingEntity getControllingPassenger() {
-        return getFirstPassenger() instanceof Player p ? p : null;
+        return inSeat(0) instanceof Player p ? p : null;
     }
 
     public boolean engineRunning() { return getControllingPassenger() != null && fuel() > 0 && !flooded(); }
@@ -229,7 +246,73 @@ public abstract class SrVehicle extends Entity implements OwnableEntity {
         return level().getFluidState(net.minecraft.core.BlockPos.containing(getX(), getY() + 1.3, getZ())).is(net.minecraft.tags.FluidTags.WATER);
     }
 
-    public int seatOf(Entity passenger) { return getPassengers().indexOf(passenger); }
+    public int seatOf(Entity passenger) {
+        CompoundTag t = entityData.get(SEATS);
+        for (String k : t.getAllKeys()) {
+            if (t.getInt(k) == passenger.getId()) return Integer.parseInt(k);
+        }
+        return t.isEmpty() ? getPassengers().indexOf(passenger) : -1;   // before the seat table has arrived
+    }
+
+    @Nullable
+    public Entity inSeat(int seat) {
+        CompoundTag t = entityData.get(SEATS);
+        if (t.isEmpty()) return seat < getPassengers().size() ? getPassengers().get(seat) : null;
+        if (!t.contains(Integer.toString(seat))) return null;
+        int id = t.getInt(Integer.toString(seat));
+        for (Entity e : getPassengers()) if (e.getId() == id) return e;
+        return null;
+    }
+
+    @Override
+    protected void addPassenger(Entity passenger) {
+        super.addPassenger(passenger);
+        if (level().isClientSide) return;
+        CompoundTag t = entityData.get(SEATS).copy();
+        for (int i = 0; i < seats().length; i++) {
+            if (!t.contains(Integer.toString(i))) {
+                t.putInt(Integer.toString(i), passenger.getId());
+                break;
+            }
+        }
+        entityData.set(SEATS, t);
+    }
+
+    @Override
+    protected void removePassenger(Entity passenger) {
+        super.removePassenger(passenger);
+        if (level().isClientSide) return;
+        CompoundTag t = entityData.get(SEATS).copy();
+        for (String k : java.util.List.copyOf(t.getAllKeys())) {
+            if (t.getInt(k) == passenger.getId()) t.remove(k);
+        }
+        entityData.set(SEATS, t);
+    }
+
+    /** Moves a rider to the next free seat round the vehicle. */
+    public void switchSeat(Entity passenger) {
+        int from = seatOf(passenger), n = seats().length;
+        if (from < 0) return;
+        CompoundTag t = entityData.get(SEATS).copy();
+        for (int k = 1; k < n; k++) {
+            int to = (from + k) % n;
+            if (!t.contains(Integer.toString(to))) {
+                t.remove(Integer.toString(from));
+                t.putInt(Integer.toString(to), passenger.getId());
+                entityData.set(SEATS, t);
+                if (passenger instanceof Player p) p.displayClientMessage(Component.translatable("message.steelrain.seat_" + Math.min(to, 2)), true);
+                return;
+            }
+        }
+    }
+
+    /** Something a rider asked for with a key: change seat, fire, pick a charge... */
+    public void action(net.minecraft.server.level.ServerPlayer player, int action) {
+        if (action == ACTION_SWITCH_SEAT && hasPassenger(player)) switchSeat(player);
+    }
+
+    /** Where a seat is now, in vehicle space; a seat in a turret turns with it. */
+    protected Vec3 seatPosition(int seat) { return seats()[seat]; }
 
     /** A point in vehicle space turned into the world, following the hull's heading. */
     public Vec3 toWorld(Vec3 local) {
@@ -242,7 +325,7 @@ public abstract class SrVehicle extends Entity implements OwnableEntity {
     protected void positionRider(Entity passenger, MoveFunction move) {
         int seat = seatOf(passenger);
         if (seat < 0) return;
-        Vec3 at = toWorld(seats()[seat]);
+        Vec3 at = toWorld(seatPosition(seat));
         move.accept(passenger, at.x, at.y, at.z);
         // turn the crew with the hull
         float turned = Mth.wrapDegrees(getYRot() - yRotO);
@@ -253,7 +336,7 @@ public abstract class SrVehicle extends Entity implements OwnableEntity {
     @Override
     public Vec3 getDismountLocationForPassenger(LivingEntity passenger) {
         int seat = Math.max(0, seatOf(passenger));
-        Vec3 s = seats()[seat];
+        Vec3 s = seatPosition(Math.min(seat, seats().length - 1));
         double side = s.x >= 0 ? 1 : -1;
         return toWorld(new Vec3(side * (width() / 2 + 0.9), 0.2, s.z));
     }
@@ -374,6 +457,19 @@ public abstract class SrVehicle extends Entity implements OwnableEntity {
         wheelSpin += (float) (along / wheelRadius());
         float turned = Mth.wrapDegrees(getYRot() - lastYawSeen);
         lastYawSeen = getYRot();
+        // a turn to the left (yaw falling) slows the left side and speeds up the right
+        double half = width() / 2 - 0.25, sideways = Math.toRadians(turned) * half;
+        trackLO = trackL; trackRO = trackR; spinLO = spinL; spinRO = spinR;
+        if (Math.abs(turned) < 30) {
+            trackL += (float) (along + sideways);
+            trackR += (float) (along - sideways);
+            spinL += (float) ((along + sideways) / wheelRadius());
+            spinR += (float) ((along - sideways) / wheelRadius());
+        }
+        int shots = entityData.get(SHOTS);
+        if (shotsSeen >= 0 && shots != shotsSeen) recoilAge = 0;
+        else recoilAge++;
+        shotsSeen = shots;
         if (!tracked()) {
             // from how fast it is turning for the distance covered, work out where the front wheels point
             double want = Math.abs(along) > 0.01 ? Mth.clamp(-Math.atan(Math.toRadians(turned) * wheelbase() / along), -0.6, 0.6) : steerShown;

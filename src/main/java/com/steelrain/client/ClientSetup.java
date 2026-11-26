@@ -17,6 +17,10 @@ import org.lwjgl.glfw.GLFW;
 public final class ClientSetup {
     public static final KeyMapping EXIT_DRONE = new KeyMapping("key.steelrain.exit_drone",
             InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_X, "key.categories.steelrain");
+    public static final KeyMapping SWITCH_SEAT = new KeyMapping("key.steelrain.switch_seat",
+            InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_Z, "key.categories.steelrain");
+    public static final KeyMapping SHELL_TYPE = new KeyMapping("key.steelrain.shell_type",
+            InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_B, "key.categories.steelrain");
 
     @SubscribeEvent
     public static void renderers(EntityRenderersEvent.RegisterRenderers e) {
@@ -45,6 +49,7 @@ public final class ClientSetup {
         }
         ModRegistry.AIR_DEFENCE.forEach((name, v) -> e.registerEntityRenderer(v.get(), c -> new SteelAutoAimRenderer(c, name)));
         e.registerEntityRenderer(ModRegistry.HIMARS.get(), c -> new SrVehicleRenderer<>(c, "himars"));
+        e.registerEntityRenderer(ModRegistry.M109.get(), c -> new SrVehicleRenderer<>(c, "m109"));
         ModRegistry.STRIKE.forEach((name, v) -> e.registerEntityRenderer(v.get(), c -> new SteelVehicleRenderer(c, name)));
         ModRegistry.SUPPORT.forEach((name, v) -> e.registerEntityRenderer(v.get(), c -> new SteelVehicleRenderer(c, name)));
         e.registerEntityRenderer(ModRegistry.OPERATOR_BODY.get(), OperatorBodyRenderer::new);
@@ -65,6 +70,8 @@ public final class ClientSetup {
     @SubscribeEvent
     public static void keys(RegisterKeyMappingsEvent e) {
         e.register(EXIT_DRONE);
+        e.register(SWITCH_SEAT);
+        e.register(SHELL_TYPE);
     }
 
     @SubscribeEvent

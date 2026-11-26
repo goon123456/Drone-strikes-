@@ -17,15 +17,57 @@ import net.neoforged.neoforge.client.event.CalculateDetachedCameraDistanceEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RenderPlayerEvent;
 
+import javax.annotation.Nullable;
+
 /** The driver's keys, the camera pulled back to see the whole vehicle, the crew hidden inside, engine noise. */
 @EventBusSubscriber(modid = ModRegistry.MODID, value = Dist.CLIENT)
 public final class VehicleClient {
     @SubscribeEvent
     public static void tick(ClientTickEvent.Post e) {
         var player = Minecraft.getInstance().player;
-        if (player != null && player.getVehicle() instanceof SrVehicle v && v.getControllingPassenger() == player) {
+        if (player == null || !(player.getVehicle() instanceof SrVehicle v)) return;
+        if (v.getControllingPassenger() == player) {
             v.setInput(player.input.forwardImpulse, player.input.leftImpulse, player.input.jumping);
         }
+        while (ClientSetup.SWITCH_SEAT.consumeClick()) send(v, SrVehicle.ACTION_SWITCH_SEAT);
+        while (ClientSetup.SHELL_TYPE.consumeClick()) {
+            if (v instanceof com.steelrain.entity.vehicle.SrGun g && g.isGunner(player)) send(v, com.steelrain.entity.vehicle.SrGun.ACTION_NEXT_SHELL);
+        }
+    }
+
+    private static void send(SrVehicle v, int action) {
+        net.neoforged.neoforge.network.PacketDistributor.sendToServer(new com.steelrain.net.Payloads.VehicleAction(v.getId(), action));
+    }
+
+    @Nullable
+    private static com.steelrain.entity.vehicle.SrGun gunnerOf() {
+        var player = Minecraft.getInstance().player;
+        return player != null && player.getVehicle() instanceof com.steelrain.entity.vehicle.SrGun g && g.isGunner(player) ? g : null;
+    }
+
+    /** The gunner's left click fires the gun instead of swinging an arm. */
+    @SubscribeEvent
+    public static void click(net.neoforged.neoforge.client.event.InputEvent.InteractionKeyMappingTriggered e) {
+        var g = gunnerOf();
+        if (g == null || !e.isAttack()) return;
+        e.setCanceled(true);
+        e.setSwingHand(false);
+        send(g, com.steelrain.entity.vehicle.SrGun.ACTION_FIRE);
+    }
+
+    /** Looking through the gun sight: no arm in front of it. */
+    @SubscribeEvent
+    public static void hand(net.neoforged.neoforge.client.event.RenderHandEvent e) {
+        if (gunnerOf() != null) e.setCanceled(true);
+    }
+
+    /** The gunner's scroll wheel picks the propellant charge. */
+    @SubscribeEvent
+    public static void scroll(net.neoforged.neoforge.client.event.InputEvent.MouseScrollingEvent e) {
+        var g = gunnerOf();
+        if (g == null || e.getScrollDeltaY() == 0) return;
+        e.setCanceled(true);
+        send(g, e.getScrollDeltaY() > 0 ? com.steelrain.entity.vehicle.SrGun.ACTION_CHARGE_UP : com.steelrain.entity.vehicle.SrGun.ACTION_CHARGE_DOWN);
     }
 
     @SubscribeEvent

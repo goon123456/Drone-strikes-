@@ -404,6 +404,14 @@ def item_icons():
     for x in (3, 9, 12):
         d.rectangle([x - 1, 12, x + 1, 14], fill=c((34, 34, 34)))
     icons["himars"] = outlined(img)
+    img, d = canvas()   # M109 from the side: tracks, hull, big turret, long barrel
+    d.rectangle([1, 10, 13, 13], fill=c((40, 40, 38)))
+    for x in (3, 6, 9, 12):
+        d.point((x, 12), fill=c((90, 90, 86)))
+    d.rectangle([1, 8, 13, 10], fill=c((96, 104, 70)))
+    d.rectangle([3, 5, 9, 8], fill=c((110, 116, 82)))
+    d.line([(9, 6), (15, 3)], fill=c((80, 86, 60)))
+    icons["m109"] = outlined(img)
     for name, body, cap in (("jerrycan", (70, 84, 56), (60, 60, 60)), ("diesel_jerrycan", (180, 60, 40), (230, 190, 60))):
         img, d = canvas()
         d.rectangle([4, 4, 11, 14], fill=c(body)); d.line([(5, 9), (10, 9)], fill=c(tuple(v - 25 for v in body)))
@@ -531,6 +539,18 @@ def lang():
         "entity.steelrain.iskander_launcher": "Iskander-M Launcher",
         "entity.steelrain.himars": "M142 HIMARS",
         "item.steelrain.himars": "M142 HIMARS",
+        "item.steelrain.m109": "M109 Howitzer",
+        "key.steelrain.switch_seat": "Change seat in a vehicle",
+        "key.steelrain.shell_type": "Gun: next shell type",
+        "message.steelrain.seat_0": "Driver's seat",
+        "message.steelrain.seat_1": "Gunner's seat",
+        "message.steelrain.seat_2": "Passenger seat",
+        "hud.steelrain.gun_charge": "Charge %s of %s  (scroll)",
+        "hud.steelrain.gun_shell": "Shell: %s  (B)",
+        "hud.steelrain.gun_loaded": "LOADED: %s",
+        "hud.steelrain.gun_loading": "Loading... %ss",
+        "hud.steelrain.gun_empty": "Breech empty: no shells of this type",
+        "hud.steelrain.gun_keys": "Look to lay  Left click: fire  Z: seat",
         "item.steelrain.jerrycan": "Jerrycan",
         "item.steelrain.diesel_jerrycan": "Jerrycan of Diesel",
         "item.steelrain.vehicle.tip": "Place on the ground. Right-click to board, sneak + right-click for storage, diesel can to refuel. Owner sneak-hits to pack it up.",
@@ -811,13 +831,21 @@ def own_vehicle(name):
     running gear on the root, hull on "body" (leans on its springs), turret on the hull, gun or pod on the turret."""
     import gen_aircraft as GA
     m = GV.MODELS[name]()
+    def links(b):
+        if b["name"].startswith("trackRot"):          # track link: moved along its path by the renderer
+            return dict(b, name="track" + b["name"][8:], parent="root")
+        return dict(b, parent={"base": "root", "move_body": "body"}.get(b["parent"], b["parent"]))
     tex, tw, th = VK.bake(m, name)
     save(Image.fromarray(tex).convert("RGB"), f"{A}/textures/entity/vehicle/{name}.png")
     out = GA.export({"base": [], "bones": [
         {"name": "body", "parent": "root", "pivot": (0, 0.6, 0), "cubes": m["base"]},
         {"name": "turret", "parent": "body", "pivot": GV.PIVOTS[name][0], "cubes": m["turret"]},
         {"name": "barrel", "parent": "turret", "pivot": GV.PIVOTS[name][1], "cubes": m["barrel"]},
-        *[dict(b, parent={"base": "root", "move_body": "body"}.get(b["parent"], b["parent"])) for b in m["bones"]]]}, tw, th)
+        *[links(b) for b in m["bones"] if not b["name"].startswith("trackMov")]]}, tw, th)
+    if m.get("track"):   # the path each link follows round the running gear, in blocks and degrees
+        t = m["track"]
+        out["track"] = {"links": t["links"], "length": t["length"], "y": [round(v / 16, 4) for v in t["y"]],
+                        "z": [round(-v / 16, 4) for v in t["z"]], "rot": [-v for v in t["rot"]]}
     path = f"{A}/models/vehicle/{name}.json"
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w") as f:
@@ -959,21 +987,7 @@ def sbw_vehicles():
               "Weapons": charges([2.0, 3.0, 4.5], [0, 0, 1.7], ["mortar_shell"]),
               "ContainerIcon": "superbwarfare:textures/gui/vehicle/type/defense.png"})
 
-    sbw_vehicle("m109",
-        base=pair(TY, 1.05, 0, -3.0, 0.5, 1.0, 6.0) + [(OL, -1.5, 0.5, -3.1, 3.0, 1.2, 6.2), (OD, -1.4, 0.9, 3.1, 2.8, 0.6, 0.4)],
-        turret=[(OLL, -1.4, 1.7, -2.8, 2.8, 1.25, 3.7), (OD, 0.5, 2.95, -2.1, 0.7, 0.3, 0.7), (OD, -1.3, 1.8, -3.1, 2.6, 0.8, 0.3)],
-        barrel=[(OD, -0.4, 2.0, 0.8, 0.8, 0.6, 0.5), (SD, -0.12, 2.18, 1.3, 0.24, 0.24, 4.6),
-                (SD, -0.17, 2.13, 3.4, 0.34, 0.34, 0.6), (SD, -0.2, 2.1, 5.5, 0.4, 0.4, 0.5)],
-        turret_pivot=(0, 1.7, -0.9), barrel_pivot=(0, 2.3, 0.9),
-        # Hand-laid: seat 0 drives, seat 1 is the gunner who traverses, elevates and fires from the range table.
-        data={**TRACK, "HudType": "@Land", "VehicleContainerType": "Small", "MaxHealth": 500, "Mass": 24, "Type": "Artillery",
-              "TerrainCompat": [[1.4, 0, 2.6], [-1.4, 0, 2.6], [1.4, 0, 0], [-1.4, 0, 0], [1.4, 0, -2.6], [-1.4, 0, -2.6]],
-              "TurretTurnSpeed": [3, 2], "TurretPitchRange": [-3, 70], "TurretControllerIndex": 1,
-              "Seats": driver(0.7, 1.2, 2.0) + [{"HidePassenger": True, "Transform": "Turret", "Position": [0, -0.3, 0],
-                        "CanRotateHead": False, "MinPitch": -3, "MaxPitch": 70, "Weapons": ["Charge1", "Charge2", "Charge3"],
-                        "CameraPos": {"Transform": "Turret", "UseFixedCameraPos": True, "Position": [0.9, 1.5, 1.2], "Direction": "Barrel"}}],
-              "Weapons": charges([3.0, 4.2, 5.5], [0, 0, 5.2], SHELLS),
-              "ContainerIcon": "superbwarfare:textures/gui/vehicle/type/land.png"})
+    own_vehicle("m109")   # driven, laid and fired through Steel Rain itself
 
     sbw_vehicle("tomahawk_launcher",
         base=pair(TY, 0.85, 0, -3.7, 0.35, 1.0, 1.0) + pair(TY, 0.85, 0, -2.5, 0.35, 1.0, 1.0) + pair(SD, 0.8, 0, 3.1, 0.2, 0.9, 0.2)
@@ -1047,7 +1061,7 @@ def sbw_vehicles():
     write(f"{D}/recipe/diesel_jerrycan.json", {"type": "minecraft:crafting_shapeless", "category": "misc",
         "ingredients": [{"item": f"{MOD}:jerrycan"}, {"tag": "minecraft:coals"}, {"tag": "minecraft:coals"}],
         "result": {"id": f"{MOD}:diesel_jerrycan", "count": 1}})
-    crate("m109", ["I  ", "BIC", "BMB"], {"I": I, "B": B, "C": "circuit_board", "M": "electric_motor"})
+    shaped("m109", ["I  ", "BIC", "BMB"], {"I": I, "B": B, "C": "circuit_board", "M": "electric_motor"})
     crate("jammer", [" A ", "CUC", "BDB"], {"A": MC + "lightning_rod", "C": "circuit_board", "U": "guidance_unit", "B": B, "D": "drone_battery"})
     crate("trench_jammer", [" A ", "CDC", "III"], {"A": MC + "lightning_rod", "C": "circuit_board", "D": "drone_battery", "I": I})
     crate("krasukha", ["AUA", "CUC", "BBB"], {"A": MC + "lightning_rod", "U": "guidance_unit", "C": "circuit_board", "B": B})

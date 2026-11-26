@@ -134,6 +134,15 @@ public final class Payloads {
         @Override public Type<Dome> type() { return TYPE; }
     }
 
+    /** Client -> server: a rider of a Steel Rain vehicle pressed a key (change seat, fire, charge, shell type). */
+    public record VehicleAction(int entityId, int action) implements CustomPacketPayload {
+        public static final Type<VehicleAction> TYPE = id("vehicle_action");
+        public static final StreamCodec<FriendlyByteBuf, VehicleAction> CODEC = StreamCodec.ofMember(VehicleAction::write, VehicleAction::new);
+        VehicleAction(FriendlyByteBuf b) { this(b.readVarInt(), b.readVarInt()); }
+        void write(FriendlyByteBuf b) { b.writeVarInt(entityId); b.writeVarInt(action); }
+        @Override public Type<VehicleAction> type() { return TYPE; }
+    }
+
     /** Client -> server: leave the remote camera feed. */
     public record StopFeed() implements CustomPacketPayload {
         public static final Type<StopFeed> TYPE = id("stop_feed");
@@ -215,6 +224,10 @@ public final class Payloads {
             if (ctx.player() instanceof ServerPlayer sp) sendLaptop(sp, false, null);
         });
         r.playToServer(Launch.TYPE, Launch.CODEC, Payloads::onLaunch);
+        r.playToServer(VehicleAction.TYPE, VehicleAction.CODEC, (p, ctx) -> {
+            if (ctx.player() instanceof ServerPlayer sp && sp.getVehicle() instanceof com.steelrain.entity.vehicle.SrVehicle v
+                    && v.getId() == p.entityId()) v.action(sp, p.action());
+        });
     }
 
     private static void onControl(Control p, IPayloadContext ctx) {
