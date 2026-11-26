@@ -433,7 +433,11 @@ public class LaptopScreen extends Screen {
     private void unitIcon(GuiGraphics g, Payloads.Entry e, double wx, double wz, int colour) {
         int[] p = onMap(wx, wz, 4);
         if (p == null) return;
-        g.fill(p[0] - 4, p[1] - 4, p[0] + 5, p[1] + 5, 0xC0000000);
+        g.fill(p[0] - 5, p[1] - 5, p[0] + 6, p[1] + 6, 0xE0000000);
+        g.fill(p[0] - 5, p[1] - 5, p[0] + 6, p[1] - 4, colour);
+        g.fill(p[0] - 5, p[1] + 5, p[0] + 6, p[1] + 6, colour);
+        g.fill(p[0] - 5, p[1] - 5, p[0] - 4, p[1] + 6, colour);
+        g.fill(p[0] + 5, p[1] - 5, p[0] + 6, p[1] + 6, colour);
         Ui.icon(g, p[0] - 3, p[1] - 3, iconFor(e), colour);
     }
 
@@ -639,8 +643,9 @@ public class LaptopScreen extends Screen {
             Payloads.Entry e = entries.get(i);
             int cy = ly + (i - listScroll) * CARD_H;
             boolean sel = i == selected;
-            g.fill(x + 3, cy + 1, x + LIST_W - 3, cy + CARD_H - 1, sel ? 0xFF0F2415 : P_PLATE);
-            if (sel) g.fill(x + 3, cy + 1, x + 5, cy + CARD_H - 1, P_AMBER);
+            if (sel) g.fill(x + 3, cy + 1, x + LIST_W - 3, cy + CARD_H - 2, 0xFF0F2415);
+            if (sel) g.fill(x + 3, cy + 1, x + 5, cy + CARD_H - 2, P_AMBER);
+            g.fill(x + 3, cy + CARD_H - 1, x + LIST_W - 3, cy + CARD_H, P_RULE);
             int colour = statusColour(e);
             Ui.icon(g, x + 8, cy + 4, iconFor(e), sel ? P_AMBER : P_TEXT);
             Component name = known(e) ? Component.translatable(e.name()) : Component.translatable("gui.steelrain.offline");
@@ -652,8 +657,6 @@ public class LaptopScreen extends Screen {
             if (known(e)) {
                 String rounds = e.ammo() + (e.second() ? "+" + e.ammo2() : "");
                 g.drawString(font, rounds, x + LIST_W - 8 - font.width(rounds), cy + 14, P_DIM, false);
-                double energy = e.fuel() <= 0 ? 0 : Math.min(1, e.fuel() / 1000.0);
-                Ui.gauge(g, x + 8, cy + CARD_H - 5, LIST_W - 19, 2, energy, P_CYAN, 20);
             }
         }
         if (entries.size() > shown) {

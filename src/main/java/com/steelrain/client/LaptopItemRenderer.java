@@ -56,12 +56,12 @@ public class LaptopItemRenderer extends BlockEntityWithoutLevelRenderer {
         var level = Minecraft.getInstance().level;
         long t = level == null ? 0 : (level.getDayTime() + 6000) % 24000;
         String clock = String.format("%02d:%02d", t / 1000, (t % 1000) * 60 / 1000);
-        font.drawInBatch("STEEL RAIN C2", 4, 4, 0xFF9CE09C, false, pose.last().pose(), buffers, mode, 0, full);
-        font.drawInBatch(clock, 206 - font.width(clock), 4, 0xFFF2B33D, false, pose.last().pose(), buffers, mode, 0, full);
-        font.drawInBatch("FIRE CONTROL", 4, 20, 0xFFE6EDF0, false, pose.last().pose(), buffers, mode, 0, full);
-        font.drawInBatch("GRID " + player.getBlockX() + " " + player.getBlockZ(), 4, 34, 0xFF8A9AA3, false, pose.last().pose(), buffers, mode, 0, full);
-        font.drawInBatch("LINK  OK", 4, 48, 0xFF7CD67C, false, pose.last().pose(), buffers, mode, 0, full);
-        if (Ui.blink()) font.drawInBatch("RIGHT-CLICK TO OPEN", 4, 112, 0xFFF2B33D, false, pose.last().pose(), buffers, mode, 0, full);
+        font.drawInBatch("STEEL RAIN C2", 4, 4, 0xFF8DF29A, false, pose.last().pose(), buffers, mode, 0, full);
+        font.drawInBatch(clock, 206 - font.width(clock), 4, 0xFFF5C451, false, pose.last().pose(), buffers, mode, 0, full);
+        font.drawInBatch("FIRE CONTROL", 4, 20, 0xFF8DF29A, false, pose.last().pose(), buffers, mode, 0, full);
+        font.drawInBatch("GRID " + player.getBlockX() + " " + player.getBlockZ(), 4, 34, 0xFF4F9A60, false, pose.last().pose(), buffers, mode, 0, full);
+        font.drawInBatch("LINK  OK", 4, 48, 0xFF8DF29A, false, pose.last().pose(), buffers, mode, 0, full);
+        if (Ui.blink()) font.drawInBatch("RIGHT-CLICK TO OPEN", 4, 112, 0xFFF5C451, false, pose.last().pose(), buffers, mode, 0, full);
         pose.popPose();
     }
 

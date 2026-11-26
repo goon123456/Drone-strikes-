@@ -296,6 +296,19 @@ def field_laptop():
     p += [B(d, -0.09, 0.006, D / 2, 0.02, 0.02, 0.02, plain=True), B(d, 0.07, 0.006, D / 2, 0.02, 0.02, 0.02, plain=True),
           bar(BLACK, (-0.08, 0.016, D / 2 + 0.03), (0.08, 0.016, D / 2 + 0.03), 0.014)]
     p += [B(d, -W / 2 + 0.03, 0.012, -D / 2 - 0.004, 0.06, 0.012, 0.004, plain=True)]              # vents and ports at the back
+    # rugged frame: a raised rail round the base, with a hinge knuckle at the back and latches at the front
+    for x in (-W / 2 + 0.004, W / 2 - 0.004):
+        p += [bar(BLACK, (x, T + 0.004, -D / 2 + 0.01), (x, T + 0.004, D / 2 - 0.01), 0.008)]
+    for z in (-D / 2 + 0.004, D / 2 - 0.004):
+        p += [bar(BLACK, (-W / 2 + 0.01, T + 0.004, z), (W / 2 - 0.01, T + 0.004, z), 0.008)]
+    for x in (-0.13, 0.13):
+        p += [B(STEEL_D, x - 0.025, T - 0.002, -D / 2 - 0.006, 0.05, 0.010, 0.010, plain=True)]    # hinge knuckles
+    for x in (-0.12, 0.12):
+        p += [B(STEEL_D, x - 0.02, T + 0.003, D / 2 + 0.001, 0.04, 0.016, 0.012, plain=True)]      # front latches
+    for side in (-1, 1):                                                                           # port doors on the sides
+        x = side * (W / 2 + 0.002)
+        p += [B(d, x - 0.002, 0.008, -0.085, 0.004, 0.02, 0.08, plain=True),
+              B(BLACK, x - 0.002, 0.012, -0.05, 0.004, 0.012, 0.012, plain=True)]
     # the lid, lying closed on the base: shell on top, display underneath facing down
     L = 0.03
     lid = [B(t, -W / 2, T, -D / 2, W, L, D, marks=[("top", "panel", 0.5, 0.5, 0.85, 0.85)])]
@@ -309,6 +322,7 @@ def field_laptop():
         lid += [B(SCREEN_LINE, -W / 2 + 0.024 + i * (W - 0.048) / 6, T - 0.0034, -D / 2 + 0.03, 0.0015, 0.0003, D - 0.07, plain=True)]
     for i in range(1, 4):
         lid += [B(SCREEN_LINE, -W / 2 + 0.024, T - 0.0034, -D / 2 + 0.03 + i * (D - 0.07) / 4, W - 0.048, 0.0003, 0.0015, plain=True)]
+    lid += [B(STEEL_D, -0.07, L + T + 0.0005, 0.08, 0.08, 0.0008, 0.035, plain=True)]               # service plate on the lid
     lid += [B(AMBER, 0.03, T - 0.0036, -0.01, 0.01, 0.0003, 0.01, plain=True), B(RED, -0.07, T - 0.0036, 0.03, 0.01, 0.0003, 0.01, plain=True),
             B(GREEN_LAMP, 0.09, T - 0.0036, -0.05, 0.008, 0.0003, 0.008, plain=True)]
     return dict(base=p, turret=[], barrel=[], bones=[{"name": "lid", "parent": "root", "pivot": (0, T, -D / 2), "cubes": lid}])
