@@ -59,14 +59,16 @@ public class SteelRain {
         event.registerBlockEntity(power, ModRegistry.WEAPON_BE.get(), (be, side) -> be.energyPort);
         event.registerBlockEntity(items, ModRegistry.WEAPON_PART_BE.get(), (part, side) -> part.coreEntity() == null ? null : part.coreEntity().items);
         event.registerBlockEntity(power, ModRegistry.WEAPON_PART_BE.get(), (part, side) -> part.coreEntity() == null ? null : part.coreEntity().energyPort);
+        // our own vehicles take FE from any mod's chargers into their battery
+        event.registerEntity(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ENTITY, ModRegistry.HIMARS.get(), (v, ctx) -> v.energyPort);
     }
 
     private static final String DOME = "SteelRainDome", DOME_OWNER = "SteelRainDomeOwner", DOME_NAME = "SteelRainDomeOwnerName";
 
     /** A Jammer Dome can be fitted to any Superb Warfare vehicle by right-clicking it. */
     private static void fitDome(net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.EntityInteract e) {
-        if (!(e.getTarget() instanceof com.atsuishio.superbwarfare.entity.vehicle.base.VehicleEntity v)
-                || !e.getItemStack().is(ModRegistry.JAMMER_DOME.get())) return;
+        net.minecraft.world.entity.Entity v = e.getTarget();
+        if (!domeCarrier(v) || !e.getItemStack().is(ModRegistry.JAMMER_DOME.get())) return;
         e.setCanceled(true);
         e.setCancellationResult(net.minecraft.world.InteractionResult.sidedSuccess(e.getLevel().isClientSide));
         if (e.getLevel().isClientSide) return;
@@ -85,21 +87,31 @@ public class SteelRain {
 
     /** A player who comes within sight of a vehicle is told if it carries a dome, so their game can draw it. */
     private static void domeSeen(net.neoforged.neoforge.event.entity.player.PlayerEvent.StartTracking e) {
-        if (e.getTarget() instanceof com.atsuishio.superbwarfare.entity.vehicle.base.VehicleEntity v && v.getPersistentData().getBoolean(DOME)
+        if (domeCarrier(e.getTarget()) && e.getTarget().getPersistentData().getBoolean(DOME)
                 && e.getEntity() instanceof net.minecraft.server.level.ServerPlayer player) {
-            net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player, new com.steelrain.net.Payloads.Dome(v.getId()));
+            net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player, new com.steelrain.net.Payloads.Dome(e.getTarget().getId()));
         }
+    }
+
+    private static boolean domeCarrier(net.minecraft.world.entity.Entity e) {
+        return e instanceof com.atsuishio.superbwarfare.entity.vehicle.base.VehicleEntity || e instanceof com.steelrain.entity.vehicle.SrVehicle;
     }
 
     /** A fitted dome keeps a small bubble up while the vehicle has energy, drawing a trickle from it. */
     private static void domeTick(net.neoforged.neoforge.event.tick.EntityTickEvent.Post e) {
-        if (!(e.getEntity() instanceof com.atsuishio.superbwarfare.entity.vehicle.base.VehicleEntity v)
-                || !(v.level() instanceof net.minecraft.server.level.ServerLevel level) || v.tickCount % 10 != 0) return;
+        net.minecraft.world.entity.Entity v = e.getEntity();
+        if (!domeCarrier(v) || !(v.level() instanceof net.minecraft.server.level.ServerLevel level) || v.tickCount % 10 != 0) return;
         net.minecraft.nbt.CompoundTag data = v.getPersistentData();
-        if (!data.getBoolean(DOME) || v.isWreck()) return;
-        if (Config.REQUIRE_ENERGY.get() && v.hasEnergyStorage()) {
-            if (v.getEnergy() < 250) return;
-            if (v.tickCount % 100 == 0) v.consumeEnergy(250);
+        if (!data.getBoolean(DOME)) return;
+        if (v instanceof com.atsuishio.superbwarfare.entity.vehicle.base.VehicleEntity sbw) {
+            if (sbw.isWreck()) return;
+            if (Config.REQUIRE_ENERGY.get() && sbw.hasEnergyStorage()) {
+                if (sbw.getEnergy() < 250) return;
+                if (v.tickCount % 100 == 0) sbw.consumeEnergy(250);
+            }
+        } else if (v instanceof com.steelrain.entity.vehicle.SrVehicle own && Config.REQUIRE_ENERGY.get()) {
+            if (own.energy() < 250) return;
+            if (v.tickCount % 100 == 0) own.useEnergy(250);
         }
         com.steelrain.util.Jamming.emit(level, v.getUUID().toString() + "dome", v.position().add(0, v.getBbHeight(), 0),
                 Config.DOME_JAMMER_RANGE.get(), data.hasUUID(DOME_OWNER) ? data.getUUID(DOME_OWNER) : null,

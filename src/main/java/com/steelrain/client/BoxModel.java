@@ -24,6 +24,8 @@ public final class BoxModel {
         float tiltX, tiltY, tiltZ;       // fixed rotation (radians)
         /** Animated rotation in radians, set before rendering. Applied Y, then X, then Z. */
         public float xRot, yRot, zRot;
+        /** Animated offset in blocks, set before rendering, applied before the rotations. */
+        public float ox, oy, oz;
         public boolean visible = true;
         /** Each quad: 4 corners (12), normal (3), colour (3), texture size (2). */
         final List<float[]> quads = new ArrayList<>();
@@ -48,10 +50,13 @@ public final class BoxModel {
      * Loads a mesh model made by tools/gen_aircraft.py from the mod's own files: bones with a pivot and a list
      * of textured faces. Every bone hangs from the root and can be turned or hidden like a box-model group.
      */
-    public static BoxModel load(String name) {
+    public static BoxModel load(String name) { return load("aircraft", name); }
+
+    /** As {@link #load(String)}, from models/{folder} and textures/entity/{folder}. Bones may hang from one another. */
+    public static BoxModel load(String folder, String name) {
         BoxModel model = new BoxModel();
-        model.texture = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(com.steelrain.ModRegistry.MODID, "textures/entity/aircraft/" + name + ".png");
-        String path = "/assets/" + com.steelrain.ModRegistry.MODID + "/models/aircraft/" + name + ".json";
+        model.texture = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(com.steelrain.ModRegistry.MODID, "textures/entity/" + folder + "/" + name + ".png");
+        String path = "/assets/" + com.steelrain.ModRegistry.MODID + "/models/" + folder + "/" + name + ".json";
         try (var in = BoxModel.class.getResourceAsStream(path)) {
             if (in == null) throw new java.io.FileNotFoundException(path);
             var root = com.google.gson.JsonParser.parseReader(new java.io.InputStreamReader(in, java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();
@@ -60,7 +65,8 @@ public final class BoxModel {
                 String boneName = bone.get("name").getAsString();
                 var pivot = bone.getAsJsonArray("pivot");
                 float px = pivot.get(0).getAsFloat(), py = pivot.get(1).getAsFloat(), pz = pivot.get(2).getAsFloat();
-                if (!boneName.equals("root")) model.group(boneName, "root", px, py, pz);
+                String parent = bone.has("parent") ? bone.get("parent").getAsString() : "root";
+                if (!boneName.equals("root")) model.group(boneName, model.groups.containsKey(parent) ? parent : "root", px, py, pz);
                 Group group = model.groups.get(boneName);
                 for (var faceElement : bone.getAsJsonArray("faces")) {
                     var face = faceElement.getAsJsonArray();
@@ -109,6 +115,11 @@ public final class BoxModel {
     }
 
     public Group get(String name) { return groups.get(name); }
+
+    /** Every group, for renderers that animate bones by their names. */
+    public java.util.Collection<Group> groups() { return groups.values(); }
+
+    public static String nameOf(Group g) { return g.name; }
 
     public boolean has(String name) { return groups.containsKey(name); }
 
@@ -271,7 +282,7 @@ public final class BoxModel {
     private void render(Group g, PoseStack pose, VertexConsumer vc, int light) {
         if (!g.visible) return;
         pose.pushPose();
-        pose.translate(g.px, g.py, g.pz);
+        pose.translate(g.px + g.ox, g.py + g.oy, g.pz + g.oz);
         float ry = g.tiltY + g.yRot, rx = g.tiltX + g.xRot, rz = g.tiltZ + g.zRot;
         if (ry != 0) pose.mulPose(Axis.YP.rotation(ry));
         if (rx != 0) pose.mulPose(Axis.XP.rotation(rx));

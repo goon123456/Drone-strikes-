@@ -396,6 +396,20 @@ def item_icons():
     icons["shell_incendiary"] = shell((230, 80, 40))
     icons["atacms_missile"] = missile_icon((92, 104, 62), (30, 30, 34), (52, 60, 40), 3, a=(4, 12), b=(12, 4))
 
+    img, d = canvas()   # HIMARS from the side: cab, launcher pod, six wheels
+    d.rectangle([1, 6, 5, 11], fill=c((96, 104, 70))); d.rectangle([2, 7, 4, 8], fill=c((70, 110, 140)))
+    d.polygon([(6, 4), (14, 2), (14, 9), (6, 9)], fill=c((110, 116, 82)))
+    d.point([(13, 4), (13, 6), (11, 5), (11, 7)], fill=c((30, 30, 30)))
+    d.rectangle([1, 10, 14, 11], fill=c((70, 76, 52)))
+    for x in (3, 9, 12):
+        d.rectangle([x - 1, 12, x + 1, 14], fill=c((34, 34, 34)))
+    icons["himars"] = outlined(img)
+    for name, body, cap in (("jerrycan", (70, 84, 56), (60, 60, 60)), ("diesel_jerrycan", (180, 60, 40), (230, 190, 60))):
+        img, d = canvas()
+        d.rectangle([4, 4, 11, 14], fill=c(body)); d.line([(5, 9), (10, 9)], fill=c(tuple(v - 25 for v in body)))
+        d.line([(5, 6), (10, 12)], fill=c(tuple(v + 25 for v in body))); d.line([(10, 6), (5, 12)], fill=c(tuple(v + 25 for v in body)))
+        d.rectangle([6, 2, 9, 3], fill=c((50, 50, 50))); d.rectangle([10, 2, 11, 3], fill=c(cap))
+        icons[name] = outlined(img)
     for name, img in icons.items():
         save(img, f"{A}/textures/item/{name}.png")
         parent = "minecraft:item/handheld" if name == "anti_drone_gun" else "minecraft:item/generated"
@@ -516,6 +530,16 @@ def lang():
         "entity.steelrain.tomahawk_launcher": "Tomahawk Launcher",
         "entity.steelrain.iskander_launcher": "Iskander-M Launcher",
         "entity.steelrain.himars": "M142 HIMARS",
+        "item.steelrain.himars": "M142 HIMARS",
+        "item.steelrain.jerrycan": "Jerrycan",
+        "item.steelrain.diesel_jerrycan": "Jerrycan of Diesel",
+        "item.steelrain.vehicle.tip": "Place on the ground. Right-click to board, sneak + right-click for storage, diesel can to refuel. Owner sneak-hits to pack it up.",
+        "message.steelrain.tank_full": "Tank is full",
+        "message.steelrain.refuelled": "Refuelled: %s / %s L",
+        "message.steelrain.vehicle_status": "Fuel %s / %s L   Battery %sk / %sk FE",
+        "message.steelrain.no_room": "No room to put it here",
+        "item.steelrain.vehicle.packed": "Packed: health %s, fuel %s L",
+        "message.steelrain.no_launcher": "No launcher within 64 blocks",
         "entity.steelrain.m109": "M109 Howitzer",
         "block.steelrain.shahed_launcher": "Shahed Launch Rail",
         "block.steelrain.ground_station": "UAV Ground Station",
@@ -782,6 +806,23 @@ def sbw_vehicle(name, base, turret, barrel, turret_pivot, barrel_pivot, data):
         full["EngineInfo"] = dict(full["EngineInfo"], TrackRotSpeed=round(100 / (math.pi * m["track"]["length"]), 4))
     write(f"{D}/sbw/vehicles/{name}.json", full)
 
+def own_vehicle(name):
+    """A vehicle driven and drawn by Steel Rain itself: one mesh file in the aircraft format with a bone tree,
+    running gear on the root, hull on "body" (leans on its springs), turret on the hull, gun or pod on the turret."""
+    import gen_aircraft as GA
+    m = GV.MODELS[name]()
+    tex, tw, th = VK.bake(m, name)
+    save(Image.fromarray(tex).convert("RGB"), f"{A}/textures/entity/vehicle/{name}.png")
+    out = GA.export({"base": [], "bones": [
+        {"name": "body", "parent": "root", "pivot": (0, 0.6, 0), "cubes": m["base"]},
+        {"name": "turret", "parent": "body", "pivot": GV.PIVOTS[name][0], "cubes": m["turret"]},
+        {"name": "barrel", "parent": "turret", "pivot": GV.PIVOTS[name][1], "cubes": m["barrel"]},
+        *[dict(b, parent={"base": "root", "move_body": "body"}.get(b["parent"], b["parent"])) for b in m["bones"]]]}, tw, th)
+    path = f"{A}/models/vehicle/{name}.json"
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w") as f:
+        json.dump(out, f, separators=(",", ":"))
+
 def cannon(name, belt, rounds, rpm, damage, muzzles, lead):
     """An automatic cannon firing Superb Warfare's real shell projectile. HE and AP belts are separate ammo types."""
     w = {"DefaultFireMode": "Auto", "AvailableFireModes": "Auto",
@@ -887,18 +928,7 @@ def sbw_vehicles():
     # Nobody steers these launchers by looking around: the fire-control order lays them.
     LAID = {"TurretControllerIndex": 9, "Weapons": {}, "HudType": "@Land", "VehicleContainerType": "Small"}
 
-    tubes = [(BK, -0.95 + i * 0.68, 1.68 + j * 0.52, z, 0.55, 0.44, 0.04) for i in range(3) for j in range(2) for z in (1.08, -3.32)]
-    sbw_vehicle("himars",
-        base=[b for z in (-2.9, -1.6, 1.8) for b in pair(TY, 0.85, 0, z, 0.35, 1.0, 1.0)]
-             + [(OD, -1.0, 0.5, -3.5, 2.0, 0.7, 7.0), (OL, -1.2, 1.2, 1.3, 2.4, 1.5, 2.2), (GL, -1.0, 2.0, 3.48, 2.0, 0.55, 0.05),
-                (SD, -1.2, 0.6, 3.4, 2.4, 0.4, 0.15)] + pair(GL, 1.18, 2.0, 1.9, 0.04, 0.5, 1.2),
-        turret=[(OD, -1.0, 1.2, -2.5, 2.0, 0.4, 2.2)],
-        barrel=[(OL, -1.15, 1.6, -3.3, 2.3, 1.1, 4.4)] + tubes,
-        turret_pivot=(0, 1.2, -1.5), barrel_pivot=(0, 1.7, -2.5),
-        data={**WHEEL, **LAID, "MaxHealth": 300, "Mass": 14, "Type": "Artillery",
-              "TerrainCompat": [[1.0, 0, 2.3], [-1.0, 0, 2.3], [1.0, 0, -1.1], [-1.0, 0, -1.1], [1.0, 0, -2.4], [-1.0, 0, -2.4]],
-              "TurretTurnSpeed": [4, 3], "TurretPitchRange": [0, 60], "Seats": driver(0.55, 1.5, 2.3),
-              "ContainerIcon": "superbwarfare:textures/gui/vehicle/type/land.png"})
+    own_vehicle("himars")   # driven and laid by Steel Rain itself, not Superb Warfare
 
     def charges(velocities, muzzle, ammo):
         """One Superb Warfare weapon per propellant charge: same gun, same shells, different muzzle velocity."""
@@ -1012,7 +1042,11 @@ def sbw_vehicles():
     crate("tomahawk_launcher", ["IHI", "BCB", "BBB"], {"I": I, "H": MC + "hopper", "B": B, "C": "circuit_board"})
     crate("iskander_launcher", ["IPI", "BCB", "BMB"], {"I": I, "P": MC + "piston", "B": B, "C": "circuit_board", "M": "electric_motor"})
     crate("mortar_120", ["  I", " I ", "NBN"], {"I": I, "N": N, "B": B})
-    crate("himars", ["III", "MCM", "BBB"], {"I": I, "M": "electric_motor", "C": "circuit_board", "B": B})
+    shaped("himars", ["III", "MCM", "BBB"], {"I": I, "M": "electric_motor", "C": "circuit_board", "B": B})
+    shaped("jerrycan", [" I ", "I I", "III"], {"I": I}, 2)
+    write(f"{D}/recipe/diesel_jerrycan.json", {"type": "minecraft:crafting_shapeless", "category": "misc",
+        "ingredients": [{"item": f"{MOD}:jerrycan"}, {"tag": "minecraft:coals"}, {"tag": "minecraft:coals"}],
+        "result": {"id": f"{MOD}:diesel_jerrycan", "count": 1}})
     crate("m109", ["I  ", "BIC", "BMB"], {"I": I, "B": B, "C": "circuit_board", "M": "electric_motor"})
     crate("jammer", [" A ", "CUC", "BDB"], {"A": MC + "lightning_rod", "C": "circuit_board", "U": "guidance_unit", "B": B, "D": "drone_battery"})
     crate("trench_jammer", [" A ", "CDC", "III"], {"A": MC + "lightning_rod", "C": "circuit_board", "D": "drone_battery", "I": I})

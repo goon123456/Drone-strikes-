@@ -39,6 +39,8 @@ public final class ClientHooks {
 
     public static void startLoop(com.steelrain.entity.FlyingWeaponEntity entity) { LoopSound.start(entity); }
 
+    public static void startVehicleSound(com.steelrain.entity.vehicle.SrVehicle v) { VehicleClient.startSound(v); }
+
     /** How badly the video link being watched is jammed right now, 0 to 1. Drives the static hiss. */
     public static float jam;
     private static boolean staticPlaying;

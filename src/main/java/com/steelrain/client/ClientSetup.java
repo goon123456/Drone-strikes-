@@ -44,6 +44,7 @@ public final class ClientSetup {
                     c -> new EntityModelRenderer<>(c, Models.aircraft(type), (float) type.gear, 1f));
         }
         ModRegistry.AIR_DEFENCE.forEach((name, v) -> e.registerEntityRenderer(v.get(), c -> new SteelAutoAimRenderer(c, name)));
+        e.registerEntityRenderer(ModRegistry.HIMARS.get(), c -> new SrVehicleRenderer<>(c, "himars"));
         ModRegistry.STRIKE.forEach((name, v) -> e.registerEntityRenderer(v.get(), c -> new SteelVehicleRenderer(c, name)));
         ModRegistry.SUPPORT.forEach((name, v) -> e.registerEntityRenderer(v.get(), c -> new SteelVehicleRenderer(c, name)));
         e.registerEntityRenderer(ModRegistry.OPERATOR_BODY.get(), OperatorBodyRenderer::new);

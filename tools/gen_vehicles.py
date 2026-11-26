@@ -811,6 +811,8 @@ def krasukha():
     return dict(base=base, turret=[], barrel=[], bones=bones)
 
 
+PIVOTS = {"himars": ((0, 1.2, -1.5), (0, 1.7, -2.5))}
+
 MODELS = {"zu_23_2": zu_23_2, "gepard": gepard, "pantsir": pantsir, "patriot": patriot, "himars": himars,
           "mortar_120": mortar_120, "m109": m109, "tomahawk_launcher": tomahawk_launcher,
           "iskander_launcher": iskander_launcher, "jammer": jammer, "trench_jammer": trench_jammer, "krasukha": krasukha}

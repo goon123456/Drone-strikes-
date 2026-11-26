@@ -25,6 +25,22 @@ full-size emplacements, and the drones and aircraft themselves are Steel Rain's 
   can be driven. The rest are static.
 - **Damage and repair** follow SBW's rules.
 
+### Steel Rain's own vehicles (moving off Superb Warfare)
+Linking to SBW caused too many problems, so the vehicles are being moved one at a time onto Steel Rain's own
+vehicle system. SBW stays required until the last one has moved. **Done so far: the M142 HIMARS.**
+
+- **Getting one**: craft it (or take it from the creative tab) and right-click the ground to put it down,
+  facing the way you look. The owner sneak-hits it to pack it back into the item; the item keeps its damage,
+  fuel, charge, loaded rockets and any dome, and the load in its storage is dropped on the ground.
+- **Driving**: right-click to get in (driver first, then a passenger). W/S throttle and reverse, A/D steer,
+  Space brakes, Shift gets out. Real steering geometry, wheels that turn and steer, the hull leaning on its springs,
+  climbs one-block steps and slopes. The camera pulls back in third person (F5). Deep water drowns the engine.
+- **Fuel**: the engine runs on diesel. Fill a **Jerrycan** (craft) with coal or charcoal to get a
+  **Jerrycan of Diesel** and right-click the vehicle with it: 20 L a can, 100 L tank, about 60 blocks a litre.
+- **Electricity**: the electronics and launcher run on FE from the vehicle's battery (500k FE). The engine's
+  alternator charges it while you drive, and any FE cable or charger can feed it.
+- **Status**: getting in as the driver shows fuel and battery. Sneak + right-click opens its storage.
+
 ### SBW air defence vehicles
 - They come packed in a Superb Warfare **container** (craftable, or from the Steel Rain and SBW vehicle tabs).
   Place it and open it with an SBW **crowbar**. Sneak + crowbar packs a vehicle up again.
@@ -206,7 +222,7 @@ at the charge's muzzle velocity and falls under gravity.
 ### Laptop-fired launchers: HIMARS, Tomahawk, Iskander
 The **HIMARS** and **Iskander-M launcher** (wheeled) can be driven; the **Tomahawk launcher** is static.
 
-- Put ammunition in the vehicle's SBW inventory (sneak + right-click).
+- Put ammunition in the vehicle's inventory (sneak + right-click).
 - Right-click the vehicle with a **Field Laptop** to link it, then use Fire Control. Links follow the vehicle.
 - On a fire order the launcher lays itself first (HIMARS pod swings onto the target, Tomahawk container and
   Iskander missile raise), then fires.
@@ -254,6 +270,7 @@ Propeller, Rocket Engine, Warhead, Guidance Unit. A recipe viewer such as JEI or
 
 ### Operator commands
 - `/steelrain launch <weapon> <from> <target>` fires a munition without a launcher
+- `/steelrain fire <x> <z> [count]` orders the nearest launcher (within 64 blocks) to fire, like the Field Laptop
 
 It needs permission level 2. Vehicles can be spawned with `/summon steelrain:<name>`.
 

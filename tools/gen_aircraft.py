@@ -370,7 +370,8 @@ def export(model, width, height):
         return out
     bones = [{"name": "root", "pivot": [0, 0, 0], "faces": faces(model["base"])}]
     for b in model["bones"]:
-        bones.append({"name": b["name"], "pivot": [round(v, 4) for v in b["pivot"]], "faces": faces(b["cubes"])})
+        bones.append({"name": b["name"], **({"parent": b["parent"]} if b.get("parent") else {}),
+                      "pivot": [round(v, 4) for v in b["pivot"]], "faces": faces(b["cubes"])})
     return {"bones": bones}
 
 

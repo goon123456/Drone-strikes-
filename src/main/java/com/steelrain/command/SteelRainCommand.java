@@ -36,7 +36,12 @@ public final class SteelRainCommand {
                                 .suggests((c, b) -> SharedSuggestionProvider.suggest(WEAPONS.keySet(), b))
                                 .then(Commands.argument("from", BlockPosArgument.blockPos())
                                         .then(Commands.argument("target", BlockPosArgument.blockPos())
-                                                .executes(SteelRainCommand::launch))))));
+                                                .executes(SteelRainCommand::launch)))))
+                .then(Commands.literal("fire")
+                        .then(Commands.argument("target", net.minecraft.commands.arguments.coordinates.ColumnPosArgument.columnPos())
+                                .executes(c -> fire(c, 1))
+                                .then(Commands.argument("count", com.mojang.brigadier.arguments.IntegerArgumentType.integer(1, 12))
+                                        .executes(c -> fire(c, com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(c, "count")))))));
     }
 
     private static int launch(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
@@ -52,6 +57,27 @@ public final class SteelRainCommand {
                 target.getX() + 0.5, target.getZ() + 0.5,
                 player != null ? player.getUUID() : null, player != null ? player.getGameProfile().getName() : null, true);
         ctx.getSource().sendSuccess(() -> Component.translatable("message.steelrain.launched", target.getX(), target.getZ()), true);
+        return 1;
+    }
+
+    /** Orders the nearest launcher within 64 blocks to fire at a target, as the Field Laptop would. */
+    private static int fire(CommandContext<CommandSourceStack> ctx, int count) throws CommandSyntaxException {
+        ServerPlayer player = ctx.getSource().getPlayerOrException();
+        var target = net.minecraft.commands.arguments.coordinates.ColumnPosArgument.getColumnPos(ctx, "target");
+        Vec3 at = ctx.getSource().getPosition();
+        var launchers = ctx.getSource().getLevel().getEntities((net.minecraft.world.entity.Entity) null,
+                new net.minecraft.world.phys.AABB(at, at).inflate(64), e -> e instanceof com.steelrain.weapon.Launcher);
+        launchers.sort(java.util.Comparator.comparingDouble(e -> e.distanceToSqr(at)));
+        if (launchers.isEmpty()) {
+            ctx.getSource().sendFailure(Component.translatable("message.steelrain.no_launcher"));
+            return 0;
+        }
+        Component refused = ((com.steelrain.weapon.Launcher) launchers.get(0)).tryLaunch(player, target.x(), target.z(), count);
+        if (refused != null) {
+            ctx.getSource().sendFailure(refused);
+            return 0;
+        }
+        ctx.getSource().sendSuccess(() -> Component.translatable("message.steelrain.launched", target.x(), target.z()), true);
         return 1;
     }
 
