@@ -24,13 +24,7 @@
     }
   },
   "result": {
-    "id": "superbwarfare:container",
-    "count": 1,
-    "components": {
-      "minecraft:block_entity_data": {
-        "id": "superbwarfare:container",
-        "EntityType": "steelrain:patriot"
-      }
-    }
+    "id": "steelrain:patriot",
+    "count": 1
   }
 }

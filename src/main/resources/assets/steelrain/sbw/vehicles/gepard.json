@@ -1,8 +1,0 @@
-{
-  "Models": [
-    {
-      "Model": "steelrain:models/bedrock/vehicle/gepard.geo.json",
-      "Texture": "steelrain:textures/bedrock/vehicle/gepard.png"
-    }
-  ]
-}

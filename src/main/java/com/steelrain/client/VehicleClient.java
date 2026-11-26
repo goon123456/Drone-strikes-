@@ -32,7 +32,43 @@ public final class VehicleClient {
         while (ClientSetup.SWITCH_SEAT.consumeClick()) send(v, SrVehicle.ACTION_SWITCH_SEAT);
         while (ClientSetup.SHELL_TYPE.consumeClick()) {
             if (v instanceof com.steelrain.entity.vehicle.SrGun g && g.isGunner(player)) send(v, com.steelrain.entity.vehicle.SrGun.ACTION_NEXT_SHELL);
+            if (v instanceof com.steelrain.entity.vehicle.SrAirDefence ad && ad.isGunner(player)) send(v, com.steelrain.entity.vehicle.SrAirDefence.ACTION_BELT);
         }
+        while (ClientSetup.AUTO_MODE.consumeClick()) {
+            if (v instanceof com.steelrain.entity.vehicle.SrAirDefence) send(v, com.steelrain.entity.vehicle.SrAirDefence.ACTION_AUTO);
+        }
+        // locked on, the sight is slaved to the guns: the view follows them round
+        if (v instanceof com.steelrain.entity.vehicle.SrAirDefence lockedOn && lockedOn.isGunner(player) && lockedOn.locked()) {
+            var d = lockedOn.gunDirection();
+            float yaw = (float) Math.toDegrees(Math.atan2(-d.x, d.z)), pitch = (float) -Math.toDegrees(Math.asin(Mth.clamp(d.y, -1, 1)));
+            player.setYRot(player.getYRot() + Mth.wrapDegrees(yaw - player.getYRot()) * 0.5f);
+            player.setXRot(player.getXRot() + (pitch - player.getXRot()) * 0.5f);
+        }
+        // the trigger is held, not clicked: tell the gun when it goes down and when it comes up
+        boolean held = v instanceof com.steelrain.entity.vehicle.SrAirDefence ad && ad.isGunner(player) && Minecraft.getInstance().options.keyAttack.isDown()
+                && Minecraft.getInstance().screen == null;
+        if (held != triggerHeld) {
+            triggerHeld = held;
+            send(v, held ? com.steelrain.entity.vehicle.SrAirDefence.ACTION_FIRE_ON : com.steelrain.entity.vehicle.SrAirDefence.ACTION_FIRE_OFF);
+        }
+    }
+
+    private static boolean triggerHeld;
+
+    /** Middle and right clicks reach the game only when looking at a block, so read them before it does. */
+    @SubscribeEvent
+    public static void tickPre(ClientTickEvent.Pre e) {
+        var ad = airGunner();
+        if (ad == null || Minecraft.getInstance().screen != null) return;
+        var options = Minecraft.getInstance().options;
+        while (options.keyPickItem.consumeClick()) send(ad, com.steelrain.entity.vehicle.SrAirDefence.ACTION_LOCK);
+        while (options.keyUse.consumeClick()) send(ad, com.steelrain.entity.vehicle.SrAirDefence.ACTION_MISSILE);
+    }
+
+    @Nullable
+    private static com.steelrain.entity.vehicle.SrAirDefence airGunner() {
+        var player = Minecraft.getInstance().player;
+        return player != null && player.getVehicle() instanceof com.steelrain.entity.vehicle.SrAirDefence ad && ad.isGunner(player) ? ad : null;
     }
 
     private static void send(SrVehicle v, int action) {
@@ -48,6 +84,13 @@ public final class VehicleClient {
     /** The gunner's left click fires the gun instead of swinging an arm. */
     @SubscribeEvent
     public static void click(net.neoforged.neoforge.client.event.InputEvent.InteractionKeyMappingTriggered e) {
+        var ad = airGunner();
+        if (ad != null) {
+            // left click is the trigger (handled as held above), middle click locks the radar, right click a missile
+            e.setCanceled(true);
+            e.setSwingHand(false);
+            return;
+        }
         var g = gunnerOf();
         if (g == null || !e.isAttack()) return;
         e.setCanceled(true);
@@ -58,7 +101,7 @@ public final class VehicleClient {
     /** Looking through the gun sight: no arm in front of it. */
     @SubscribeEvent
     public static void hand(net.neoforged.neoforge.client.event.RenderHandEvent e) {
-        if (gunnerOf() != null) e.setCanceled(true);
+        if (gunnerOf() != null || airGunner() != null) e.setCanceled(true);
     }
 
     /** The gunner's scroll wheel picks the propellant charge. */

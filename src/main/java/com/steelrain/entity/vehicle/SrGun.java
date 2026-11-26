@@ -58,11 +58,7 @@ public abstract class SrGun extends SrVehicle implements Launcher {
 
     protected abstract float elevateRate();
 
-    /** Pivots and the muzzle in vehicle space with the gun in its travelling position. */
-    protected abstract Vec3 turretPivot();
-
-    protected abstract Vec3 barrelPivot();
-
+    /** The muzzle in vehicle space with the gun in its travelling position. */
     protected abstract Vec3 muzzle();
 
     protected abstract int reloadTicks();
@@ -98,19 +94,6 @@ public abstract class SrGun extends SrVehicle implements Launcher {
     @Override
     protected Vec3 seatPosition(int seat) {
         return seat == gunnerSeat() ? onTurret(seats()[seat], false) : seats()[seat];
-    }
-
-    /** A point on the turret (and, if {@code onBarrel}, the barrel) as it is laid now, in vehicle space. */
-    public Vec3 onTurret(Vec3 p, boolean onBarrel) {
-        Vec3 tp = turretPivot(), bp = barrelPivot();
-        if (onBarrel) {
-            double e = Math.toRadians(gunPitch());
-            double y = p.y - bp.y, z = p.z - bp.z;
-            p = new Vec3(p.x, bp.y + y * Math.cos(e) + z * Math.sin(e), bp.z + z * Math.cos(e) - y * Math.sin(e));
-        }
-        double r = Math.toRadians(turretYaw());
-        double x = p.x - tp.x, z = p.z - tp.z;
-        return new Vec3(tp.x + x * Math.cos(r) - z * Math.sin(r), p.y, tp.z + x * Math.sin(r) + z * Math.cos(r));
     }
 
     /** Where the barrel points, in the world. */

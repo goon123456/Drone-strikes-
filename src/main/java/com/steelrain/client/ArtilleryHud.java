@@ -16,6 +16,77 @@ public final class ArtilleryHud {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player != null && !mc.options.hideGui && mc.player.getVehicle() instanceof com.steelrain.entity.vehicle.SrGun sr
                 && sr.isGunner(mc.player)) renderOwn(g, sr, mc);
+        if (mc.player != null && !mc.options.hideGui && mc.player.getVehicle() instanceof com.steelrain.entity.vehicle.SrAirDefence ad
+                && ad.isGunner(mc.player)) renderAir(g, ad, mc, delta.getGameTimeDeltaPartialTick(false));
+    }
+
+    /** Screen position of a direction from the eye, or null when it is behind or far off to the side. */
+    @javax.annotation.Nullable
+    private static int[] onScreen(GuiGraphics g, Minecraft mc, Vec3 dir) {
+        var player = mc.player;
+        double yaw = Math.toDegrees(Math.atan2(-dir.x, dir.z)), pitch = Math.toDegrees(Math.asin(Math.max(-1, Math.min(1, dir.y))));
+        double dyaw = net.minecraft.util.Mth.wrapDegrees(yaw - player.getYRot()), dpitch = pitch + player.getXRot();
+        if (Math.abs(dyaw) > 75 || Math.abs(dpitch) > 75) return null;
+        double scale = g.guiHeight() / 2.0 / Math.tan(Math.toRadians(mc.options.fov().get() / 2.0));
+        return new int[]{(int) (g.guiWidth() / 2.0 + Math.tan(Math.toRadians(dyaw)) * scale), (int) (g.guiHeight() / 2.0 - Math.tan(Math.toRadians(dpitch)) * scale)};
+    }
+
+    /**
+     * Air defence sight: the radar's state, a box round the tracked target, a diamond where to aim so the shells meet
+     * it (radar-laid guns only), a cross where the guns point now, rounds and belts, missiles.
+     */
+    private static void renderAir(GuiGraphics g, com.steelrain.entity.vehicle.SrAirDefence ad, Minecraft mc, float pt) {
+        Font font = mc.font;
+        int green = 0xFF8CE08C, amber = 0xFFE8C060, red = 0xFFE07060, white = 0xFFFFFFFF, dim = 0xFFB8C8B0;
+        Vec3 eye = mc.player.getEyePosition(pt);
+        var target = ad.target();
+        int x = 8, y = 8;
+        g.fill(x - 4, y - 4, x + 190, y + 66, 0x90101410);
+        Component radar;
+        if (!ad.hasRadar()) {
+            radar = Component.translatable("hud.steelrain.radar_none");
+        } else if (target == null) {
+            radar = Component.translatable("hud.steelrain.radar_search");
+        } else {
+            radar = Component.translatable(ad.locked() ? "hud.steelrain.radar_lock" : "hud.steelrain.radar_track",
+                    target.getName(), (int) target.distanceTo(ad));
+        }
+        g.drawString(font, radar, x, y, ad.locked() ? red : target != null ? amber : green, false);
+        if (ad.hasGuns()) {
+            g.drawString(font, Component.translatable(ad.beltAp() ? "hud.steelrain.belt_ap" : "hud.steelrain.belt_he", ad.rounds(),
+                    ad.stock(0), ad.stock(1)), x, y + 12, ad.rounds() > 0 ? white : red, false);
+        }
+        if (ad.missileRange() > 0) g.drawString(font, Component.translatable("hud.steelrain.missiles", ad.stock(2)), x, y + 24, white, false);
+        g.drawString(font, Component.translatable(ad.auto() ? "hud.steelrain.auto_on" : "hud.steelrain.auto_off"), x, y + 36, dim, false);
+        g.drawString(font, Component.translatable(ad.hasRadar() ? "hud.steelrain.air_keys_radar" : "hud.steelrain.air_keys"), x, y + 50, 0xFF808880, false);
+
+        // where the guns point right now
+        int[] gun = onScreen(g, mc, ad.gunDirection());
+        if (gun != null) {
+            g.fill(gun[0] - 5, gun[1], gun[0] + 6, gun[1] + 1, 0xC0FFFFFF);
+            g.fill(gun[0], gun[1] - 5, gun[0] + 1, gun[1] + 6, 0xC0FFFFFF);
+        }
+        if (target == null || !ad.hasRadar()) return;
+        Vec3 tp = new Vec3(net.minecraft.util.Mth.lerp(pt, target.xo, target.getX()), net.minecraft.util.Mth.lerp(pt, target.yo, target.getY()) + target.getBbHeight() / 2,
+                net.minecraft.util.Mth.lerp(pt, target.zo, target.getZ()));
+        int[] box = onScreen(g, mc, tp.subtract(eye).normalize());
+        int c = ad.locked() ? red : amber;
+        if (box != null) {
+            int r = 9;
+            g.fill(box[0] - r, box[1] - r, box[0] + r, box[1] - r + 1, c); g.fill(box[0] - r, box[1] + r, box[0] + r + 1, box[1] + r + 1, c);
+            g.fill(box[0] - r, box[1] - r, box[0] - r + 1, box[1] + r, c); g.fill(box[0] + r, box[1] - r, box[0] + r + 1, box[1] + r, c);
+        }
+        if (ad.hasGuns()) {
+            // the lead: where to put the guns so the shells and the target arrive together
+            Vec3 lead = ad.leadOn(target, true);
+            int[] d = onScreen(g, mc, lead);
+            if (d != null) {
+                for (int i = 0; i <= 5; i++) {
+                    g.fill(d[0] - 5 + i, d[1] - i, d[0] - 4 + i, d[1] - i + 1, green); g.fill(d[0] + 5 - i, d[1] - i, d[0] + 6 - i, d[1] - i + 1, green);
+                    g.fill(d[0] - 5 + i, d[1] + i, d[0] - 4 + i, d[1] + i + 1, green); g.fill(d[0] + 5 - i, d[1] + i, d[0] + 6 - i, d[1] + i + 1, green);
+                }
+            }
+        }
     }
 
     /**

@@ -320,6 +320,24 @@ public abstract class SrVehicle extends Entity implements OwnableEntity {
         if (action == ACTION_SWITCH_SEAT && hasPassenger(player)) switchSeat(player);
     }
 
+    /** Pivots of the turret and the gun on it, in vehicle space. */
+    protected Vec3 turretPivot() { return Vec3.ZERO; }
+
+    protected Vec3 barrelPivot() { return Vec3.ZERO; }
+
+    /** A point on the turret (and, if {@code onBarrel}, the gun) as it is laid now, in vehicle space. */
+    public Vec3 onTurret(Vec3 p, boolean onBarrel) {
+        Vec3 tp = turretPivot(), bp = barrelPivot();
+        if (onBarrel) {
+            double e = Math.toRadians(gunPitch());
+            double y = p.y - bp.y, z = p.z - bp.z;
+            p = new Vec3(p.x, bp.y + y * Math.cos(e) + z * Math.sin(e), bp.z + z * Math.cos(e) - y * Math.sin(e));
+        }
+        double r = Math.toRadians(turretYaw());
+        double x = p.x - tp.x, z = p.z - tp.z;
+        return new Vec3(tp.x + x * Math.cos(r) - z * Math.sin(r), p.y, tp.z + x * Math.sin(r) + z * Math.cos(r));
+    }
+
     /** Where a seat is now, in vehicle space; a seat in a turret turns with it. */
     protected Vec3 seatPosition(int seat) { return seats()[seat]; }
 

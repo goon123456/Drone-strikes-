@@ -177,6 +177,14 @@ public final class ModRegistry {
             () -> new com.steelrain.item.VehicleItem(new Item.Properties().stacksTo(1), () -> ModRegistry.TOMAHAWK_LAUNCHER.get()));
     public static final DeferredItem<Item> ISKANDER_LAUNCHER_ITEM = ITEMS.register("iskander_launcher",
             () -> new com.steelrain.item.VehicleItem(new Item.Properties().stacksTo(1), () -> ModRegistry.ISKANDER_LAUNCHER.get()));
+    public static final DeferredItem<Item> ZU23_ITEM = ITEMS.register("zu_23_2",
+            () -> new com.steelrain.item.VehicleItem(new Item.Properties().stacksTo(1), () -> ModRegistry.ZU23.get()));
+    public static final DeferredItem<Item> GEPARD_ITEM = ITEMS.register("gepard",
+            () -> new com.steelrain.item.VehicleItem(new Item.Properties().stacksTo(1), () -> ModRegistry.GEPARD.get()));
+    public static final DeferredItem<Item> PANTSIR_ITEM = ITEMS.register("pantsir",
+            () -> new com.steelrain.item.VehicleItem(new Item.Properties().stacksTo(1), () -> ModRegistry.PANTSIR.get()));
+    public static final DeferredItem<Item> PATRIOT_ITEM = ITEMS.register("patriot",
+            () -> new com.steelrain.item.VehicleItem(new Item.Properties().stacksTo(1), () -> ModRegistry.PATRIOT.get()));
     public static final DeferredItem<Item> M109_ITEM = ITEMS.register("m109",
             () -> new com.steelrain.item.VehicleItem(new Item.Properties().stacksTo(1), () -> ModRegistry.M109.get()));
 
@@ -255,6 +263,9 @@ public final class ModRegistry {
         }
     }
 
+    public static final DeferredHolder<EntityType<?>, EntityType<com.steelrain.entity.CannonShellEntity>> CANNON_SHELL = ENTITIES.register("cannon_shell",
+            () -> EntityType.Builder.<com.steelrain.entity.CannonShellEntity>of(com.steelrain.entity.CannonShellEntity::new, MobCategory.MISC)
+                    .sized(0.15f, 0.15f).clientTrackingRange(16).updateInterval(5).noSave().build("cannon_shell"));
     public static final DeferredHolder<EntityType<?>, EntityType<InterceptorEntity>> INTERCEPTOR = ENTITIES.register("pantsir_missile",
             () -> EntityType.Builder.<InterceptorEntity>of(InterceptorEntity::new, MobCategory.MISC)
                     .sized(0.4f, 0.4f).clientTrackingRange(20).updateInterval(1).build("pantsir_missile"));
@@ -270,20 +281,19 @@ public final class ModRegistry {
     public static final DeferredHolder<EntityType<?>, EntityType<FpvDroneEntity>> MAVIC_ENTITY = ENTITIES.register("mavic",
             () -> EntityType.Builder.<FpvDroneEntity>of(FpvDroneEntity::new, MobCategory.MISC)
                     .sized(0.45f, 0.2f).eyeHeight(0.05f).clientTrackingRange(24).updateInterval(1).build("mavic"));
-    // ---- air defence: real Superb Warfare vehicles ----
-    public static final Map<String, DeferredHolder<EntityType<?>, EntityType<com.steelrain.entity.AirDefenceVehicle>>> AIR_DEFENCE = new java.util.LinkedHashMap<>();
-    static {
-        airDefence("zu_23_2", 2.4f, 1.9f);
-        airDefence("gepard", 3.3f, 3.3f);
-        airDefence("pantsir", 3.0f, 3.6f);
-        airDefence("patriot", 3.0f, 3.4f);
-    }
-
-    private static void airDefence(String name, float width, float height) {
-        AIR_DEFENCE.put(name, ENTITIES.register(name, () -> EntityType.Builder
-                .<com.steelrain.entity.AirDefenceVehicle>of(com.steelrain.entity.AirDefenceVehicle::new, MobCategory.MISC)
-                .setTrackingRange(512).setUpdateInterval(1).fireImmune().sized(width, height).build(name)));
-    }
+    // ---- air defence ----
+    public static final DeferredHolder<EntityType<?>, EntityType<com.steelrain.entity.vehicle.Zu23>> ZU23 = ENTITIES.register("zu_23_2",
+            () -> EntityType.Builder.<com.steelrain.entity.vehicle.Zu23>of(com.steelrain.entity.vehicle.Zu23::new, MobCategory.MISC)
+                    .setTrackingRange(512).setUpdateInterval(1).fireImmune().sized(2.4f, 1.9f).build("zu_23_2"));
+    public static final DeferredHolder<EntityType<?>, EntityType<com.steelrain.entity.vehicle.Gepard>> GEPARD = ENTITIES.register("gepard",
+            () -> EntityType.Builder.<com.steelrain.entity.vehicle.Gepard>of(com.steelrain.entity.vehicle.Gepard::new, MobCategory.MISC)
+                    .setTrackingRange(512).setUpdateInterval(1).fireImmune().sized(3.3f, 3.3f).build("gepard"));
+    public static final DeferredHolder<EntityType<?>, EntityType<com.steelrain.entity.vehicle.Pantsir>> PANTSIR = ENTITIES.register("pantsir",
+            () -> EntityType.Builder.<com.steelrain.entity.vehicle.Pantsir>of(com.steelrain.entity.vehicle.Pantsir::new, MobCategory.MISC)
+                    .setTrackingRange(512).setUpdateInterval(1).fireImmune().sized(3.0f, 3.6f).build("pantsir"));
+    public static final DeferredHolder<EntityType<?>, EntityType<com.steelrain.entity.vehicle.Patriot>> PATRIOT = ENTITIES.register("patriot",
+            () -> EntityType.Builder.<com.steelrain.entity.vehicle.Patriot>of(com.steelrain.entity.vehicle.Patriot::new, MobCategory.MISC)
+                    .setTrackingRange(512).setUpdateInterval(1).fireImmune().sized(3.0f, 3.4f).build("patriot"));
 
     /** Steel Rain's own vehicles (moving off Superb Warfare one at a time). */
     public static final DeferredHolder<EntityType<?>, EntityType<com.steelrain.entity.vehicle.Himars>> HIMARS = ENTITIES.register("himars",
@@ -319,7 +329,6 @@ public final class ModRegistry {
     /** Every Superb Warfare vehicle this mod adds, for containers and creative tabs. */
     public static java.util.List<EntityType<?>> vehicles() {
         java.util.List<EntityType<?>> all = new java.util.ArrayList<>();
-        AIR_DEFENCE.values().forEach(v -> all.add(v.get()));
         SUPPORT.values().forEach(v -> all.add(v.get()));
         return all;
     }

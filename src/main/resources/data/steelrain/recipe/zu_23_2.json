@@ -21,13 +21,7 @@
     }
   },
   "result": {
-    "id": "superbwarfare:container",
-    "count": 1,
-    "components": {
-      "minecraft:block_entity_data": {
-        "id": "superbwarfare:container",
-        "EntityType": "steelrain:zu_23_2"
-      }
-    }
+    "id": "steelrain:zu_23_2",
+    "count": 1
   }
 }

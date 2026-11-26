@@ -19,6 +19,8 @@ public final class ClientSetup {
             InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_X, "key.categories.steelrain");
     public static final KeyMapping SWITCH_SEAT = new KeyMapping("key.steelrain.switch_seat",
             InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_Z, "key.categories.steelrain");
+    public static final KeyMapping AUTO_MODE = new KeyMapping("key.steelrain.auto_mode",
+            InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_I, "key.categories.steelrain");
     public static final KeyMapping SHELL_TYPE = new KeyMapping("key.steelrain.shell_type",
             InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_B, "key.categories.steelrain");
 
@@ -47,7 +49,11 @@ public final class ClientSetup {
             e.registerEntityRenderer(ModRegistry.AIRCRAFT.get(type).get(),
                     c -> new EntityModelRenderer<>(c, Models.aircraft(type), (float) type.gear, 1f));
         }
-        ModRegistry.AIR_DEFENCE.forEach((name, v) -> e.registerEntityRenderer(v.get(), c -> new SteelAutoAimRenderer(c, name)));
+        e.registerEntityRenderer(ModRegistry.ZU23.get(), c -> new SrVehicleRenderer<>(c, "zu_23_2"));
+        e.registerEntityRenderer(ModRegistry.GEPARD.get(), c -> new SrVehicleRenderer<>(c, "gepard"));
+        e.registerEntityRenderer(ModRegistry.PANTSIR.get(), c -> new SrVehicleRenderer<>(c, "pantsir"));
+        e.registerEntityRenderer(ModRegistry.PATRIOT.get(), c -> new SrVehicleRenderer<>(c, "patriot"));
+        e.registerEntityRenderer(ModRegistry.CANNON_SHELL.get(), CannonShellRenderer::new);
         e.registerEntityRenderer(ModRegistry.HIMARS.get(), c -> new SrVehicleRenderer<>(c, "himars"));
         e.registerEntityRenderer(ModRegistry.M109.get(), c -> new SrVehicleRenderer<>(c, "m109"));
         e.registerEntityRenderer(ModRegistry.MORTAR.get(), c -> new SrVehicleRenderer<>(c, "mortar_120"));
@@ -74,6 +80,7 @@ public final class ClientSetup {
         e.register(EXIT_DRONE);
         e.register(SWITCH_SEAT);
         e.register(SHELL_TYPE);
+        e.register(AUTO_MODE);
     }
 
     @SubscribeEvent

@@ -12,8 +12,8 @@ and tube artillery, and defend your base with air defence and jammers.
 The idea was inspired by the *Iron Drone* mod. All code, models and textures here are original.
 
 ## Built on Superb Warfare
-The air defence vehicles and jammers are still Superb Warfare vehicles (the artillery and missile launchers have
-moved to Steel Rain's own system, below); the rules in this section apply to those. The drone and aircraft launch sites (UAV Ground Station, Orlan Catapult, Shahed Launch Rail) are placed
+Only the jammers (EW Jammer, Trench Jammer, Krasukha-4) are still Superb Warfare vehicles; everything else has
+moved to Steel Rain's own vehicle system. The rules in this section apply to the jammers. The drone and aircraft launch sites (UAV Ground Station, Orlan Catapult, Shahed Launch Rail) are placed
 full-size emplacements, and the drones and aircraft themselves are Steel Rain's own.
 
 - **Getting one**: each comes packed in an SBW **container** (craftable; also in the Steel Rain and SBW vehicle
@@ -21,12 +21,13 @@ full-size emplacements, and the drones and aircraft themselves are Steel Rain's 
 - **Energy**: everything runs on SBW energy (FE). Park next to an SBW Charging Station or use any FE source.
   There is no liquid fuel.
 - **Inventory**: sneak + right-click opens the vehicle's SBW inventory for ammunition, missiles and aircraft.
-- **Driving**: the Gepard (tracked) and the Pantsir and Krasukha (wheeled) can be driven. The rest are static.
+- **Driving**: the Krasukha (wheeled) can be driven; the other two jammers are static.
 - **Damage and repair** follow SBW's rules.
 
 ### Steel Rain's own vehicles (moving off Superb Warfare)
 Linking to SBW caused too many problems, so the vehicles are being moved one at a time onto Steel Rain's own
-vehicle system. SBW stays required until the last one has moved. **Done so far: the HIMARS, M109, 120 mm mortar, Tomahawk launcher and Iskander-M launcher.**
+vehicle system. SBW stays required until the last one has moved. **Done so far: the HIMARS, M109, 120 mm mortar, Tomahawk and Iskander launchers, and all air defence
+(ZU-23-2, Gepard, Pantsir, Patriot).** Only the jammers are left.
 
 - **Getting one**: craft it (or take it from the creative tab) and right-click the ground to put it down,
   facing the way you look. The owner sneak-hits it to pack it back into the item; the item keeps its damage,
@@ -42,54 +43,29 @@ vehicle system. SBW stays required until the last one has moved. **Done so far: 
   alternator charges it while you drive, and any FE cable or charger can feed it.
 - **Status**: getting in as the driver shows fuel and battery. Sneak + right-click opens its storage.
 
-### SBW air defence vehicles
-- They come packed in a Superb Warfare **container** (craftable, or from the Steel Rain and SBW vehicle tabs).
-  Place it and open it with an SBW **crowbar**. Sneak + crowbar packs a vehicle up again.
-- **Gepard** (tracked) and **Pantsir** (8x8) can be driven; the **ZU-23-2** and **Patriot** are static.
-- Get in to fire the cannons yourself with SBW's HUD. The radar-laid Gepard and Pantsir show a lead point; the
-  hand-laid ZU-23-2 deliberately does not.
-- **Automatic mode**: sneak + right-click (first player becomes the owner) toggles it. With nobody inside, the
-  vehicle then searches for hostile aircraft, drones and missiles anywhere in range, aims at where they will be,
-  and fires. This is Steel Rain's own area-defence logic: SBW's built-in turrets only defend themselves.
-- **Targets**: Steel Rain drones and missiles, crewed SBW aircraft and helicopters, SBW recon drones and SBW
-  guided weapons, unless they belong to you or your scoreboard team.
-- **Ammo** goes in the vehicle's SBW inventory (sneak + right-click): 23 / 35 / 30 mm HE or AP belts for the
-  guns, 57E6 missiles for the Pantsir, PAC-2 missiles for the Patriot. The cannons fire SBW's own shell
-  projectile, which has a flight time.
-- **Energy**: the radar draws 250 FE a second while searching (500 while tracking), a Pantsir missile 5000 FE,
-  a Patriot missile 25000 FE. Driving uses energy the SBW way.
-- Steel Rain's flying things can also be locked and shot by Superb Warfare's own weapons.
-
-## What is in it
-
-Everything is built at real-world scale (1 block = 1 metre). Turrets, pods and barrels physically swing onto
-the target before firing.
-
-| System | Size (W x H x L) | Type | How it is used |
-| --- | --- | --- | --- |
-| **FPV Kamikaze Drone** | 0.5 m | Piloted drone | Flown by hand through its camera, explodes on impact |
-| **Fiber-Optic FPV Drone** | 0.5 m | Piloted drone | Same, but wired: cannot be jammed, limited by its cable instead of radio range |
-| **DJI Mavic** | 0.45 m | Piloted recon drone | Reusable, hovers, zoom camera, carries one droppable grenade |
-| **Orlan-10** | 3 m wingspan | Recon drone | Orlan Catapult + laptop. Circles the target for 4 minutes, returns by parachute |
-| **Bayraktar TB2** | 12 m wingspan | Recon drone | Ground Station + runway (30 blocks). Circles for 8 minutes |
-| **RQ-4 Global Hawk** | 40 m wingspan | High-altitude recon | Ground Station + runway (60 blocks). Very wide sensor, flies above the Pantsir |
-| **MQ-9 Reaper** | 20 m wingspan | Strike drone | Ground Station + runway (40 blocks). Fires up to 4 Hellfires, then lands |
-| **Shahed-136** | 2.5 m wingspan | One-way attack drone | Launch Rail (3 x 2 x 5) + laptop, range 4000 |
-| **Tomahawk** | 5.6 m | Cruise missile | Trailer launcher (3 x 3 x 9), container erects to fire, range 6000 |
-| **Iskander-M** | 7.3 m | Ballistic missile | TEL (3 x 3 x 13), missile raises to vertical, range 8000 |
-| **M142 HIMARS** | 3 x 3 x 7 | Rocket artillery | 6 GMLRS rockets, salvo fire, range 1200 |
-| **M109 Howitzer** | 3 x 3 x 7 | Tube artillery | 155 mm shells, cheap, less accurate, range 600 |
-| **Pantsir-S1** | 3 x 4 x 10 | Short-range air defence | Missiles for far or fast targets, twin 30 mm cannons for close ones; reaches 100 blocks above itself |
-| **Flakpanzer Gepard** | 3 x 4 x 8 | Gun air defence | Radar-aimed twin 35 mm guns, 96 block range, cheap ammo |
-| **ZU-23-2** | 3 x 2 x 3 | Gun air defence | Twin 23 mm. Fires on its own, or sit on it and aim by hand |
-| **MIM-104 Patriot** | 3 x 4 x 9 | Long-range air defence | 400 block reach, any altitude; only fires at aircraft, cruise and ballistic missiles |
-| **EW Jammer** | 3 x 3 x 3 + mast | Jammer | 64 block bubble |
-| **Krasukha-4** | 3 x 4 x 11 | Long-range jammer | 200 block bubble, burns fuel twenty times faster |
-| **Trench Jammer** | 1 x 2 x 1 | Jammer | 32 block bubble, cheap base protection |
-
-Ranges are in blocks and can be scaled in the config.
-
-## How to play
+### Air defence vehicles (Steel Rain's own)
+- **Getting one**: craft it and place it from the item; the owner sneak-hits it to pack it up again (it keeps its
+  state). Sneak + right-click opens its storage for belts and missiles.
+- **Gepard** (tracked) and **Pantsir** (8x8) are driven from seat 0; seat 1 is the gunner in the turret. The
+  **ZU-23-2** has one exposed gunner. The **Patriot** has no crew position. **Z** changes seat.
+- **Gunner**: look where to shoot and **hold left click** to fire; the guns follow your eye at their own pace (a
+  white cross shows where they point). The radar (Gepard, Pantsir) tracks the threat nearest your sight: a box
+  marks it and a green diamond shows where to aim so the shells meet it. **Middle click** locks on: the turret then
+  lays itself on the lead and your sight follows the guns; middle click again to let go. **Right click** fires a
+  Pantsir missile at the tracked target. **B** switches between HE and AP belts. The ZU-23-2 has no radar: you judge
+  the lead yourself.
+- **Automatic mode** (**I** while aboard; right-click the Patriot): with nobody at the guns it searches for hostile
+  aircraft, drones and missiles in range, aims at where they will be and fires its guns or missiles. The owner
+  switches it.
+- **Targets**: Steel Rain drones and missiles, crewed SBW aircraft and helicopters, SBW recon drones and guided
+  weapons, unless they belong to you or your scoreboard team. The Patriot only takes on missiles and aircraft.
+- **Ammo**: one belt is 50 rounds (40 for the Gepard's 35 mm); the loader puts the next belt on in 2 seconds.
+  HE rounds have a proximity fuse and a small blast; AP rounds hit 1.8x harder but must strike. Every second round
+  is a tracer. 57E6 missiles for the Pantsir, PAC-2 for the Patriot.
+- **Energy**: the radar draws 250 FE a second while searching (500 while tracking), a Pantsir missile 5000 FE, a
+  Patriot missile 25000 FE. Diesel engines charge the battery while driving; the Patriot has a diesel power unit.
+- Measured in automatic mode against a Shahed crossing overhead: Gepard and Pantsir guns down nearly all of them,
+  the ZU-23-2 about one in ten.
 
 ### Launchers and the Field Laptop
 1. Load ammunition into the vehicle's SBW inventory and make sure it is charged.
@@ -141,9 +117,7 @@ Every shot is a real object with a flight time.
   hit points, so it usually takes several hits.
 - **Missiles** steer towards the predicted intercept point with a limited turn rate and carry a proximity fuse:
   they only go off if they truly pass within a few blocks. There is no hit-chance roll anywhere.
-- **Manning the ZU-23-2**: right-click it with an empty hand to sit down (sneak + right-click opens its ammo
-  box instead). The guns follow where you look, hold attack to fire, sneak to get off. There is no lead marker:
-  judging the lead is up to you. The shells also hurt mobs and players.
+- **Manning the guns**: see "Air defence vehicles" above. The shells also hurt mobs and players.
 
 Ammo: 30 mm belts go in the Pantsir's second slot, 35 mm belts in the Gepard, 23 mm boxes in the ZU-23-2.
 
