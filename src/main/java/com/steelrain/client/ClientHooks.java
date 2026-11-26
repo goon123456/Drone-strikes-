@@ -6,7 +6,7 @@ import net.minecraft.client.Minecraft;
 /** Entry points for server -> client packets. Only ever touched on a physical client. */
 public final class ClientHooks {
     public static void onPilot(Payloads.Pilot p) {
-        if (p.start()) FpvClient.start(p.entityId(), p.range(), p.maxBattery());
+        if (p.start()) FpvClient.start(p.entityId(), p.maxBattery());
         else FpvClient.stopIf(p.entityId());
     }
 
@@ -32,6 +32,8 @@ public final class ClientHooks {
             FpvClient.stopFeed();
         }
     }
+
+    public static void onCable(Payloads.Cable p) { CableClient.update(p); }
 
     private ClientHooks() {}
 }

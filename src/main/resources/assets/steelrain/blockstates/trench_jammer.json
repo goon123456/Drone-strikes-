@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "steelrain:block/trench_jammer"
+    },
+    "facing=east": {
+      "model": "steelrain:block/trench_jammer",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "steelrain:block/trench_jammer",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "steelrain:block/trench_jammer",
+      "y": 270
+    }
+  }
+}

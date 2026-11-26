@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "steelrain:fpv_drone"
+    },
+    {
+      "item": "steelrain:fiber_spool"
+    }
+  ],
+  "result": {
+    "id": "steelrain:fiber_fpv_drone",
+    "count": 1
+  }
+}

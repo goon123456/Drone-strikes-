@@ -44,6 +44,7 @@ public class AircraftEntity extends FlyingWeaponEntity {
     private double speed;
     private int age, phaseTicks, orbitTicks;
     private int fireCooldown = 10;
+    private int jammedTicks;
 
     public AircraftEntity(EntityType<?> entityType, Level level) {
         super(entityType, level);
@@ -99,13 +100,19 @@ public class AircraftEntity extends FlyingWeaponEntity {
     @Override protected double modelRadius() { return type.span / 2 + 2; }
     @Override public boolean highValue() { return type != AircraftType.ORLAN; }
     @Override public boolean interceptable() { return phase != Phase.ROLL && phase != Phase.ROLLOUT; }
-    @Override public boolean jammable() { return phase == Phase.OUTBOUND || phase == Phase.ATTACK || phase == Phase.ORBIT; }
+    @Override protected boolean radioLinked() { return phase != Phase.ROLL && phase != Phase.ROLLOUT && phase != Phase.CHUTE; }
 
-    @Override
-    public void jam() {
-        if (!jammable()) return;
-        setPhase(Phase.RETURN);
-        tell("message.steelrain.aircraft_jammed");
+    /** Blinded sensors straight away; if the link stays jammed for five seconds the aircraft gives up and turns home. */
+    private void jammedTick() {
+        if (jam < 0.5f) {
+            jammedTicks = Math.max(0, jammedTicks - 1);
+            return;
+        }
+        if (++jammedTicks > 100 && (phase == Phase.OUTBOUND || phase == Phase.ATTACK || phase == Phase.ORBIT)) {
+            jammedTicks = 0;
+            setPhase(Phase.RETURN);
+            tell("message.steelrain.aircraft_jammed");
+        }
     }
 
     /** Sends an airborne aircraft to a new target. */
@@ -134,8 +141,9 @@ public class AircraftEntity extends FlyingWeaponEntity {
         age++;
         phaseTicks++;
         Vec3 pos = position();
+        jammedTick();
         if (phase != Phase.ROLL && phase != Phase.ROLLOUT) {
-            Recon.scan(level, this, type.sensorRadius, phase == Phase.ORBIT);
+            Recon.scan(level, this, type.sensorRadius, phase == Phase.ORBIT, jam);
         }
         switch (phase) {
             case ROLL -> roll(level, pos);
@@ -209,7 +217,7 @@ public class AircraftEntity extends FlyingWeaponEntity {
             case ATTACK -> {
                 desired = terrainFollowing(dir, targetX, targetZ, type.altitude, type.speed);
                 double h = flat(pos, targetX, targetZ);
-                if (hellfires > 0 && --fireCooldown <= 0) {
+                if (hellfires > 0 && jam < 0.5f && --fireCooldown <= 0) {
                     hellfires--;
                     fireCooldown = 25;
                     MissileEntity.launch(level, MissileProfile.HELLFIRE, pos.add(0, -1.5, 0), targetX, targetZ, ownerId, ownerName, true);

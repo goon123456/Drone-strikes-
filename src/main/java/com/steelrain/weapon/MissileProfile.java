@@ -26,7 +26,7 @@ public record MissileProfile(
     public static final MissileProfile ISKANDER = new MissileProfile("iskander", FlightMode.BALLISTIC,
             3.6, 8f, 8, 140f, 20, true, 20f, true, false, 0, 1.0, true);
     public static final MissileProfile GMLRS = new MissileProfile("gmlrs", FlightMode.BALLISTIC,
-            3.0, 5f, 3, 55f, 9, false, 6f, true, false, 0, 2.5, true);
+            3.0, 5f, 3, 55f, 9, false, 6f, true, true, 0, 2.5, true);
     public static final MissileProfile SHELL = new MissileProfile("shell_155mm", FlightMode.BALLISTIC,
             3.0, 4f, 2, 35f, 7, false, 100f, false, false, 0, 6.0, false);
     public static final MissileProfile HELLFIRE = new MissileProfile("hellfire", FlightMode.DIRECT,

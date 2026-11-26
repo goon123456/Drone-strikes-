@@ -2,6 +2,7 @@ package com.steelrain.util;
 
 import com.steelrain.ModRegistry;
 import com.steelrain.entity.AircraftEntity;
+import com.steelrain.entity.FpvDroneEntity;
 import com.steelrain.entity.OperatorBodyEntity;
 import com.steelrain.net.Payloads;
 import net.minecraft.core.registries.Registries;
@@ -46,11 +47,21 @@ public final class FeedManager {
         return false;
     }
 
-    /** @return null on success, otherwise why the feed could not start. */
+    /** Aircraft camera feed. @return null on success, otherwise why it could not start. */
     @Nullable
     public static Component start(ServerPlayer player, AircraftEntity aircraft) {
+        Component problem = attach(player, aircraft);
+        if (problem == null) {
+            PacketDistributor.sendToPlayer(player, new Payloads.Feed(aircraft.getId(), true, aircraft.type().ordinal()));
+        }
+        return problem;
+    }
+
+    /** Puts the player inside {@code target} and leaves a stand-in body behind. */
+    @Nullable
+    public static Component attach(ServerPlayer player, Entity target) {
         if (watching(player)) return Component.translatable("message.steelrain.feed_busy");
-        if (player.level() != aircraft.level() || !player.isAlive() || player.isSpectator()) {
+        if (player.level() != target.level() || !player.isAlive() || player.isSpectator()) {
             return Component.translatable("message.steelrain.feed_unavailable");
         }
         ServerLevel level = player.serverLevel();
@@ -62,22 +73,27 @@ public final class FeedManager {
         level.addFreshEntity(body);
 
         Session s = new Session(level.dimension(), player.position(), player.getYRot(), player.getXRot(),
-                player.gameMode.getGameModeForPlayer(), aircraft.getId(), body.getUUID());
+                player.gameMode.getGameModeForPlayer(), target.getId(), body.getUUID());
         SESSIONS.put(player.getUUID(), s);
         player.getPersistentData().put(TAG, write(s));
 
+        float pitch = target instanceof AircraftEntity ? 45f : player.getXRot();
         player.setGameMode(GameType.SPECTATOR);
-        player.teleportTo(level, aircraft.getX(), aircraft.getY(), aircraft.getZ(), player.getYRot(), 45f);
-        player.setCamera(aircraft);
-        PacketDistributor.sendToPlayer(player, new Payloads.Feed(aircraft.getId(), true, aircraft.type().ordinal()));
+        player.teleportTo(level, target.getX(), target.getY(), target.getZ(), player.getYRot(), pitch);
+        player.setCamera(target);
         return null;
     }
 
-    public static void stop(ServerPlayer player) {
+    /** Ends whatever the player is attached to and puts them back in their body. */
+    public static void detach(ServerPlayer player) {
         Session s = SESSIONS.remove(player.getUUID());
         if (s == null) return;
+        Entity target = player.level().getEntity(s.aircraftId);
         restore(player, s);
+        if (target instanceof FpvDroneEntity drone && drone.isPilot(player)) drone.releasePilot(null);
     }
+
+    public static void stop(ServerPlayer player) { detach(player); }
 
     private static void restore(ServerPlayer player, Session s) {
         MinecraftServer server = player.getServer();

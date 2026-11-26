@@ -121,7 +121,17 @@ public class WeaponBlock extends Block implements EntityBlock {
         if (!(level.getBlockEntity(core) instanceof WeaponBlockEntity be)) return InteractionResult.PASS;
         WeaponType type = be.type();
         if (level.isClientSide) return InteractionResult.SUCCESS;
-        if (stack.is(ModRegistry.FIELD_LAPTOP.get())) {
+        if (stack.is(ModRegistry.JAMMER_DOME.get())) {
+            if (be.fitDome()) {
+                if (!player.getAbilities().instabuild) stack.shrink(1);
+                player.displayClientMessage(Component.translatable("message.steelrain.dome_fitted"), true);
+            } else {
+                player.displayClientMessage(Component.translatable("message.steelrain.dome_refused"), true);
+            }
+        } else if (type.seat() != null && stack.isEmpty() && !player.isShiftKeyDown()) {
+            // Empty hand climbs on to the gun; sneak + empty hand opens the ammunition box instead.
+            be.mount(player);
+        } else if (stack.is(ModRegistry.FIELD_LAPTOP.get())) {
             if (!type.laptopControlled()) {
                 player.displayClientMessage(Component.translatable("message.steelrain.not_linkable"), true);
             } else {
@@ -154,6 +164,9 @@ public class WeaponBlock extends Block implements EntityBlock {
             if (level.getBlockEntity(pos) instanceof WeaponBlockEntity be && !Blast.destroying()) {
                 for (int i = 0; i < be.items.getSlots(); i++) {
                     Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), be.items.getStackInSlot(i));
+                }
+                if (be.hasDome()) {
+                    Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), new ItemStack(ModRegistry.JAMMER_DOME.get()));
                 }
             }
             // Take the rest of the vehicle with it.

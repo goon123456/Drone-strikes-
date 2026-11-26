@@ -73,7 +73,7 @@ public class WeaponBlockEntity extends BlockEntity implements MenuProvider {
             return switch (slot) {
                 case SLOT_PRIMARY -> type.acceptsPrimary(stack);
                 case SLOT_SECONDARY -> type.acceptsSecondary(stack);
-                default -> stack.is(ModRegistry.FUEL_CANISTER.get())
+                default -> stack.is(ModRegistry.FUEL_CANISTER.get()) || stack.is(ModRegistry.DRONE_BATTERY.get())
                         || stack.getCapability(Capabilities.FluidHandler.ITEM) != null;
             };
         }
@@ -139,11 +139,11 @@ public class WeaponBlockEntity extends BlockEntity implements MenuProvider {
 
     public final ContainerData data = new ContainerData() {
         @Override
-        public int get(int i) { return i == 0 ? fuel : busyTicks(); }
+        public int get(int i) { return i == 0 ? fuel : i == 1 ? busyTicks() : switchedOn ? 1 : 0; }
         @Override
         public void set(int i, int v) {}
         @Override
-        public int getCount() { return 2; }
+        public int getCount() { return 3; }
     };
 
     public WeaponBlockEntity(BlockPos pos, BlockState state) {
@@ -303,10 +303,9 @@ public class WeaponBlockEntity extends BlockEntity implements MenuProvider {
                 }
             }
             case AIR_DEFENCE -> airDefenceTick(sl, time);
-            case JAMMER -> {
-                if (time % 10 == 0) jam(sl);
-            }
+            case JAMMER -> { }
         }
+        if (time % 10 == 0 && (dome || type.kind == WeaponType.Kind.JAMMER)) emit(sl);
         if (salvoLeft == 0 && engageId < 0 && restTimer > 0 && --restTimer == 0) {
             yawTarget = 0;
             pitchTarget = type.restPitch;
@@ -320,6 +319,15 @@ public class WeaponBlockEntity extends BlockEntity implements MenuProvider {
         if (stack.is(ModRegistry.FUEL_CANISTER.get())) {
             if (TANK_CAPACITY - fuel >= CANISTER_MB) {
                 fuel += CANISTER_MB;
+                items.extractItem(SLOT_FUEL, 1, false);
+                setChanged();
+            }
+            return;
+        }
+        if (stack.is(ModRegistry.DRONE_BATTERY.get())) {
+            // Jammers also run off batteries.
+            if (TANK_CAPACITY - fuel >= 500) {
+                fuel += 500;
                 items.extractItem(SLOT_FUEL, 1, false);
                 setChanged();
             }
@@ -483,34 +491,118 @@ public class WeaponBlockEntity extends BlockEntity implements MenuProvider {
         setChanged();
     }
 
-    // ---- air defence ----
+    // ---- air defence: missiles and guns ----
+
+    private int rounds;            // cannon rounds left in the belt that is currently loaded
+    private int engageTicks;
+    private boolean barrel;        // alternates between the two guns
+    private boolean manualFire;
+    private int seatId = -1;
+
+    private int beltSlot() { return type == WeaponType.PANTSIR ? SLOT_SECONDARY : SLOT_PRIMARY; }
+
+    private boolean hasRounds() {
+        return type.hasGuns() && (rounds > 0 || !items.getStackInSlot(beltSlot()).isEmpty());
+    }
+
+    private boolean hasMissile() {
+        return type.hasMissiles() && primaryCount() > 0 && hasFuel(type.fuelPerShot);
+    }
+
+    /** The player sitting at the gun, if any. */
+    @Nullable
+    private Player gunner() {
+        if (seatId < 0 || level == null) return null;
+        Entity seat = level.getEntity(seatId);
+        if (seat == null || !seat.isAlive()) {
+            seatId = -1;
+            manualFire = false;
+            return null;
+        }
+        return seat.getFirstPassenger() instanceof Player p ? p : null;
+    }
+
+    /** Seats a player at a gun that can be manned. */
+    public boolean mount(Player player) {
+        Vec3 seat = type.seat();
+        if (seat == null || !(level instanceof ServerLevel sl) || gunner() != null) return false;
+        com.steelrain.entity.SeatEntity e = new com.steelrain.entity.SeatEntity(ModRegistry.SEAT.get(), sl);
+        e.setGun(worldPosition);
+        e.setPos(modelToWorld(seat));
+        sl.addFreshEntity(e);
+        seatId = e.getId();
+        manualFire = false;
+        return player.startRiding(e, true);
+    }
+
+    public void setManualFire(Player player, boolean firing) {
+        if (gunner() == player) manualFire = firing;
+    }
 
     private void airDefenceTick(ServerLevel level, long time) {
+        // A human gunner overrides the fire-control computer: the barrels follow their eyes, and they get no aiming help.
+        Player gunner = gunner();
+        if (gunner != null) {
+            engageId = -1;
+            aimAt(gunner.getYRot() - facing().toYRot(), Mth.clamp(-gunner.getXRot(), -5, 85));
+            // The seat is part of the mount: it swings round with the guns so the gunner always sits behind them.
+            Entity seat = level.getEntity(seatId);
+            Vec3 s = type.seat(), t = type.turretPivot();
+            if (seat != null && s != null) {
+                double r = yaw * Mth.DEG_TO_RAD, px = s.x - t.x, pz = s.z - t.z;
+                seat.setPos(modelToWorld(new Vec3(t.x + px * Math.cos(r) - pz * Math.sin(r), s.y, t.z + px * Math.sin(r) + pz * Math.cos(r))));
+            }
+            if (manualFire && time % 2 == 0) fireBullet(level, 0.4, gunner.getUUID());
+            return;
+        }
         boolean patriot = type == WeaponType.PATRIOT;
         if (engageId < 0) {
-            if (cooldown == 0 && primaryCount() > 0 && hasFuel(type.fuelPerShot) && time % (patriot ? 10 : 4) == 0) {
+            if ((hasMissile() && cooldown == 0 || hasRounds()) && time % (patriot ? 10 : 4) == 0) {
                 FlyingWeaponEntity target = findTarget(level, patriot);
                 if (target != null) {
                     engageId = target.getId();
-                    target.engagedUntil = time + 100;
+                    engageTicks = 0;
                 }
             }
             return;
         }
         Entity e = level.getEntity(engageId);
-        if (!(e instanceof FlyingWeaponEntity target) || !target.isAlive() || primaryCount() <= 0) {
+        Vec3 from = modelToWorld(type.gunPivot());
+        if (!(e instanceof FlyingWeaponEntity target) || !target.isAlive() || ++engageTicks > 400
+                || (!hasMissile() && !hasRounds())) {
             engageId = -1;
             return;
         }
-        // Swing the turret onto the target, then fire.
-        Vec3 from = modelToWorld(type.gunPivot());
-        Vec3 to = target.position().subtract(from);
+        Vec3 targetPos = target.position().add(0, target.getBbHeight() / 2, 0);
+        Vec3 targetMove = com.steelrain.util.Ballistics.velocity(target);
+        double dist = from.distanceTo(targetPos);
+
+        // Guns for close targets; the Pantsir keeps its missiles for far or fast ones.
+        boolean guns = hasRounds() && dist <= type.gunRange() && (!hasMissile() || !target.highValue());
+        if (!guns && !hasMissile()) {
+            if (dist > type.gunRange() * 1.4) engageId = -1;
+            guns = hasRounds();
+            if (!guns) return;
+        }
+        double shotSpeed = guns ? type.bulletSpeed() : (patriot ? 6.0 : 4.5);
+        // Aim at where the target will be when the shot arrives, plus a little up for the drop of a shell.
+        Vec3 aim = com.steelrain.util.Ballistics.intercept(from, targetPos, targetMove, shotSpeed);
+        if (aim == null) aim = targetPos;
+        if (guns) {
+            double t = from.distanceTo(aim) / shotSpeed;
+            aim = aim.add(0, 0.5 * com.steelrain.entity.BulletEntity.GRAVITY * t * t, 0);
+        }
+        Vec3 to = aim.subtract(from);
         float bearing = (float) (Mth.atan2(-to.x, to.z) * Mth.RAD_TO_DEG);
         float elevation = (float) (Mth.atan2(to.y, Math.sqrt(to.x * to.x + to.z * to.z)) * Mth.RAD_TO_DEG);
-        if (time % 3 == 0 || restTimer == 0) {
-            aimAt(bearing - facing().toYRot(), patriot ? type.firePitch : Mth.clamp(elevation, 0, 85));
+        aimAt(bearing - facing().toYRot(), patriot ? type.firePitch : Mth.clamp(elevation, -5, 85));
+
+        if (guns) {
+            target.engagedUntil = Math.max(target.engagedUntil, time + 10);
+            if (aligned(2.5f) && dist <= type.gunRange() && time % 2 == 0) fireBullet(level, type.dispersion(), owner);
+            return;
         }
-        if (cooldown > 0 || !aligned(12f)) return;
+        if (cooldown > 0 || !aligned(12f) || target.engagedUntil > time) return;
 
         items.extractItem(SLOT_PRIMARY, 1, false);
         burn(type.fuelPerShot);
@@ -529,33 +621,78 @@ public class WeaponBlockEntity extends BlockEntity implements MenuProvider {
         sync();
     }
 
+    /** One round out of the barrel, in the direction the gun is actually pointing right now. */
+    private void fireBullet(ServerLevel level, double dispersionDeg, @Nullable UUID shooter) {
+        if (rounds <= 0) {
+            if (items.extractItem(beltSlot(), 1, false).isEmpty()) return;
+            rounds = type.roundsPerBelt();
+        }
+        rounds--;
+        barrel = !barrel;
+        double e = effectivePitch() * Mth.DEG_TO_RAD, r = yaw * Mth.DEG_TO_RAD;
+        Vec3 m = type.gunMuzzle(), g = type.gunPivot(), t = type.turretPivot();
+        double mx = barrel ? m.x : -m.x;
+        double my = m.y * Math.cos(e) + m.z * Math.sin(e);
+        double mz = -m.y * Math.sin(e) + m.z * Math.cos(e);
+        double px = g.x - t.x + mx, py = g.y - t.y + my, pz = g.z - t.z + mz;
+        Vec3 from = modelToWorld(new Vec3(t.x + px * Math.cos(r) - pz * Math.sin(r), t.y + py, t.z + px * Math.sin(r) + pz * Math.cos(r)));
+        double spread = Math.tan(dispersionDeg * Mth.DEG_TO_RAD);
+        Vec3 dir = aimDirection().add(level.random.nextGaussian() * spread, level.random.nextGaussian() * spread,
+                level.random.nextGaussian() * spread).normalize();
+        com.steelrain.entity.BulletEntity.fire(level, from, dir.scale(type.bulletSpeed()), type.bulletDamage(), shooter);
+        level.playSound(null, BlockPos.containing(from), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.BLOCKS, 1.5f, 2f);
+        if (level.random.nextInt(3) == 0) level.sendParticles(ParticleTypes.SMOKE, from.x, from.y, from.z, 1, 0.05, 0.05, 0.05, 0.01);
+        setChanged();
+    }
+
     @Nullable
     private FlyingWeaponEntity findTarget(ServerLevel level, boolean patriot) {
-        double range = patriot ? Config.PATRIOT_RANGE.get() : Config.AIR_DEFENCE_RANGE.get();
+        double range = patriot ? Config.PATRIOT_RANGE.get()
+                : type.hasMissiles() ? Config.AIR_DEFENCE_RANGE.get() : type.gunRange() * 1.3;
         Vec3 centre = Vec3.atCenterOf(worldPosition);
         long now = level.getGameTime();
+        boolean gunsOnly = !hasMissile();
         return level.getEntitiesOfClass(FlyingWeaponEntity.class, new AABB(centre, centre).inflate(range),
-                        e -> e.interceptable() && e.engagedUntil < now
+                        e -> e.interceptable() && (gunsOnly || e.engagedUntil < now)
                                 && (patriot ? e.highValue() : e.getY() - worldPosition.getY() <= Config.AIR_DEFENCE_CEILING.get())
                                 && e.distanceToSqr(centre) <= range * range
                                 && !Teams.friendly(level, owner, ownerName, e.ownerId(), e.ownerName()))
                 .stream().min(Comparator.comparingDouble(e -> e.distanceToSqr(centre))).orElse(null);
     }
 
-    // ---- jammer ----
+    // ---- jamming ----
 
-    private void jam(ServerLevel level) {
+    private boolean switchedOn = true;
+    private boolean dome;
+
+    public boolean switchedOn() { return switchedOn; }
+    public boolean hasDome() { return dome; }
+
+    public void toggle() {
+        switchedOn = !switchedOn;
+        sync();
+    }
+
+    /** Fits a Jammer Dome. @return false if it already has one. */
+    public boolean fitDome() {
+        if (dome || type.kind == WeaponType.Kind.JAMMER) return false;
+        dome = true;
+        sync();
+        return true;
+    }
+
+    /** Keeps this system's jamming bubble alive while it is switched on and has fuel. */
+    private void emit(ServerLevel level) {
+        Vec3 centre = modelToWorld(new Vec3(0, type.height, type.length / 2.0));
+        if (dome) {
+            com.steelrain.util.Jamming.emit(level, worldPosition.above(), centre, Config.DOME_JAMMER_RANGE.get(), owner, ownerName);
+        }
+        if (type.kind != WeaponType.Kind.JAMMER || !switchedOn) return;
         if (Config.REQUIRE_FUEL.get()) {
             if (fuel <= 0) return;
-            burn(1);
+            burn(type.jamFuel());
         }
-        double range = Config.JAMMER_RANGE.get();
-        Vec3 centre = Vec3.atCenterOf(worldPosition);
-        for (FlyingWeaponEntity e : level.getEntitiesOfClass(FlyingWeaponEntity.class, new AABB(centre, centre).inflate(range),
-                e -> e.jammable() && e.distanceToSqr(centre) <= range * range
-                        && !Teams.friendly(level, owner, ownerName, e.ownerId(), e.ownerName()))) {
-            e.jam();
-        }
+        com.steelrain.util.Jamming.emit(level, worldPosition, centre, type.jamRadius(), owner, ownerName);
     }
 
     // ---- menu ----
@@ -588,6 +725,9 @@ public class WeaponBlockEntity extends BlockEntity implements MenuProvider {
         tag.putFloat("Pitch", pitch);
         tag.putFloat("YawT", yawTarget);
         tag.putFloat("PitchT", pitchTarget);
+        tag.putInt("Rounds", rounds);
+        tag.putBoolean("On", switchedOn);
+        tag.putBoolean("Dome", dome);
     }
 
     @Override
@@ -598,6 +738,8 @@ public class WeaponBlockEntity extends BlockEntity implements MenuProvider {
             yawTarget = tag.getFloat("YawT");
             pitchTarget = tag.getFloat("PitchT");
             loaded = tag.getInt("Loaded");
+            dome = tag.getBoolean("Dome");
+            switchedOn = tag.getBoolean("On");
             if (!clientInit) {
                 clientInit = true;
                 yaw = yawO = tag.getFloat("Yaw");
@@ -616,6 +758,9 @@ public class WeaponBlockEntity extends BlockEntity implements MenuProvider {
         salvoOwner = tag.hasUUID("SalvoOwner") ? tag.getUUID("SalvoOwner") : null;
         salvoOwnerName = tag.contains("SalvoOwnerName") ? tag.getString("SalvoOwnerName") : null;
         aircraftId = tag.hasUUID("Aircraft") ? tag.getUUID("Aircraft") : null;
+        rounds = tag.getInt("Rounds");
+        switchedOn = !tag.contains("On") || tag.getBoolean("On");
+        dome = tag.getBoolean("Dome");
         if (tag.contains("Pitch")) {
             yaw = yawO = tag.getFloat("Yaw");
             pitch = pitchO = tag.getFloat("Pitch");
@@ -633,6 +778,8 @@ public class WeaponBlockEntity extends BlockEntity implements MenuProvider {
         tag.putFloat("YawT", yawTarget);
         tag.putFloat("PitchT", pitchTarget);
         tag.putInt("Loaded", loadedCode());
+        tag.putBoolean("Dome", dome);
+        tag.putBoolean("On", switchedOn);
         return tag;
     }
 

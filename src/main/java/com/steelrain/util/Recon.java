@@ -31,7 +31,7 @@ import java.util.UUID;
 
 /** Sensors of recon drones: terrain for the laptop map, target markers, and artillery spotting. */
 public final class Recon {
-    public static final int HOSTILE = 0, NEUTRAL = 1, ENEMY_PLAYER = 2, FRIENDLY_PLAYER = 3, ENEMY_WEAPON = 4;
+    public static final int HOSTILE = 0, NEUTRAL = 1, ENEMY_PLAYER = 2, FRIENDLY_PLAYER = 3, ENEMY_WEAPON = 4, JAMMER = 5;
     private static final int TILES_PER_TICK = 3;
     private static final int MAX_MARKERS = 256;
 
@@ -41,9 +41,17 @@ public final class Recon {
     private static final Map<Integer, Source> SOURCES = new HashMap<>();
 
     /** Call every tick from a drone that is looking at the ground. */
-    public static void scan(ServerLevel level, FlyingWeaponEntity drone, int radius, boolean wide) {
+    public static void scan(ServerLevel level, FlyingWeaponEntity drone, int radius, boolean wide, float jam) {
         long time = level.getGameTime();
         boolean slow = (time + drone.getId()) % 20 == 0;
+        boolean blind = jam > 0.3f; // a jammed drone sees nothing, but it can still tell where the jamming comes from
+        if (blind) {
+            if (slow) {
+                List<ServerPlayer> who = viewers(level, drone);
+                if (!who.isEmpty()) sendMarkers(level, drone, radius, who, true);
+            }
+            return;
+        }
         if (slow) {
             SOURCES.put(drone.getId(), new Source(level.dimension(), drone.getX(), drone.getZ(), radius,
                     drone.ownerId(), drone.ownerName(), time + 40));
@@ -51,7 +59,7 @@ public final class Recon {
         List<ServerPlayer> viewers = viewers(level, drone);
         if (viewers.isEmpty()) return;
         sendTiles(level, drone, radius, viewers);
-        if (slow) sendMarkers(level, drone, radius, viewers);
+        if (slow) sendMarkers(level, drone, radius, viewers, false);
     }
 
     /** The owner and their team mates who are in this dimension. */
@@ -112,9 +120,20 @@ public final class Recon {
         return out;
     }
 
-    private static void sendMarkers(ServerLevel level, FlyingWeaponEntity drone, int radius, List<ServerPlayer> viewers) {
+    private static void sendMarkers(ServerLevel level, FlyingWeaponEntity drone, int radius, List<ServerPlayer> viewers, boolean blind) {
         IntArrayList data = new IntArrayList();
         double x = drone.getX(), z = drone.getZ();
+        // Running jammers are loud radio sources: they give themselves away even to a drone they are blinding.
+        for (Jamming.Emitter e : Jamming.hostileNear(level, x, z, radius, drone.ownerId(), drone.ownerName())) {
+            data.add(Mth.floor(e.pos().x));
+            data.add(Mth.floor(e.pos().z));
+            data.add(JAMMER);
+        }
+        if (blind) {
+            Payloads.Markers jammed = new Payloads.Markers(drone.getId(), Mth.floor(x), Mth.floor(z), 0, data.toIntArray());
+            for (ServerPlayer p : viewers) PacketDistributor.sendToPlayer(p, jammed);
+            return;
+        }
         AABB box = new AABB(x - radius, level.getMinBuildHeight(), z - radius, x + radius, level.getMaxBuildHeight() + 64, z + radius);
         for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, box, e -> e.isAlive() && !e.isSpectator())) {
             if (data.size() >= MAX_MARKERS * 3) break;

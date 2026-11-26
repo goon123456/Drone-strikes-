@@ -18,6 +18,14 @@ public class EntityModelRenderer<T extends Entity> extends EntityRenderer<T> {
     private final float pitchFactor;
 
     /** @param axisHeight how far the model's origin sits above the entity's feet */
+    private boolean glow;
+
+    /** Makes the model ignore the light level, for tracers. */
+    public EntityModelRenderer<T> fullBright() {
+        glow = true;
+        return this;
+    }
+
     public EntityModelRenderer(EntityRendererProvider.Context ctx, BoxModel model, float axisHeight, float pitchFactor) {
         super(ctx);
         this.model = model;
@@ -35,7 +43,7 @@ public class EntityModelRenderer<T extends Entity> extends EntityRenderer<T> {
         if (entity instanceof FpvDroneEntity drone && drone.mavic()) {
             model.get("grenade").visible = drone.hasGrenade();
         }
-        model.render(pose, buffers.getBuffer(RenderType.entityCutoutNoCull(Models.PAINT)), light);
+        model.render(pose, buffers.getBuffer(RenderType.entityCutoutNoCull(Models.PAINT)), glow ? 0xF000F0 : light);
         pose.popPose();
         super.render(entity, yaw, partialTick, pose, buffers, light);
     }

@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "  A",
+    "ICD",
+    "I  "
+  ],
+  "key": {
+    "A": {
+      "item": "minecraft:lightning_rod"
+    },
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "C": {
+      "item": "steelrain:circuit_board"
+    },
+    "D": {
+      "item": "steelrain:drone_battery"
+    }
+  },
+  "result": {
+    "id": "steelrain:anti_drone_gun",
+    "count": 1
+  }
+}

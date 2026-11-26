@@ -155,6 +155,42 @@ BLOCKS = {
         el("white", [7, 3.5, 2, 9, 5.5, 11], ([8, 2, 16], 22.5)),
         el("white", [1, 5, 5, 15, 5.6, 8], ([8, 2, 16], 22.5)),
     ],
+    "gepard": [
+        el("tracks", [0, 0, 0, 3, 4, 16]), el("tracks", [13, 0, 0, 16, 4, 16]),
+        el("olive", [1, 2, 0, 15, 7, 16]),
+        el("panel", [4, 7, 5, 12, 12, 13]),
+        el("olive_dark", [1.5, 8, 5, 4, 11, 12], ([8, 9.5, 12], 22.5)),
+        el("olive_dark", [12, 8, 5, 14.5, 11, 12], ([8, 9.5, 12], 22.5)),
+        el("steel_dark", [2.3, 9, -3, 3.3, 10, 5], ([8, 9.5, 12], 22.5)),
+        el("steel_dark", [12.7, 9, -3, 13.7, 10, 5], ([8, 9.5, 12], 22.5)),
+        el("radar", [5, 13, 12, 11, 16, 13]),
+        el("steel", [7.5, 12, 12.5, 8.5, 13, 13.5]),
+    ],
+    "zu_23_2": [
+        el("tracks", [1, 0, 6, 4, 5, 11]), el("tracks", [12, 0, 6, 15, 5, 11]),
+        el("steel_dark", [3, 2, 4, 13, 4, 13]),
+        el("olive", [5, 4, 6, 11, 8, 11]),
+        el("olive_dark", [5.5, 4, 11, 10.5, 9, 13]),
+        el("steel_dark", [6, 8, -4, 7.2, 9.2, 9], ([8, 8.5, 9], 22.5)),
+        el("steel_dark", [8.8, 8, -4, 10, 9.2, 9], ([8, 8.5, 9], 22.5)),
+        el("olive", [3, 6, 5, 5.5, 10, 9]), el("olive", [10.5, 6, 5, 13, 10, 9]),
+    ],
+    "trench_jammer": [
+        el("panel", [3, 0, 3, 13, 9, 13]),
+        el("steel_dark", [4, 9, 4, 12, 10, 12]),
+        el("steel", [7.5, 10, 7.5, 8.5, 22, 8.5]),
+        el("steel_dark", [3, 19, 7.7, 13, 19.6, 8.3]),
+        el("steel_dark", [7.7, 16, 3, 8.3, 16.6, 13]),
+        el("red", [7.5, 22, 7.5, 8.5, 23, 8.5]),
+    ],
+    "krasukha": wheels([1, 6.5, 12]) + [
+        el("olive", [2, 2, 0, 14, 6, 16]),
+        el("panel", [2, 6, 0, 14, 10, 4]),
+        el("glass", [3, 7.5, -0.2, 13, 9.5, 0]),
+        el("olive_dark", [2, 6, 5, 14, 11, 12]),
+        el("steel", [7.5, 6, 13, 8.5, 14, 14]),
+        el("radar", [1, 9, 13.5, 15, 20, 14.5], ([8, 14, 14], -22.5)),
+    ],
     "patriot": [
         el("tracks", [1, 0, 6, 15, 3, 9.5]), el("tracks", [1, 0, 10.5, 15, 3, 14]),
         el("steel_dark", [2, 3, 0, 14, 5, 16]),
@@ -390,9 +426,66 @@ def item_icons():
     d.rectangle([7, 9, 8, 11], fill=c((110, 114, 120)))
     icons["global_hawk"] = outlined(img)
 
+    img, d = canvas()   # fibre-optic FPV: cyan props and a cable reel
+    d.line([(3, 3), (12, 12)], fill=c((40, 40, 44))); d.line([(12, 3), (3, 12)], fill=c((40, 40, 44)))
+    for x, y in ((2, 2), (11, 2), (2, 11), (11, 11)):
+        d.rectangle([x, y, x + 2, y + 2], fill=c((64, 200, 255)))
+    d.rectangle([6, 5, 9, 10], fill=c((66, 68, 74)))
+    d.rectangle([7, 8, 8, 9], fill=c((230, 230, 224)))
+    d.rectangle([7, 4, 8, 5], fill=c((80, 110, 70)))
+    icons["fiber_fpv_drone"] = outlined(img)
+
+    img, d = canvas()   # spool of fibre
+    d.ellipse([3, 3, 12, 12], fill=c((226, 226, 220)))
+    d.ellipse([5, 5, 10, 10], fill=c((64, 200, 255)))
+    d.rectangle([7, 7, 8, 8], fill=c((60, 64, 70)))
+    d.line([(12, 9), (14, 13)], fill=c((64, 200, 255)))
+    icons["fiber_spool"] = outlined(img)
+
+    img, d = canvas()   # fibre backpack
+    d.rectangle([4, 3, 11, 13], fill=c((66, 76, 46)))
+    d.ellipse([5, 5, 10, 10], fill=c((226, 226, 220)))
+    d.rectangle([7, 7, 8, 8], fill=c((64, 200, 255)))
+    d.line([(4, 3), (2, 6)], fill=c((40, 46, 30))); d.line([(11, 3), (13, 6)], fill=c((40, 46, 30)))
+    icons["fiber_backpack"] = outlined(img)
+
+    img, d = canvas()   # jammer backpack
+    d.rectangle([4, 6, 11, 14], fill=c((92, 104, 62)))
+    d.rectangle([6, 8, 9, 11], fill=c((66, 76, 46)))
+    d.line([(5, 6), (5, 1)], fill=c((70, 74, 78))); d.line([(8, 6), (8, 0)], fill=c((70, 74, 78))); d.line([(10, 6), (10, 3)], fill=c((70, 74, 78)))
+    d.point((8, 12), fill=c((230, 50, 40)))
+    icons["jammer_backpack"] = outlined(img)
+
+    img, d = canvas()   # anti-drone gun: stock, body, panel antenna
+    d.line([(2, 12), (6, 9)], fill=c((50, 52, 56)), width=2)
+    d.rectangle([5, 7, 10, 9], fill=c((70, 74, 80)))
+    d.rectangle([10, 4, 13, 9], fill=c((40, 44, 50)))
+    d.rectangle([11, 5, 12, 8], fill=c((64, 200, 255)))
+    d.line([(6, 10), (6, 12)], fill=c((50, 52, 56)))
+    icons["anti_drone_gun"] = outlined(img)
+
+    img, d = canvas()   # jammer dome
+    d.pieslice([3, 4, 12, 16], 180, 360, fill=c((156, 160, 166)))
+    d.rectangle([3, 10, 12, 11], fill=c((112, 116, 122)))
+    d.line([(8, 4), (8, 1)], fill=c((70, 74, 78)))
+    icons["jammer_dome"] = outlined(img)
+
+    def belt(shell, tip, n):
+        img, d = canvas()
+        d.rectangle([2, 9, 13, 12], fill=c((66, 76, 46)))
+        for i in range(n):
+            x = 3 + i * (10 // n)
+            d.rectangle([x, 4, x + 1, 10], fill=c(shell))
+            d.point([(x, 3), (x + 1, 3)], fill=c(tip))
+        return outlined(img)
+    icons["ammo_30mm"] = belt((196, 166, 76), (200, 60, 50), 4)
+    icons["ammo_35mm"] = belt((196, 166, 76), (60, 90, 190), 3)
+    icons["ammo_23mm"] = belt((184, 112, 64), (40, 40, 40), 5)
+
     for name, img in icons.items():
         save(img, f"{A}/textures/item/{name}.png")
-        write(f"{A}/models/item/{name}.json", {"parent": "minecraft:item/generated", "textures": {"layer0": f"{MOD}:item/{name}"}})
+        parent = "minecraft:item/handheld" if name == "anti_drone_gun" else "minecraft:item/generated"
+        write(f"{A}/models/item/{name}.json", {"parent": parent, "textures": {"layer0": f"{MOD}:item/{name}"}})
 
 
 # ---------------------------------------------------------------- entity paint
@@ -448,6 +541,27 @@ def recipes():
     shaped("orlan_10", ["IPI", "IUI", " M "], {"I": I, "P": "propeller", "U": "guidance_unit", "M": "electric_motor"})
     shaped("bayraktar_tb2", [" U ", "BMB", "DPD"], {"U": "guidance_unit", "B": B, "M": "electric_motor", "D": "drone_battery", "P": "propeller"})
     shaped("global_hawk", ["DUD", "BEB", "DUD"], {"D": MC + "diamond", "U": "guidance_unit", "B": B, "E": "rocket_engine"})
+    shaped("gepard", ["UOU", "MCM", "BBB"], {"U": "ammo_35mm", "O": MC + "observer", "M": "electric_motor", "C": "circuit_board", "B": B})
+    shaped("zu_23_2", ["I I", "IMI", "NBN"], {"I": I, "M": "electric_motor", "N": N, "B": B})
+    shaped("trench_jammer", [" A ", "CDC", "III"], {"A": MC + "lightning_rod", "C": "circuit_board", "D": "drone_battery", "I": I})
+    shaped("krasukha", ["AUA", "CUC", "BBB"], {"A": MC + "lightning_rod", "U": "guidance_unit", "C": "circuit_board", "B": B})
+    shaped("jammer_dome", [" A ", "ICI", "IDI"], {"A": MC + "lightning_rod", "I": N, "C": "circuit_board", "D": "drone_battery"})
+    shaped("jammer_backpack", ["A A", "LCL", "LDL"], {"A": MC + "lightning_rod", "L": MC + "leather", "C": "circuit_board", "D": "drone_battery"})
+    shaped("anti_drone_gun", ["  A", "ICD", "I  "], {"A": MC + "lightning_rod", "I": I, "C": "circuit_board", "D": "drone_battery"})
+    shaped("fiber_spool", ["GGG", "GSG", "GGG"], {"G": MC + "glass_pane", "S": MC + "stick"}, 2)
+    shaped("fiber_backpack", ["L L", "LFL", "LIL"], {"L": MC + "leather", "F": "fiber_spool", "I": I})
+    shaped("ammo_30mm", ["NNN", "PPP", "CCC"], {"N": N, "P": P, "C": C}, 2)
+    shaped("ammo_35mm", ["NNN", "PPP", "CIC"], {"N": N, "P": P, "C": C, "I": I}, 2)
+    shaped("ammo_23mm", ["NNN", "PPP", " C "], {"N": N, "P": P, "C": C}, 2)
+    write(f"{D}/recipe/fiber_fpv_drone.json", {
+        "type": "minecraft:crafting_shapeless", "category": "misc",
+        "ingredients": [{"item": f"{MOD}:fpv_drone"}, {"item": f"{MOD}:fiber_spool"}],
+        "result": {"id": f"{MOD}:fiber_fpv_drone", "count": 1}})
+    for gadget in ("jammer_backpack", "anti_drone_gun"):
+        write(f"{D}/recipe/{gadget}_recharge.json", {
+            "type": "minecraft:crafting_shapeless", "category": "misc",
+            "ingredients": [{"item": f"{MOD}:{gadget}"}, {"item": f"{MOD}:drone_battery"}],
+            "result": {"id": f"{MOD}:{gadget}", "count": 1}})
     # A fresh battery puts a used Mavic back to full charge.
     write(f"{D}/recipe/mavic_recharge.json", {
         "type": "minecraft:crafting_shapeless", "category": "misc",
@@ -460,6 +574,9 @@ def recipes():
 # ---------------------------------------------------------------- tags
 def tags():
     opt = lambda i: {"id": i, "required": False}
+    # Curios (optional): give players a back slot and allow the backpacks in it.
+    write(f"{RES}/data/curios/tags/item/back.json", {"replace": False, "values": [f"{MOD}:fiber_backpack", f"{MOD}:jammer_backpack"]})
+    write(f"{D}/curios/entities/steelrain_player.json", {"entities": ["minecraft:player"], "slots": ["back"]})
     write(f"{D}/tags/fluid/launcher_fuel.json", {"replace": False, "values": [
         opt("#c:diesel"), opt("#c:gasoline"), opt("#c:biodiesel"), opt("#c:kerosene"), opt("#c:fuel"),
         opt("createdieselgenerators:diesel"), opt("createdieselgenerators:gasoline"), opt("createdieselgenerators:biodiesel"),
@@ -503,6 +620,47 @@ def lang():
         "block.steelrain.orlan_catapult": "Orlan Catapult",
         "block.steelrain.patriot": "MIM-104 Patriot",
         "block.steelrain.weapon_part": "Weapon System",
+        "block.steelrain.gepard": "Flakpanzer Gepard",
+        "block.steelrain.zu_23_2": "ZU-23-2",
+        "block.steelrain.trench_jammer": "Trench Jammer",
+        "block.steelrain.krasukha": "Krasukha-4 Long-Range Jammer",
+        "item.steelrain.fiber_fpv_drone": "Fiber-Optic FPV Drone",
+        "item.steelrain.fiber_backpack": "Fiber Spool Backpack",
+        "item.steelrain.fiber_spool": "Fiber Spool",
+        "item.steelrain.jammer_backpack": "Jammer Backpack",
+        "item.steelrain.anti_drone_gun": "Anti-Drone Gun",
+        "item.steelrain.jammer_dome": "Jammer Dome",
+        "item.steelrain.ammo_30mm": "30 mm Ammo Belt",
+        "item.steelrain.ammo_35mm": "35 mm Ammo Belt",
+        "item.steelrain.ammo_23mm": "23 mm Ammo Box",
+        "entity.steelrain.fiber_fpv_drone": "Fiber-Optic FPV Drone",
+        "entity.steelrain.bullet": "Cannon Round",
+        "entity.steelrain.seat": "Gunner Seat",
+        "curios.identifier.back": "Back",
+        "tooltip.steelrain.fiber_fpv": "Wired FPV: cannot be jammed. Needs a Fiber Spool Backpack",
+        "tooltip.steelrain.cable": "Cable: %s / %s blocks",
+        "tooltip.steelrain.fiber_backpack": "Click Fiber Spools onto it to add 250 blocks each",
+        "tooltip.steelrain.switched_on": "Switched ON",
+        "tooltip.steelrain.switched_off": "Switched off",
+        "tooltip.steelrain.jammer_backpack": "Right-click to switch. Jams enemy drones around you",
+        "tooltip.steelrain.anti_drone_gun": "Hold use while aiming at a drone to cut its link",
+        "message.steelrain.no_spool": "You need a Fiber Spool Backpack",
+        "message.steelrain.spool_empty": "The spool is empty",
+        "message.steelrain.cable_snapped": "Cable snapped: out of line",
+        "message.steelrain.cable_snagged": "Cable snagged and broke",
+        "message.steelrain.cable_cut": "Cable cut by an explosion",
+        "message.steelrain.flat_battery": "Battery is flat",
+        "message.steelrain.jammer_on": "Jammer ON",
+        "message.steelrain.jammer_off": "Jammer off",
+        "message.steelrain.dome_fitted": "Jammer Dome fitted",
+        "message.steelrain.dome_refused": "This vehicle cannot take a dome",
+        "message.steelrain.laptop_jammed": "Link jammed: you are inside an enemy jammer's bubble",
+        "hud.steelrain.cable": "CABLE %s m",
+        "hud.steelrain.jammed": "! JAMMING !",
+        "gui.steelrain.switch_on": "Power: ON",
+        "gui.steelrain.switch_off": "Power: OFF",
+        "gui.steelrain.belts": "Belts",
+        "gui.steelrain.hint_manned": "Right-click to man. Sneak-click: ammo",
         "item.steelrain.mavic": "DJI Mavic Recon Drone",
         "item.steelrain.drone_grenade": "Drone Grenade",
         "item.steelrain.orlan_10": "Orlan-10",
@@ -596,7 +754,7 @@ def lang():
         "gui.steelrain.busy": "BUSY %ss",
         "gui.steelrain.hint_launcher": "Fire it from a Field Laptop",
         "gui.steelrain.hint_air_defence": "Engages hostile aircraft itself",
-        "gui.steelrain.hint_jammer": "Jams hostile drones while fuelled",
+        "gui.steelrain.hint_jammer": "Jams hostile links (needs fuel)",
         "gui.steelrain.laptop_title": "FIRE CONTROL",
         "gui.steelrain.no_links": "No launchers linked. Right-click a launcher with the laptop.",
         "gui.steelrain.offline": "Out of reach",

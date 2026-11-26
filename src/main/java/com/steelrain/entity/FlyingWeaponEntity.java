@@ -75,14 +75,37 @@ public abstract class FlyingWeaponEntity extends Entity {
     /** Progress of this entity's recon sweep over the chunks below it. */
     public int scanIndex;
 
-    /** Whether jammers affect this. */
-    public boolean jammable() { return false; }
+    private static final net.minecraft.network.syncher.EntityDataAccessor<Integer> JAM = SynchedEntityData.defineId(
+            FlyingWeaponEntity.class, net.minecraft.network.syncher.EntityDataSerializers.INT);
 
-    /** Called by a jammer in range. */
-    public void jam() {}
+    /** How badly the radio link is jammed right now: 0 clean, 1 lost. Server side. */
+    protected float jam;
+    private long directJamUntil;
+
+    /** Does this depend on a radio or satellite signal at the moment? Wired and inertial things do not. */
+    protected boolean radioLinked() { return false; }
+
+    /** An anti-drone gun is being held on this. */
+    public void directJam(long until) { directJamUntil = Math.max(directJamUntil, until); }
+
+    /** Jam level as a percentage, usable on the client. */
+    public int jamPercent() { return entityData.get(JAM); }
+
+    private void updateJam(ServerLevel level) {
+        float j = 0;
+        if (radioLinked()) {
+            j = directJamUntil > level.getGameTime() ? 1f
+                    : com.steelrain.util.Jamming.level(level, position(), ownerId, ownerName);
+        }
+        jam = j;
+        int pct = Math.round(j * 100);
+        if (pct != entityData.get(JAM)) entityData.set(JAM, pct);
+    }
 
     @Override
-    protected void defineSynchedData(SynchedEntityData.Builder builder) {}
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        builder.define(JAM, 0);
+    }
 
     @Override
     public void tick() {
@@ -94,6 +117,7 @@ public abstract class FlyingWeaponEntity extends Entity {
             }
             clientTick();
         } else {
+            if ((tickCount + getId()) % 3 == 0) updateJam((ServerLevel) level());
             serverTick((ServerLevel) level());
         }
     }

@@ -39,6 +39,22 @@ neoForge {
     }
 }
 
+repositories {
+    maven {
+        name = 'Curios API'
+        url = 'https://maven.theillusivec4.top/'
+        content { includeGroup 'top.theillusivec4.curios' }
+    }
+}
+
+dependencies {
+    // Optional: the backpacks use the Curios "back" slot when Curios is installed.
+    compileOnly "top.theillusivec4.curios:curios-neoforge:${curios_version}:api"
+    if (project.hasProperty('withCurios')) {
+        runtimeOnly "top.theillusivec4.curios:curios-neoforge:${curios_version}"
+    }
+}
+
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
 }

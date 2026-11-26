@@ -29,6 +29,15 @@ public class SteelRain {
                 e -> e.put(ModRegistry.OPERATOR_BODY.get(), OperatorBodyEntity.attributes().build()));
         NeoForge.EVENT_BUS.addListener(RegisterCommandsEvent.class, e -> SteelRainCommand.register(e.getDispatcher()));
         NeoForge.EVENT_BUS.addListener(ServerTickEvent.Post.class, e -> FeedManager.tick(e.getServer()));
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.event.tick.PlayerTickEvent.Post.class, e -> {
+            if (e.getEntity() instanceof ServerPlayer sp) com.steelrain.util.Gear.tickPlayer(sp);
+        });
+        // Explosions cut fibre-optic cables that run close to them.
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.event.level.ExplosionEvent.Detonate.class, e -> {
+            if (!e.getLevel().isClientSide) {
+                com.steelrain.entity.FpvDroneEntity.explosionAt(e.getLevel(), e.getExplosion().center(), e.getExplosion().radius() + 1);
+            }
+        });
         NeoForge.EVENT_BUS.addListener(PlayerEvent.PlayerLoggedOutEvent.class, e -> {
             if (e.getEntity() instanceof ServerPlayer sp) FeedManager.onLogout(sp);
         });

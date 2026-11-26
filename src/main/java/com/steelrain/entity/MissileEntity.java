@@ -31,6 +31,7 @@ public class MissileEntity extends FlyingWeaponEntity {
     private int flightTicks = 1;
     private double apex;
     private boolean jammed;
+    private double driftAngle;
     private boolean announce = true;
     private boolean launched;
 
@@ -104,18 +105,16 @@ public class MissileEntity extends FlyingWeaponEntity {
 
     @Override public boolean interceptable() { return profile.interceptable(); }
     @Override public boolean highValue() { return profile.highValue(); }
-    @Override public boolean jammable() { return profile.jammable() && !jammed; }
+    @Override protected boolean radioLinked() { return profile.jammable(); }
 
-    @Override
-    public void jam() {
-        if (jammed) return;
-        jammed = true;
-        // Guidance lost: the drone wanders off and comes down somewhere nearby.
-        double a = random.nextDouble() * Math.PI * 2;
-        double r = 40 + random.nextDouble() * 50;
-        targetX = getX() + Math.cos(a) * r;
-        targetZ = getZ() + Math.sin(a) * r;
-        targetY = Double.NaN;
+    /** Satellite navigation is being jammed: the aim point slides away for as long as it stays in the bubble. */
+    private void drift() {
+        if (!jammed) {
+            jammed = true;
+            driftAngle = random.nextDouble() * Math.PI * 2;
+        }
+        targetX += Math.cos(driftAngle) * jam * 0.9;
+        targetZ += Math.sin(driftAngle) * jam * 0.9;
     }
 
     @Override
@@ -125,6 +124,7 @@ public class MissileEntity extends FlyingWeaponEntity {
             return;
         }
         age++;
+        if (jam > 0) drift();
         Vec3 pos = position();
         Vec3 next = switch (profile.mode()) {
             case BALLISTIC -> ballisticStep(pos);

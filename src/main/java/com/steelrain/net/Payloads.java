@@ -36,11 +36,11 @@ public final class Payloads {
     }
 
     /** Server -> client: start or stop looking through a drone's camera. */
-    public record Pilot(int entityId, boolean start, int range, int maxBattery) implements CustomPacketPayload {
+    public record Pilot(int entityId, boolean start, int maxBattery) implements CustomPacketPayload {
         public static final Type<Pilot> TYPE = id("pilot");
         public static final StreamCodec<FriendlyByteBuf, Pilot> CODEC = StreamCodec.ofMember(Pilot::write, Pilot::new);
-        Pilot(FriendlyByteBuf b) { this(b.readVarInt(), b.readBoolean(), b.readVarInt(), b.readVarInt()); }
-        void write(FriendlyByteBuf b) { b.writeVarInt(entityId); b.writeBoolean(start); b.writeVarInt(range); b.writeVarInt(maxBattery); }
+        Pilot(FriendlyByteBuf b) { this(b.readVarInt(), b.readBoolean(), b.readVarInt()); }
+        void write(FriendlyByteBuf b) { b.writeVarInt(entityId); b.writeBoolean(start); b.writeVarInt(maxBattery); }
         @Override public Type<Pilot> type() { return TYPE; }
     }
 
@@ -112,6 +112,24 @@ public final class Payloads {
         @Override public Type<Feed> type() { return TYPE; }
     }
 
+    /** Server -> client: the path of a fibre-optic cable (empty = gone). The drone itself is the last point. */
+    public record Cable(int droneId, List<net.minecraft.world.phys.Vec3> points) implements CustomPacketPayload {
+        public static final Type<Cable> TYPE = id("cable");
+        public static final StreamCodec<FriendlyByteBuf, Cable> CODEC = StreamCodec.ofMember(Cable::write, Cable::new);
+        Cable(FriendlyByteBuf b) { this(b.readVarInt(), b.readList(FriendlyByteBuf::readVec3)); }
+        void write(FriendlyByteBuf b) { b.writeVarInt(droneId); b.writeCollection(points, FriendlyByteBuf::writeVec3); }
+        @Override public Type<Cable> type() { return TYPE; }
+    }
+
+    /** Client -> server: the gunner pressed or let go of the trigger. */
+    public record GunFire(boolean firing) implements CustomPacketPayload {
+        public static final Type<GunFire> TYPE = id("gun_fire");
+        public static final StreamCodec<FriendlyByteBuf, GunFire> CODEC = StreamCodec.ofMember(GunFire::write, GunFire::new);
+        GunFire(FriendlyByteBuf b) { this(b.readBoolean()); }
+        void write(FriendlyByteBuf b) { b.writeBoolean(firing); }
+        @Override public Type<GunFire> type() { return TYPE; }
+    }
+
     /** Client -> server: leave the remote camera feed. */
     public record StopFeed() implements CustomPacketPayload {
         public static final Type<StopFeed> TYPE = id("stop_feed");
@@ -177,6 +195,15 @@ public final class Payloads {
         r.playToClient(Feed.TYPE, Feed.CODEC, (p, ctx) -> {
             if (FMLEnvironment.dist.isClient()) com.steelrain.client.ClientHooks.onFeed(p);
         });
+        r.playToClient(Cable.TYPE, Cable.CODEC, (p, ctx) -> {
+            if (FMLEnvironment.dist.isClient()) com.steelrain.client.ClientHooks.onCable(p);
+        });
+        r.playToServer(GunFire.TYPE, GunFire.CODEC, (p, ctx) -> {
+            if (ctx.player().getVehicle() instanceof com.steelrain.entity.SeatEntity seat
+                    && ctx.player().level().getBlockEntity(seat.gun()) instanceof WeaponBlockEntity be) {
+                be.setManualFire(ctx.player(), p.firing());
+            }
+        });
         r.playToServer(StopFeed.TYPE, StopFeed.CODEC, (p, ctx) -> {
             if (ctx.player() instanceof ServerPlayer sp) FeedManager.stop(sp);
         });
@@ -208,6 +235,8 @@ public final class Payloads {
         Component result;
         if (laptop.isEmpty() || !LaptopItem.links(laptop).contains(p.pos())) {
             result = Component.translatable("message.steelrain.not_linked");
+        } else if (jammed(sp)) {
+            result = Component.translatable("message.steelrain.laptop_jammed");
         } else if (!reachable(sp, p.pos()) || !(sp.level().getBlockEntity(p.pos()) instanceof WeaponBlockEntity be)) {
             result = Component.translatable("message.steelrain.no_signal");
         } else {
@@ -225,6 +254,8 @@ public final class Payloads {
         Component result;
         if (laptop.isEmpty() || !LaptopItem.links(laptop).contains(p.pos())) {
             result = Component.translatable("message.steelrain.not_linked");
+        } else if (jammed(sp)) {
+            result = Component.translatable("message.steelrain.laptop_jammed");
         } else if (!reachable(sp, p.pos()) || !(sp.level().getBlockEntity(p.pos()) instanceof WeaponBlockEntity be)) {
             result = Component.translatable("message.steelrain.no_signal");
         } else {
@@ -239,6 +270,12 @@ public final class Payloads {
             }
         }
         sendLaptop(sp, false, result);
+    }
+
+    /** A laptop inside an enemy jamming bubble cannot reach its launchers. */
+    private static boolean jammed(ServerPlayer player) {
+        return com.steelrain.util.Jamming.level(player.serverLevel(), player.position(), player.getUUID(),
+                player.getGameProfile().getName()) > 0.5f;
     }
 
     private static ItemStack heldLaptop(ServerPlayer player) {

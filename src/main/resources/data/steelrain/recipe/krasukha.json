@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "AUA",
+    "CUC",
+    "BBB"
+  ],
+  "key": {
+    "A": {
+      "item": "minecraft:lightning_rod"
+    },
+    "U": {
+      "item": "steelrain:guidance_unit"
+    },
+    "C": {
+      "item": "steelrain:circuit_board"
+    },
+    "B": {
+      "item": "minecraft:iron_block"
+    }
+  },
+  "result": {
+    "id": "steelrain:krasukha",
+    "count": 1
+  }
+}

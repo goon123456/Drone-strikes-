@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/handheld",
+  "textures": {
+    "layer0": "steelrain:item/anti_drone_gun"
+  }
+}

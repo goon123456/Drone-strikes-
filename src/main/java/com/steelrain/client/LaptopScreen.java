@@ -340,9 +340,10 @@ public class LaptopScreen extends Screen {
                     case 1 -> 0xFFB0B0B0;   // animal / neutral
                     case 2 -> 0xFFFF40FF;   // enemy player
                     case 3 -> 0xFF4080FF;   // friendly player
+                    case 5 -> 0xFFFFF040;   // enemy jammer
                     default -> 0xFFFF9020;  // enemy weapon system
                 };
-                marker(g, d[i] + 0.5, d[i + 1] + 0.5, colour, d[i + 2] == 4 ? 2 : 1);
+                marker(g, d[i] + 0.5, d[i + 1] + 0.5, colour, d[i + 2] >= 4 ? 2 : 1);
             }
             marker(g, mk.x() + 0.5, mk.z() + 0.5, 0xFF40E0FF, 1);
         }

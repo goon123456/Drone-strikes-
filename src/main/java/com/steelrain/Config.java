@@ -29,9 +29,9 @@ public final class Config {
             .comment("How far (blocks) the Field Laptop can be from a linked launcher.")
             .defineInRange("laptopLinkRange", 128, 8, 100000);
     public static final ModConfigSpec.IntValue FPV_RANGE = B
-            .comment("Control range (blocks) of the FPV drone. Beyond it the signal is lost and the drone falls.",
-                    "Values above the server view distance will not work well.")
-            .defineInRange("fpvRange", 200, 16, 512);
+            .comment("Radio control range (blocks) of the FPV drone and Mavic, measured from where the pilot stands.",
+                    "Fibre-optic drones are limited by their cable instead.")
+            .defineInRange("radioRange", 500, 16, 4000);
     public static final ModConfigSpec.IntValue FPV_BATTERY_SECONDS = B
             .comment("Flight time of an FPV drone battery, in seconds.")
             .defineInRange("fpvBatterySeconds", 150, 10, 3600);
@@ -44,15 +44,9 @@ public final class Config {
     public static final ModConfigSpec.IntValue AIR_DEFENCE_CEILING = B
             .comment("How far above itself (blocks) the Pantsir can reach. The Global Hawk cruises above this; only the Patriot can hit it.")
             .defineInRange("airDefenceCeiling", 100, 16, 512);
-    public static final ModConfigSpec.DoubleValue AIR_DEFENCE_HIT_CHANCE = B
-            .comment("Chance for one Pantsir interceptor to destroy its target.")
-            .defineInRange("airDefenceHitChance", 0.8, 0.0, 1.0);
     public static final ModConfigSpec.IntValue PATRIOT_RANGE = B
             .comment("Engagement radius (blocks) of the Patriot. It only fires at aircraft, cruise and ballistic missiles.")
             .defineInRange("patriotRange", 400, 32, 1024);
-    public static final ModConfigSpec.DoubleValue PATRIOT_HIT_CHANCE = B
-            .comment("Chance for one Patriot interceptor to destroy its target.")
-            .defineInRange("patriotHitChance", 0.9, 0.0, 1.0);
     public static final ModConfigSpec.BooleanValue MARK_PLAYERS = B
             .comment("Recon drones show players on the laptop map. Turn off for PvP servers that want stealth.")
             .define("reconMarksPlayers", true);
@@ -60,8 +54,23 @@ public final class Config {
             .comment("Aiming error multiplier for rounds landing in an area one of your recon drones is watching.")
             .defineInRange("spottedSpreadMultiplier", 0.2, 0.0, 1.0);
     public static final ModConfigSpec.IntValue JAMMER_RANGE = B
-            .comment("Radius (blocks) of the EW jammer.")
-            .defineInRange("jammerRange", 48, 8, 256);
+            .comment("Bubble radius (blocks) of the EW Jammer vehicle.")
+            .defineInRange("jammerRange", 64, 8, 256);
+    public static final ModConfigSpec.IntValue TRENCH_JAMMER_RANGE = B
+            .comment("Bubble radius of the single-block Trench Jammer.")
+            .defineInRange("trenchJammerRange", 32, 4, 128);
+    public static final ModConfigSpec.IntValue STRATEGIC_JAMMER_RANGE = B
+            .comment("Bubble radius of the Krasukha-4 long-range jammer.")
+            .defineInRange("strategicJammerRange", 200, 32, 512);
+    public static final ModConfigSpec.IntValue BACKPACK_JAMMER_RANGE = B
+            .comment("Bubble radius of the Jammer Backpack.")
+            .defineInRange("backpackJammerRange", 24, 4, 64);
+    public static final ModConfigSpec.IntValue DOME_JAMMER_RANGE = B
+            .comment("Bubble radius of a Jammer Dome fitted to a vehicle.")
+            .defineInRange("domeJammerRange", 14, 4, 64);
+    public static final ModConfigSpec.IntValue FIBER_MAX = B
+            .comment("Most cable (blocks) a Fiber Spool Backpack can hold.")
+            .defineInRange("fiberMaxLength", 1000, 100, 10000);
     public static final ModConfigSpec.BooleanValue REQUIRE_FUEL = B
             .comment("If false, launchers and the jammer work without fuel.")
             .define("requireFuel", true);

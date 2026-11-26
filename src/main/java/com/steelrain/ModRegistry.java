@@ -77,6 +77,19 @@ public final class ModRegistry {
                     .networkSynchronized(UUIDUtil.STREAM_CODEC)
                     .build());
 
+    /** Whether a switchable item (jammer backpack) is on. */
+    public static final Supplier<DataComponentType<Boolean>> ACTIVE = COMPONENTS.register("active",
+            () -> DataComponentType.<Boolean>builder()
+                    .persistent(com.mojang.serialization.Codec.BOOL)
+                    .networkSynchronized(ByteBufCodecs.BOOL)
+                    .build());
+    /** Blocks of fibre-optic cable left on a spool backpack. */
+    public static final Supplier<DataComponentType<Integer>> CABLE = COMPONENTS.register("cable",
+            () -> DataComponentType.<Integer>builder()
+                    .persistent(com.mojang.serialization.Codec.INT)
+                    .networkSynchronized(ByteBufCodecs.VAR_INT)
+                    .build());
+
     /** Remaining charge (ticks) of a drone that was picked up. */
     public static final Supplier<DataComponentType<Integer>> BATTERY = COMPONENTS.register("battery",
             () -> DataComponentType.<Integer>builder()
@@ -108,6 +121,17 @@ public final class ModRegistry {
     public static final DeferredItem<Item> BAYRAKTAR_TB2 = simple("bayraktar_tb2", 1);
     public static final DeferredItem<Item> GLOBAL_HAWK = simple("global_hawk", 1);
     public static final DeferredItem<Item> DRONE_GRENADE = simple("drone_grenade", 16);
+    public static final DeferredItem<Item> AMMO_30MM = simple("ammo_30mm", 16);
+    public static final DeferredItem<Item> AMMO_35MM = simple("ammo_35mm", 16);
+    public static final DeferredItem<Item> AMMO_23MM = simple("ammo_23mm", 16);
+    public static final DeferredItem<Item> FIBER_SPOOL = simple("fiber_spool", 16);
+    public static final DeferredItem<Item> JAMMER_DOME = simple("jammer_dome", 16);
+    public static final DeferredItem<Item> FIBER_BACKPACK = ITEMS.register("fiber_backpack",
+            () -> new com.steelrain.item.FiberBackpackItem(new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<Item> JAMMER_BACKPACK = ITEMS.register("jammer_backpack",
+            () -> new com.steelrain.item.JammerBackpackItem(new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<Item> ANTI_DRONE_GUN = ITEMS.register("anti_drone_gun",
+            () -> new com.steelrain.item.AntiDroneGunItem(new Item.Properties().stacksTo(1)));
 
     // ---- tools ----
     public static final DeferredItem<Item> FIELD_LAPTOP = ITEMS.register("field_laptop",
@@ -115,9 +139,11 @@ public final class ModRegistry {
     public static final DeferredItem<Item> FPV_CONTROLLER = ITEMS.register("fpv_controller",
             () -> new FpvControllerItem(new Item.Properties().stacksTo(1)));
     public static final DeferredItem<Item> FPV_DRONE = ITEMS.register("fpv_drone",
-            () -> new FpvDroneItem(new Item.Properties().stacksTo(16), false));
+            () -> new FpvDroneItem(new Item.Properties().stacksTo(16), 0));
+    public static final DeferredItem<Item> FIBER_FPV_DRONE = ITEMS.register("fiber_fpv_drone",
+            () -> new FpvDroneItem(new Item.Properties().stacksTo(16), 2));
     public static final DeferredItem<Item> MAVIC = ITEMS.register("mavic",
-            () -> new FpvDroneItem(new Item.Properties().stacksTo(1), true));
+            () -> new FpvDroneItem(new Item.Properties().stacksTo(1), 1));
 
     // ---- weapon blocks ----
     public static final Map<WeaponType, DeferredBlock<WeaponBlock>> WEAPON_BLOCKS = new EnumMap<>(WeaponType.class);
@@ -126,7 +152,8 @@ public final class ModRegistry {
             DeferredBlock<WeaponBlock> block = BLOCKS.register(type.id, () -> new WeaponBlock(type,
                     BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GREEN).strength(4f, 12f)
                             .sound(SoundType.METAL).noOcclusion().requiresCorrectToolForDrops()
-                            .pushReaction(net.minecraft.world.level.material.PushReaction.BLOCK)));
+                            .pushReaction(net.minecraft.world.level.material.PushReaction.BLOCK)
+                            .isSuffocating((st, l, p) -> false).isViewBlocking((st, l, p) -> false)));
             WEAPON_BLOCKS.put(type, block);
             ITEMS.register(type.id, () -> new WeaponBlockItem(block.get(), new Item.Properties().stacksTo(1)));
         }
@@ -136,7 +163,8 @@ public final class ModRegistry {
     public static final DeferredBlock<WeaponPartBlock> WEAPON_PART = BLOCKS.register("weapon_part",
             () -> new WeaponPartBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GREEN).strength(4f, 12f)
                     .sound(SoundType.METAL).noOcclusion().noLootTable()
-                    .pushReaction(net.minecraft.world.level.material.PushReaction.BLOCK)));
+                    .pushReaction(net.minecraft.world.level.material.PushReaction.BLOCK)
+                            .isSuffocating((st, l, p) -> false).isViewBlocking((st, l, p) -> false)));
     public static final Supplier<BlockEntityType<WeaponPartBlockEntity>> WEAPON_PART_BE = BLOCK_ENTITIES.register("weapon_part",
             () -> BlockEntityType.Builder.of(WeaponPartBlockEntity::new, WEAPON_PART.get()).build(null));
 
@@ -178,6 +206,17 @@ public final class ModRegistry {
     public static final DeferredHolder<EntityType<?>, EntityType<FpvDroneEntity>> FPV = ENTITIES.register("fpv_drone",
             () -> EntityType.Builder.<FpvDroneEntity>of(FpvDroneEntity::new, MobCategory.MISC)
                     .sized(0.5f, 0.25f).eyeHeight(0.12f).clientTrackingRange(24).updateInterval(1).build("fpv_drone"));
+    public static final DeferredHolder<EntityType<?>, EntityType<FpvDroneEntity>> FIBER_FPV = ENTITIES.register("fiber_fpv_drone",
+            () -> EntityType.Builder.<FpvDroneEntity>of(FpvDroneEntity::new, MobCategory.MISC)
+                    .sized(0.5f, 0.25f).eyeHeight(0.12f).clientTrackingRange(24).updateInterval(1).build("fiber_fpv_drone"));
+    /** Cannon round: a real projectile with flight time, never a hitscan. */
+    public static final DeferredHolder<EntityType<?>, EntityType<com.steelrain.entity.BulletEntity>> BULLET = ENTITIES.register("bullet",
+            () -> EntityType.Builder.<com.steelrain.entity.BulletEntity>of(com.steelrain.entity.BulletEntity::new, MobCategory.MISC)
+                    .sized(0.2f, 0.2f).clientTrackingRange(12).updateInterval(20).noSave().build("bullet"));
+    /** Gunner's seat on a manned gun. */
+    public static final DeferredHolder<EntityType<?>, EntityType<com.steelrain.entity.SeatEntity>> SEAT = ENTITIES.register("seat",
+            () -> EntityType.Builder.<com.steelrain.entity.SeatEntity>of(com.steelrain.entity.SeatEntity::new, MobCategory.MISC)
+                    .sized(0.3f, 0.1f).clientTrackingRange(8).noSave().build("seat"));
     public static final DeferredHolder<EntityType<?>, EntityType<FpvDroneEntity>> MAVIC_ENTITY = ENTITIES.register("mavic",
             () -> EntityType.Builder.<FpvDroneEntity>of(FpvDroneEntity::new, MobCategory.MISC)
                     .sized(0.45f, 0.2f).eyeHeight(0.05f).clientTrackingRange(24).updateInterval(1).build("mavic"));

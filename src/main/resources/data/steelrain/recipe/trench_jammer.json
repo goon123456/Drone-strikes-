@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " A ",
+    "CDC",
+    "III"
+  ],
+  "key": {
+    "A": {
+      "item": "minecraft:lightning_rod"
+    },
+    "C": {
+      "item": "steelrain:circuit_board"
+    },
+    "D": {
+      "item": "steelrain:drone_battery"
+    },
+    "I": {
+      "item": "minecraft:iron_ingot"
+    }
+  },
+  "result": {
+    "id": "steelrain:trench_jammer",
+    "count": 1
+  }
+}

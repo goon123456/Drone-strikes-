@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "A A",
+    "LCL",
+    "LDL"
+  ],
+  "key": {
+    "A": {
+      "item": "minecraft:lightning_rod"
+    },
+    "L": {
+      "item": "minecraft:leather"
+    },
+    "C": {
+      "item": "steelrain:circuit_board"
+    },
+    "D": {
+      "item": "steelrain:drone_battery"
+    }
+  },
+  "result": {
+    "id": "steelrain:jammer_backpack",
+    "count": 1
+  }
+}

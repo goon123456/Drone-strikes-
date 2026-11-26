@@ -19,6 +19,26 @@ public class WeaponScreen extends AbstractContainerScreen<WeaponMenu> {
         imageHeight = 180;
     }
 
+    private net.minecraft.client.gui.components.Button power;
+
+    @Override
+    protected void init() {
+        super.init();
+        if (menu.be.type().kind == WeaponType.Kind.JAMMER) {
+            power = addRenderableWidget(net.minecraft.client.gui.components.Button.builder(Component.empty(), b -> {
+                if (minecraft != null && minecraft.gameMode != null) minecraft.gameMode.handleInventoryButtonClick(menu.containerId, 0);
+            }).bounds(leftPos + 40, topPos + 32, 60, 20).build());
+        }
+    }
+
+    @Override
+    protected void containerTick() {
+        super.containerTick();
+        if (power != null) {
+            power.setMessage(Component.translatable(menu.switchedOn() ? "gui.steelrain.switch_on" : "gui.steelrain.switch_off"));
+        }
+    }
+
     @Override
     protected void renderBg(GuiGraphics g, float partialTick, int mouseX, int mouseY) {
         int x = leftPos, y = topPos;
@@ -50,13 +70,16 @@ public class WeaponScreen extends AbstractContainerScreen<WeaponMenu> {
         if (WeaponMenu.usesFuel(type)) {
             g.drawString(font, Component.translatable("gui.steelrain.fuel"), 112, 24, 0x404040, false);
         }
+        if (type == WeaponType.PANTSIR) {
+            g.drawString(font, Component.translatable("gui.steelrain.belts"), 66, 55, 0x404040, false);
+        }
         Component status = menu.busy() > 0
                 ? Component.translatable("gui.steelrain.busy", (menu.busy() + 19) / 20)
                 : Component.translatable("gui.steelrain.ready");
         g.drawString(font, status, 8, 60, menu.busy() > 0 ? 0xA03020 : 0x207020, false);
         Component hint = Component.translatable(switch (type.kind) {
             case LAUNCHER -> type == WeaponType.GROUND_STATION ? "gui.steelrain.hint_station" : "gui.steelrain.hint_launcher";
-            case AIR_DEFENCE -> "gui.steelrain.hint_air_defence";
+            case AIR_DEFENCE -> type.seat() != null ? "gui.steelrain.hint_manned" : "gui.steelrain.hint_air_defence";
             case JAMMER -> "gui.steelrain.hint_jammer";
         });
         g.drawString(font, hint, 8, 72, 0x505050, false);

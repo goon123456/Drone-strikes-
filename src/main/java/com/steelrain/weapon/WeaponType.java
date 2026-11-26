@@ -22,9 +22,13 @@ public enum WeaponType {
     SHAHED_LAUNCHER("shahed_launcher", Kind.LAUNCHER, 100, 4000, 250, 60, 5, 0, 3, 2, 5, 0f, 0f, 0f, 0f),
     GROUND_STATION("ground_station", Kind.LAUNCHER, 50, 10000, 0, 100, 1, 4, 3, 3, 6, 0f, 0f, 0f, 0f),
     ORLAN_CATAPULT("orlan_catapult", Kind.LAUNCHER, 50, 1500, 0, 100, 1, 0, 1, 1, 4, 0f, 0f, 0f, 0f),
-    PANTSIR("pantsir", Kind.AIR_DEFENCE, 0, 0, 0, 30, 12, 0, 3, 4, 10, 12f, 8f, 0f, 0f),
+    PANTSIR("pantsir", Kind.AIR_DEFENCE, 0, 0, 0, 30, 12, 16, 3, 4, 10, 12f, 8f, 0f, 0f),
+    GEPARD("gepard", Kind.AIR_DEFENCE, 0, 0, 0, 0, 16, 0, 3, 4, 8, 14f, 10f, 0f, 0f),
+    ZU23("zu_23_2", Kind.AIR_DEFENCE, 0, 0, 0, 0, 16, 0, 3, 2, 3, 16f, 12f, 0f, 0f),
     PATRIOT("patriot", Kind.AIR_DEFENCE, 0, 0, 100, 60, 4, 0, 3, 4, 9, 5f, 3f, 0f, 38f),
-    JAMMER("jammer", Kind.JAMMER, 0, 0, 0, 0, 0, 0, 3, 3, 3, 0f, 0f, 0f, 0f);
+    JAMMER("jammer", Kind.JAMMER, 0, 0, 0, 0, 0, 0, 3, 3, 3, 0f, 0f, 0f, 0f),
+    TRENCH_JAMMER("trench_jammer", Kind.JAMMER, 0, 0, 0, 0, 0, 0, 1, 2, 1, 0f, 0f, 0f, 0f),
+    KRASUKHA("krasukha", Kind.JAMMER, 0, 0, 0, 0, 0, 0, 3, 4, 11, 0f, 0f, 0f, 0f);
 
     public enum Kind { LAUNCHER, AIR_DEFENCE, JAMMER }
 
@@ -86,12 +90,14 @@ public enum WeaponType {
             case ORLAN_CATAPULT -> ModRegistry.ORLAN_10;
             case PANTSIR -> ModRegistry.PANTSIR_MISSILE;
             case PATRIOT -> ModRegistry.PATRIOT_MISSILE;
-            case JAMMER -> null;
+            case GEPARD -> ModRegistry.AMMO_35MM;
+            case ZU23 -> ModRegistry.AMMO_23MM;
+            case JAMMER, TRENCH_JAMMER, KRASUKHA -> null;
         };
     }
 
     public Supplier<? extends Item> secondaryAmmo() {
-        return this == GROUND_STATION ? ModRegistry.HELLFIRE_MISSILE : null;
+        return this == GROUND_STATION ? ModRegistry.HELLFIRE_MISSILE : this == PANTSIR ? ModRegistry.AMMO_30MM : null;
     }
 
     public boolean acceptsPrimary(ItemStack stack) {
@@ -117,6 +123,8 @@ public enum WeaponType {
             case M109 -> new Vec3(0, 1.7, 2.2);
             case PANTSIR -> new Vec3(0, 2.2, 3.5);
             case PATRIOT -> new Vec3(0, 1.3, 3.5);
+            case GEPARD -> new Vec3(0, 2.0, 3.6);
+            case ZU23 -> new Vec3(0, 0.5, 1.5);
             default -> gunPivot();
         };
     }
@@ -130,6 +138,8 @@ public enum WeaponType {
             case ISKANDER_LAUNCHER -> new Vec3(0, 2.2, 1.0);
             case PANTSIR -> new Vec3(0, 3.1, 3.5);
             case PATRIOT -> new Vec3(0, 1.9, 2.5);
+            case GEPARD -> new Vec3(0, 2.8, 3.8);
+            case ZU23 -> new Vec3(0, 1.15, 1.5);
             case SHAHED_LAUNCHER -> new Vec3(0, 0.4, 0.3);
             case ORLAN_CATAPULT -> new Vec3(0, 0.3, 0.2);
             default -> new Vec3(0, height, length / 2.0);
@@ -150,6 +160,50 @@ public enum WeaponType {
             default -> Vec3.ZERO;
         };
     }
+
+    // ---- guns: real projectiles that have to be led onto the target ----
+
+    public boolean hasGuns() { return this == PANTSIR || this == GEPARD || this == ZU23; }
+
+    public boolean hasMissiles() { return this == PANTSIR || this == PATRIOT; }
+
+    /** Where bullets leave, relative to the gun pivot with the barrels level. Mirror X for the other barrel. */
+    public Vec3 gunMuzzle() {
+        return switch (this) {
+            case PANTSIR -> new Vec3(0.85, -0.55, 3.2);
+            case GEPARD -> new Vec3(1.3, 0, 3.4);
+            case ZU23 -> new Vec3(0.18, 0, 2.3);
+            default -> Vec3.ZERO;
+        };
+    }
+
+    /** Blocks per tick. Far slower than the real thing so the flight time matters at Minecraft distances. */
+    public double bulletSpeed() { return this == GEPARD ? 6.5 : this == ZU23 ? 5.5 : 6.0; }
+
+    public float bulletDamage() { return this == GEPARD ? 5f : this == ZU23 ? 3f : 4f; }
+
+    public double gunRange() { return this == GEPARD ? 96 : 64; }
+
+    /** Random error in degrees when the fire-control computer is aiming. */
+    public double dispersion() { return this == GEPARD ? 0.5 : this == ZU23 ? 1.6 : 0.6; }
+
+    public int roundsPerBelt() { return this == GEPARD ? 40 : 50; }
+
+    /** Seat for a human gunner, in model space, or null if the system cannot be manned. */
+    public Vec3 seat() { return this == ZU23 ? new Vec3(0, 0.45, 0.6) : null; }
+
+    /** Radius of the jamming bubble for jammer systems. */
+    public double jamRadius() {
+        return switch (this) {
+            case JAMMER -> Config.JAMMER_RANGE.get();
+            case TRENCH_JAMMER -> Config.TRENCH_JAMMER_RANGE.get();
+            case KRASUKHA -> Config.STRATEGIC_JAMMER_RANGE.get();
+            default -> 0;
+        };
+    }
+
+    /** mB of fuel a running jammer burns every half second. */
+    public int jamFuel() { return this == KRASUKHA ? 5 : 1; }
 
     /** Fixed incline of rails that do not move. */
     public float fixedPitch() {

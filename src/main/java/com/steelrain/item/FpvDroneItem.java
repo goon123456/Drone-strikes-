@@ -15,11 +15,14 @@ import net.minecraft.world.phys.Vec3;
 import java.util.List;
 
 public class FpvDroneItem extends Item {
+    /** 0 radio FPV, 1 Mavic, 2 fibre-optic FPV. */
+    private final int kind;
     private final boolean mavic;
 
-    public FpvDroneItem(Properties properties, boolean mavic) {
+    public FpvDroneItem(Properties properties, int kind) {
         super(properties);
-        this.mavic = mavic;
+        this.kind = kind;
+        this.mavic = kind == 1;
     }
 
     @Override
@@ -27,7 +30,7 @@ public class FpvDroneItem extends Item {
         Level level = ctx.getLevel();
         if (!level.isClientSide) {
             Vec3 at = Vec3.atBottomCenterOf(ctx.getClickedPos().relative(ctx.getClickedFace()));
-            FpvDroneEntity drone = new FpvDroneEntity(mavic ? ModRegistry.MAVIC_ENTITY.get() : ModRegistry.FPV.get(), level);
+            FpvDroneEntity drone = new FpvDroneEntity(kind == 1 ? ModRegistry.MAVIC_ENTITY.get() : kind == 2 ? ModRegistry.FIBER_FPV.get() : ModRegistry.FPV.get(), level);
             drone.setPos(at);
             Player player = ctx.getPlayer();
             if (player != null) {
@@ -43,7 +46,7 @@ public class FpvDroneItem extends Item {
 
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
-        tooltip.add(Component.translatable(mavic ? "tooltip.steelrain.mavic" : "tooltip.steelrain.fpv_drone"));
+        tooltip.add(Component.translatable(kind == 1 ? "tooltip.steelrain.mavic" : kind == 2 ? "tooltip.steelrain.fiber_fpv" : "tooltip.steelrain.fpv_drone"));
         Integer charge = stack.get(ModRegistry.BATTERY.get());
         if (charge != null) tooltip.add(Component.translatable("tooltip.steelrain.charge", charge / 20));
     }

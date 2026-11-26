@@ -1,6 +1,6 @@
 package com.steelrain.entity;
 
-import com.steelrain.Config;
+import com.steelrain.util.Ballistics;
 import com.steelrain.util.Blast;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
@@ -37,32 +37,45 @@ public class InterceptorEntity extends FlyingWeaponEntity {
     protected void serverTick(ServerLevel level) {
         age++;
         Entity e = level.getEntity(targetId);
-        if (!(e instanceof FlyingWeaponEntity target) || target.isRemoved() || age > (patriot ? 200 : 120)) {
+        if (!(e instanceof FlyingWeaponEntity target) || target.isRemoved() || age > (patriot ? 220 : 130)) {
             Blast.airburst(level, position());
             discard();
             return;
         }
         Vec3 pos = position();
-        Vec3 to = target.position().subtract(pos);
-        double dist = to.length();
-        // Both are moving fast: count the ground the target covers in a tick too, or they pass each other between ticks.
-        double closing = Math.sqrt(Mth.square(target.getX() - target.xo) + Mth.square(target.getY() - target.yo)
-                + Mth.square(target.getZ() - target.zo));
-        if (dist <= speed + closing + 1.5) {
-            setPos(target.position());
-            if (random.nextDouble() < (patriot ? Config.PATRIOT_HIT_CHANCE.get() : Config.AIR_DEFENCE_HIT_CHANCE.get())) {
-                target.shotDown();
-            } else {
-                target.engagedUntil = 0; // missed: let the launcher try again
-                Blast.airburst(level, position());
-            }
+        Vec3 targetPos = target.position().add(0, target.getBbHeight() / 2, 0);
+        Vec3 targetMove = Ballistics.velocity(target);
+        double dist = pos.distanceTo(targetPos);
+
+        // Steer for where the target will be when we get there, not where it is now. The turn rate is limited,
+        // so a target that is fast, close or crossing can still get away.
+        Vec3 aim = Ballistics.intercept(pos, targetPos, targetMove, speed);
+        Vec3 desired = (aim != null ? aim : targetPos).subtract(pos).normalize();
+        dir = turnTowards(dir, desired, age < 4 ? 4 : (patriot ? 9 : 14));
+        Vec3 move = dir.scale(speed);
+
+        // Proximity fuse: only goes off if this tick's flight really passes close enough.
+        double miss = Ballistics.closestApproach(pos, move, targetPos, targetMove);
+        if (miss <= (patriot ? 4.0 : 2.5)) {
+            setPos(targetPos);
+            Blast.airburst(level, targetPos);
+            target.hurt(level.damageSources().explosion(this, ownerPlayer()), patriot ? 60f : 25f);
             discard();
             return;
         }
-        dir = steer(dir, to.scale(1 / dist), age < 4 ? 0.2 : 0.6);
-        Vec3 next = pos.add(dir.scale(speed));
-        keepChunksLoaded(level, next, dir.scale(speed));
+        // Flew past: it is not coming back round.
+        if (dist > lastDist + 0.5 && age > 6 && ++opening > 6) {
+            target.engagedUntil = 0;
+            Blast.airburst(level, pos);
+            discard();
+            return;
+        }
+        lastDist = dist;
+
+        Vec3 next = pos.add(move);
+        keepChunksLoaded(level, next, move);
         if (age > 3 && blockHit(pos, next) != null) {
+            target.engagedUntil = 0;
             Blast.airburst(level, pos);
             discard();
             return;
@@ -70,5 +83,19 @@ public class InterceptorEntity extends FlyingWeaponEntity {
         setPos(next);
         faceAlong(dir);
         level.sendParticles(ParticleTypes.CLOUD, pos.x, pos.y, pos.z, 2, 0.05, 0.05, 0.05, 0.01);
+    }
+
+    private double lastDist = Double.MAX_VALUE;
+    private int opening;
+
+    /** Rotates {@code from} towards {@code to} by at most {@code maxDegrees}. */
+    private static Vec3 turnTowards(Vec3 from, Vec3 to, double maxDegrees) {
+        double dot = Mth.clamp(from.dot(to), -1, 1);
+        double angle = Math.acos(dot);
+        double max = Math.toRadians(maxDegrees);
+        if (angle <= max || angle < 1e-4) return to;
+        double t = max / angle;
+        Vec3 v = from.scale(Math.sin((1 - t) * angle)).add(to.scale(Math.sin(t * angle))).scale(1 / Math.sin(angle));
+        return v.lengthSqr() < 1e-8 ? to : v.normalize();
     }
 }

@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "steelrain:anti_drone_gun"
+    },
+    {
+      "item": "steelrain:drone_battery"
+    }
+  ],
+  "result": {
+    "id": "steelrain:anti_drone_gun",
+    "count": 1
+  }
+}

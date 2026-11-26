@@ -39,6 +39,12 @@ public class WeaponRenderer implements BlockEntityRenderer<WeaponBlockEntity> {
         VertexConsumer vc = buffers.getBuffer(RenderType.entityCutoutNoCull(Models.PAINT));
         model.render(pose, vc, light);
 
+        if (be.hasDome()) {
+            pose.pushPose();
+            pose.translate(0, type.height > 3 ? type.height - 0.6 : type.height, type.length / 2.0);
+            Models.DOME.render(pose, vc, light);
+            pose.popPose();
+        }
         if (be.loaded() >= 0) {
             Vec3 g = type.gunPivot();
             switch (type) {

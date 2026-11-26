@@ -19,7 +19,7 @@ public class WeaponMenu extends AbstractContainerMenu {
 
     /** Client side. */
     public WeaponMenu(int id, Inventory inv, BlockPos pos) {
-        this(id, inv, (WeaponBlockEntity) inv.player.level().getBlockEntity(pos), new SimpleContainerData(2));
+        this(id, inv, (WeaponBlockEntity) inv.player.level().getBlockEntity(pos), new SimpleContainerData(3));
     }
 
     public WeaponMenu(int id, Inventory inv, WeaponBlockEntity be, ContainerData data) {
@@ -56,6 +56,17 @@ public class WeaponMenu extends AbstractContainerMenu {
 
     public int fuel() { return data.get(0); }
     public int busy() { return data.get(1); }
+    public boolean switchedOn() { return data.get(2) != 0; }
+
+    /** Button 0: the on/off switch of a jammer. */
+    @Override
+    public boolean clickMenuButton(Player player, int id) {
+        if (id == 0 && be.type().kind == WeaponType.Kind.JAMMER) {
+            be.toggle();
+            return true;
+        }
+        return false;
+    }
 
     @Override
     public ItemStack quickMoveStack(Player player, int index) {

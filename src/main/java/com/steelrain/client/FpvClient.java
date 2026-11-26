@@ -3,6 +3,7 @@ package com.steelrain.client;
 import com.steelrain.ModRegistry;
 import com.steelrain.entity.AircraftEntity;
 import com.steelrain.entity.FpvDroneEntity;
+import com.steelrain.entity.SeatEntity;
 import com.steelrain.net.Payloads;
 import com.steelrain.weapon.AircraftType;
 import net.minecraft.client.DeltaTracker;
@@ -32,10 +33,11 @@ import net.neoforged.neoforge.network.PacketDistributor;
 public final class FpvClient {
     // hand-flown drone
     private static int droneId = -1;
-    private static int range = 200;
     private static int maxBattery = 3000;
     private static int waitTicks;
     private static boolean attached;
+    private static boolean gunFiring;
+    private static final java.util.Random STATIC = new java.util.Random();
     private static float forward, strafe, vertical;
     private static boolean detonate;
     private static float roll;
@@ -48,11 +50,10 @@ public final class FpvClient {
 
     public static boolean piloting() { return droneId >= 0; }
 
-    static void start(int id, int controlRange, int battery) {
+    static void start(int id, int battery) {
         droneId = id;
-        range = Math.max(1, controlRange);
         maxBattery = Math.max(1, battery);
-        waitTicks = 60;
+        waitTicks = 100;
         attached = false;
         detonate = false;
         zoom = 1f;
@@ -63,11 +64,10 @@ public final class FpvClient {
     }
 
     private static void stop() {
+        // The server puts the camera back when it returns the pilot to their body.
         droneId = -1;
         attached = false;
         zoom = 1f;
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.player != null && mc.getCameraEntity() != mc.player) mc.setCameraEntity(mc.player);
     }
 
     static void startFeed(int id, int aircraftType) {
@@ -83,11 +83,10 @@ public final class FpvClient {
         zoom = 1f;
     }
 
+    /** The drone we are flying, once the server has put our camera inside it. */
     private static FpvDroneEntity drone() {
         Minecraft mc = Minecraft.getInstance();
-        if (droneId < 0 || mc.level == null) return null;
-        Entity e = mc.level.getEntity(droneId);
-        return e instanceof FpvDroneEntity d && !d.isRemoved() ? d : null;
+        return droneId >= 0 && mc.getCameraEntity() instanceof FpvDroneEntity d && d.getId() == droneId && !d.isRemoved() ? d : null;
     }
 
     private static AircraftEntity feed() {
@@ -106,23 +105,28 @@ public final class FpvClient {
         boolean exit = false;
         while (ClientSetup.EXIT_DRONE.consumeClick()) exit = true;
         if (feedId >= 0 && exit) PacketDistributor.sendToServer(new Payloads.StopFeed());
+
+        // Gunner's trigger: tell the server while the attack key is held on a manned gun.
+        boolean onGun = mc.player.getVehicle() instanceof SeatEntity;
+        boolean trigger = onGun && mc.screen == null && mc.options.keyAttack.isDown();
+        if (trigger != gunFiring) {
+            gunFiring = trigger;
+            PacketDistributor.sendToServer(new Payloads.GunFire(trigger));
+        }
+
         if (droneId < 0) return;
         FpvDroneEntity d = drone();
         if (d == null) {
-            // Either it has not been sent to us yet, or it blew up.
+            // Either the server has not moved us into it yet, or it is gone.
             if (attached || --waitTicks < 0) stop();
             return;
         }
-        if (mc.getCameraEntity() != d) mc.setCameraEntity(d);
         attached = true;
         speed = Math.sqrt(Mth.square(d.getX() - d.xo) + Mth.square(d.getY() - d.yo) + Mth.square(d.getZ() - d.zo)) * 20;
         PacketDistributor.sendToServer(new Payloads.Control(droneId, forward, strafe, vertical,
                 mc.player.getYRot(), mc.player.getXRot(), detonate));
         detonate = false;
-        if (exit) {
-            PacketDistributor.sendToServer(new Payloads.StopPilot(droneId));
-            stop();
-        }
+        if (exit) PacketDistributor.sendToServer(new Payloads.StopPilot(droneId));
     }
 
     /** The player's own body stays put: movement keys go to the drone instead. */
@@ -142,8 +146,10 @@ public final class FpvClient {
 
     @SubscribeEvent
     public static void click(InputEvent.InteractionKeyMappingTriggered event) {
-        if (droneId < 0) return;
-        if (event.isAttack()) detonate = true;
+        Minecraft mc = Minecraft.getInstance();
+        boolean onGun = mc.player != null && mc.player.getVehicle() instanceof SeatEntity;
+        if (droneId < 0 && feed() == null && !(onGun && event.isAttack())) return;
+        if (droneId >= 0 && event.isAttack()) detonate = true;
         event.setSwingHand(false);
         event.setCanceled(true);
     }
@@ -204,6 +210,7 @@ public final class FpvClient {
         feedId = -1;
         zoom = 1f;
         ReconClient.clear();
+        CableClient.clear();
     }
 
     private static void frame(GuiGraphics g, int w, int h, int colour) {
@@ -215,6 +222,26 @@ public final class FpvClient {
         int cx = w / 2, cy = h / 2;
         g.fill(cx - 12, cy, cx - 4, cy + 1, colour); g.fill(cx + 5, cy, cx + 13, cy + 1, colour);
         g.fill(cx, cy - 12, cx + 1, cy - 4, colour); g.fill(cx, cy + 5, cx + 1, cy + 13, colour);
+    }
+
+    /** Video noise that thickens as the link gets worse. */
+    private static void noise(GuiGraphics g, int w, int h, int jamPercent) {
+        if (jamPercent <= 2) return;
+        float j = jamPercent / 100f;
+        g.fill(0, 0, w, h, ((int) (j * 110) << 24) | 0x808080);
+        int n = (int) (j * j * 500) + (int) (j * 60);
+        for (int i = 0; i < n; i++) {
+            int x = STATIC.nextInt(w), y = STATIC.nextInt(h);
+            int len = 4 + STATIC.nextInt(60), shade = STATIC.nextInt(256);
+            int alpha = 60 + STATIC.nextInt((int) (j * 190) + 1);
+            g.fill(x, y, Math.min(w, x + len), y + 1 + STATIC.nextInt(2), (alpha << 24) | (shade << 16) | (shade << 8) | shade);
+        }
+        if (j > 0.6f) { // rolling tear bars
+            for (int i = 0; i < 3; i++) {
+                int y = STATIC.nextInt(h);
+                g.fill(0, y, w, y + 3 + STATIC.nextInt(10), 0xC0101010);
+            }
+        }
     }
 
     private static void right(GuiGraphics g, Font font, Component text, int w, int y, int colour) {
@@ -233,7 +260,12 @@ public final class FpvClient {
         AircraftEntity aircraft = feed();
         if (aircraft != null) {
             AircraftType type = AircraftType.values()[Mth.clamp(feedType, 0, AircraftType.values().length - 1)];
+            noise(g, w, h, aircraft.jamPercent());
             frame(g, w, h, green);
+            if (aircraft.jamPercent() > 30) {
+                Component jammed = Component.translatable("hud.steelrain.jammed");
+                g.drawString(font, jammed, w / 2 - font.width(jammed) / 2, h / 2 - 30, blink ? red : 0xFFFFFFFF, true);
+            }
             g.drawString(font, Component.translatable(type.translationKey()).append("  ● LIVE"), 18, 18, blink ? red : green, true);
             g.drawString(font, Component.translatable("hud.steelrain.position",
                     Mth.floor(aircraft.getX()), Mth.floor(aircraft.getZ())), 18, 30, green, true);
@@ -246,23 +278,34 @@ public final class FpvClient {
 
         FpvDroneEntity d = drone();
         if (d == null || !attached) return;
+        noise(g, w, h, d.jamPercent());
         frame(g, w, h, green);
         int battery = Mth.clamp(d.battery() * 100 / maxBattery, 0, 100);
-        double dist = Math.sqrt(d.distanceToSqr(mc.player));
-        int signal = Mth.clamp((int) Math.round(100 * (1 - dist / range)), 0, 100);
+        int dist = d.distance();
+        int signal = d.signal();
 
-        g.drawString(font, (d.mavic() ? "MAVIC" : "FPV") + "  ● REC", 18, 18, blink ? red : green, true);
+        g.drawString(font, (d.mavic() ? "MAVIC" : d.fiber() ? "FPV FIBER" : "FPV") + "  \u25CF REC", 18, 18, blink ? red : green, true);
         g.drawString(font, Component.translatable("hud.steelrain.battery", battery), 18, 30,
                 battery < 20 ? (blink ? red : 0xFFFFFFFF) : green, true);
-        g.drawString(font, Component.translatable("hud.steelrain.signal", signal), 18, 42,
-                signal < 20 ? (blink ? red : 0xFFFFFFFF) : green, true);
+        if (d.fiber()) {
+            int left = Math.max(0, d.cableLeft());
+            g.drawString(font, Component.translatable("hud.steelrain.cable", left), 18, 42,
+                    left < 30 ? (blink ? red : 0xFFFFFFFF) : 0xFF40C8FF, true);
+        } else {
+            g.drawString(font, Component.translatable("hud.steelrain.signal", signal), 18, 42,
+                    signal < 25 ? (blink ? red : 0xFFFFFFFF) : green, true);
+            if (d.jamPercent() > 30) {
+                Component jammed = Component.translatable("hud.steelrain.jammed");
+                g.drawString(font, jammed, w / 2 - font.width(jammed) / 2, h / 2 - 30, blink ? red : 0xFFFFFFFF, true);
+            }
+        }
         if (d.mavic()) {
             g.drawString(font, Component.translatable(d.hasGrenade() ? "hud.steelrain.grenade_ready" : "hud.steelrain.grenade_none"),
                     18, 54, d.hasGrenade() ? 0xFFFFD040 : 0xFF88AA88, true);
         }
         right(g, font, Component.translatable("hud.steelrain.altitude", (int) Math.round(d.getY())), w, 18, green);
         right(g, font, Component.translatable("hud.steelrain.speed", String.format("%.1f", speed)), w, 30, green);
-        right(g, font, Component.translatable("hud.steelrain.distance", (int) Math.round(dist)), w, 42, green);
+        right(g, font, Component.translatable("hud.steelrain.distance", dist), w, 42, green);
         right(g, font, zoomText, w, 54, green);
 
         Component hint = Component.translatable(d.mavic() ? "hud.steelrain.hint_mavic" : "hud.steelrain.hint",

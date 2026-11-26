@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "steelrain:block/krasukha"
+    },
+    "facing=east": {
+      "model": "steelrain:block/krasukha",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "steelrain:block/krasukha",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "steelrain:block/krasukha",
+      "y": 270
+    }
+  }
+}

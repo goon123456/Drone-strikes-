@@ -19,7 +19,7 @@ public final class Models {
     private static final int OLIVE = 0x5C683E, OLIVE_D = 0x424C2E, OLIVE_L = 0x6E7C4C, TYRE = 0x242426,
             STEEL = 0x8A8E94, STEEL_D = 0x3E4246, GLASS = 0x28405A, WHITE = 0xD8D8D2, GREY = 0x9A9EA4,
             GREY_D = 0x70747A, RED = 0xBE2824, SAND = 0xB8AC8C, SAND_D = 0x8E846A, ORANGE = 0xD6582C,
-            BRASS = 0xC4A64C, COPPER = 0xB87040, BLACK = 0x18181A, CARBON = 0x2C2C30, DUNE = 0xC6C2B4;
+            BRASS = 0xC4A64C, CYAN = 0x40C8FF, COPPER = 0xB87040, BLACK = 0x18181A, CARBON = 0x2C2C30, DUNE = 0xC6C2B4;
 
     private static final float D18 = (float) Math.toRadians(18), D15 = (float) Math.toRadians(15);
 
@@ -97,16 +97,52 @@ public final class Models {
 
     // ------------------------------------------------------------------ small drones
 
-    public static final BoxModel FPV = new BoxModel()
-            .box(CARBON, -0.09, -0.03, -0.13, 0.18, 0.07, 0.26)
-            .box(STEEL_D, -0.07, 0.04, -0.1, 0.14, 0.05, 0.2)
-            .box(BLACK, -0.04, -0.01, 0.13, 0.08, 0.07, 0.04)
-            .box(OLIVE, -0.045, -0.12, -0.12, 0.09, 0.08, 0.34)
-            .box(BRASS, -0.03, -0.105, 0.22, 0.06, 0.05, 0.06)
-            .pair(ORANGE, 0.1, 0.03, 0.1, 0.22, 0.012, 0.22)
-            .pair(ORANGE, 0.1, 0.03, -0.32, 0.22, 0.012, 0.22)
-            .group("a1", "root", 0, 0, 0).tilt(0, Math.PI / 4, 0).box(BLACK, -0.02, -0.01, -0.3, 0.04, 0.025, 0.6)
-            .group("a2", "root", 0, 0, 0).tilt(0, -Math.PI / 4, 0).box(BLACK, -0.02, -0.01, -0.3, 0.04, 0.025, 0.6);
+    private static BoxModel fpv(boolean fiber) {
+        BoxModel m = new BoxModel()
+                .box(CARBON, -0.09, -0.03, -0.13, 0.18, 0.07, 0.26)
+                .box(STEEL_D, -0.07, 0.04, -0.1, 0.14, 0.05, 0.2)
+                .box(BLACK, -0.04, -0.01, 0.13, 0.08, 0.07, 0.04)
+                .box(OLIVE, -0.045, -0.12, -0.12, 0.09, 0.08, 0.34)
+                .box(BRASS, -0.03, -0.105, 0.22, 0.06, 0.05, 0.06)
+                .pair(fiber ? CYAN : ORANGE, 0.1, 0.03, 0.1, 0.22, 0.012, 0.22)
+                .pair(fiber ? CYAN : ORANGE, 0.1, 0.03, -0.32, 0.22, 0.012, 0.22);
+        if (fiber) {
+            // the cable reel slung under the tail
+            m.box(WHITE, -0.08, -0.16, -0.3, 0.16, 0.14, 0.16).box(STEEL_D, -0.1, -0.11, -0.26, 0.2, 0.04, 0.08);
+        }
+        return m.group("a1", "root", 0, 0, 0).tilt(0, Math.PI / 4, 0).box(BLACK, -0.02, -0.01, -0.3, 0.04, 0.025, 0.6)
+                .group("a2", "root", 0, 0, 0).tilt(0, -Math.PI / 4, 0).box(BLACK, -0.02, -0.01, -0.3, 0.04, 0.025, 0.6);
+    }
+
+    public static final BoxModel FPV = fpv(false);
+    public static final BoxModel FIBER_FPV = fpv(true);
+
+    /** Tracer: a short bright streak along the direction of flight. */
+    public static final BoxModel BULLET = new BoxModel()
+            .box(0xFFE27A, -0.04, -0.04, -0.9, 0.08, 0.08, 1.4)
+            .box(0xFFFFFF, -0.03, -0.03, 0.5, 0.06, 0.06, 0.25);
+
+    /** Small radome fitted on top of a vehicle. */
+    public static final BoxModel DOME = new BoxModel()
+            .box(GREY_D, -0.35, 0, -0.35, 0.7, 0.12, 0.7)
+            .box(GREY, -0.28, 0.12, -0.28, 0.56, 0.3, 0.56)
+            .box(STEEL_D, -0.03, 0.42, -0.03, 0.06, 0.6, 0.06)
+            .box(STEEL_D, 0.2, 0.42, 0.2, 0.04, 0.4, 0.04);
+
+    /** Worn on the back. Origin at the middle of the wearer's back, +Z away from them. */
+    public static final BoxModel FIBER_PACK = new BoxModel()
+            .box(OLIVE_D, -0.2, -0.28, 0, 0.4, 0.56, 0.16)
+            .box(WHITE, -0.16, -0.16, 0.16, 0.32, 0.32, 0.14)
+            .box(STEEL_D, -0.05, -0.05, 0.3, 0.1, 0.1, 0.04)
+            .box(CYAN, -0.17, -0.02, 0.18, 0.34, 0.04, 0.1);
+
+    public static final BoxModel JAMMER_PACK = new BoxModel()
+            .box(OLIVE, -0.2, -0.28, 0, 0.4, 0.56, 0.2)
+            .box(OLIVE_D, -0.16, -0.2, 0.2, 0.32, 0.3, 0.05)
+            .box(STEEL_D, -0.17, 0.28, 0.05, 0.03, 0.55, 0.03)
+            .box(STEEL_D, 0.14, 0.28, 0.05, 0.03, 0.4, 0.03)
+            .box(STEEL_D, -0.015, 0.28, 0.12, 0.03, 0.7, 0.03)
+            .box(RED, -0.03, 0.1, 0.25, 0.06, 0.06, 0.02);
 
     public static final BoxModel MAVIC = new BoxModel()
             .box(GREY_D, -0.1, -0.04, -0.15, 0.2, 0.09, 0.32)
@@ -320,6 +356,56 @@ public final class Models {
                 .box(OLIVE_D, -0.3, 7.8, 0.0, 0.6, 0.9, 0.12)
                 .box(OLIVE_D, -0.3, 7.8, 2.88, 0.6, 0.9, 0.12)
                 .box(RED, -0.08, 9.0, 1.42, 0.16, 0.16, 0.16));
+
+        WEAPONS.put(WeaponType.GEPARD, new BoxModel()
+                .pair(TYRE, 1.05, 0, 0.2, 0.5, 1.0, 7.4)
+                .box(OLIVE, -1.5, 0.5, 0, 3.0, 1.5, 7.8)
+                .box(OLIVE_D, -1.4, 0.9, 7.8, 2.8, 0.7, 0.2)
+                .group("turret", "root", 0, 2.0, 3.6)
+                .box(OLIVE_L, -1.1, 2.0, 2.2, 2.2, 1.3, 3.0)
+                .box(STEEL_D, -0.08, 3.3, 2.4, 0.16, 0.5, 0.16)
+                .box(OLIVE_D, -0.9, 3.8, 2.3, 1.8, 0.5, 0.25)
+                .box(OLIVE_D, -0.45, 2.4, 5.2, 0.9, 0.9, 0.3)
+                .group("gun", "turret", 0, 2.8, 3.8)
+                .pair(OLIVE_D, 1.1, 2.4, 2.8, 0.45, 0.8, 2.2)
+                .pair(STEEL_D, 1.25, 2.74, 5.0, 0.12, 0.12, 2.4));
+
+        WEAPONS.put(WeaponType.ZU23, new BoxModel()
+                .pair(TYRE, 1.0, 0, 1.1, 0.25, 0.8, 0.8)
+                .box(STEEL_D, -1.0, 0.25, 0.6, 2.0, 0.2, 1.8)
+                .box(STEEL_D, -0.1, 0, 2.5, 0.2, 0.3, 0.4)
+                .group("turret", "root", 0, 0.5, 1.5)
+                .box(OLIVE, -0.5, 0.45, 1.0, 1.0, 0.5, 1.0)
+                .box(OLIVE_D, -0.3, 0.45, 0.3, 0.6, 0.15, 0.6)
+                .box(OLIVE_D, -0.3, 0.6, 0.25, 0.6, 0.6, 0.1)
+                .group("gun", "turret", 0, 1.15, 1.5)
+                .pair(OLIVE_D, 0.08, 1.0, 1.0, 0.22, 0.3, 1.2)
+                .pair(STEEL_D, 0.14, 1.1, 2.2, 0.09, 0.09, 1.7)
+                .pair(BLACK, 0.12, 1.08, 3.8, 0.13, 0.13, 0.2)
+                .pair(OLIVE, 0.35, 0.9, 1.1, 0.35, 0.45, 0.7));
+
+        WEAPONS.put(WeaponType.TRENCH_JAMMER, new BoxModel()
+                .box(OLIVE, -0.35, 0, 0.15, 0.7, 0.6, 0.7)
+                .box(OLIVE_D, -0.3, 0.6, 0.2, 0.6, 0.06, 0.6)
+                .box(STEEL_D, -0.04, 0.66, 0.46, 0.08, 1.2, 0.08)
+                .box(STEEL_D, -0.3, 1.5, 0.48, 0.6, 0.04, 0.04)
+                .box(STEEL_D, -0.02, 1.3, 0.2, 0.04, 0.04, 0.6)
+                .box(RED, -0.05, 1.86, 0.45, 0.1, 0.1, 0.1));
+
+        WEAPONS.put(WeaponType.KRASUKHA, new BoxModel()
+                .pair(TYRE, 0.9, 0, 0.8, 0.4, 1.2, 1.2).pair(TYRE, 0.9, 0, 2.2, 0.4, 1.2, 1.2)
+                .pair(TYRE, 0.9, 0, 7.0, 0.4, 1.2, 1.2).pair(TYRE, 0.9, 0, 8.4, 0.4, 1.2, 1.2)
+                .box(OLIVE_D, -1.0, 0.6, 0, 2.0, 0.8, 11.0)
+                .box(OLIVE, -1.25, 1.4, 9.0, 2.5, 1.6, 2.0)
+                .box(GLASS, -1.05, 2.2, 10.98, 2.1, 0.6, 0.05)
+                .pair(GLASS, 1.23, 2.2, 9.5, 0.04, 0.55, 1.0)
+                .box(OLIVE, -1.25, 1.4, 3.0, 2.5, 1.9, 5.6)
+                .box(OLIVE_D, -0.6, 3.3, 5.0, 1.2, 0.5, 1.2)
+                .box(STEEL_D, -0.12, 1.4, 1.4, 0.24, 2.4, 0.24)
+                .group("dish", "root", 0, 3.6, 1.5).tilt(-0.45, 0, 0)
+                .box(OLIVE_L, -1.5, 2.4, 1.2, 3.0, 2.6, 0.25)
+                .box(OLIVE_D, -1.3, 2.6, 1.45, 2.6, 2.2, 0.06)
+                .box(STEEL_D, -0.06, 3.6, 1.45, 0.12, 0.12, 0.9));
     }
 
     public static BoxModel weapon(WeaponType type) { return WEAPONS.get(type); }

@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "steelrain:jammer_backpack"
+    },
+    {
+      "item": "steelrain:drone_battery"
+    }
+  ],
+  "result": {
+    "id": "steelrain:jammer_backpack",
+    "count": 1
+  }
+}

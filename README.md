@@ -16,6 +16,7 @@ occupy their full footprint; turrets, pods and barrels physically swing onto the
 | System | Size (W x H x L) | Type | How it is used |
 | --- | --- | --- | --- |
 | **FPV Kamikaze Drone** | 0.5 m | Piloted drone | Flown by hand through its camera, explodes on impact |
+| **Fiber-Optic FPV Drone** | 0.5 m | Piloted drone | Same, but wired: cannot be jammed, limited by its cable instead of radio range |
 | **DJI Mavic** | 0.45 m | Piloted recon drone | Reusable, hovers, zoom camera, carries one droppable grenade |
 | **Orlan-10** | 3 m wingspan | Recon drone | Orlan Catapult + laptop. Circles the target for 4 minutes, returns by parachute |
 | **Bayraktar TB2** | 12 m wingspan | Recon drone | Ground Station + runway (30 blocks). Circles for 8 minutes |
@@ -26,9 +27,13 @@ occupy their full footprint; turrets, pods and barrels physically swing onto the
 | **Iskander-M** | 7.3 m | Ballistic missile | TEL (3 x 3 x 13), missile raises to vertical, range 8000 |
 | **M142 HIMARS** | 3 x 3 x 7 | Rocket artillery | 6 GMLRS rockets, salvo fire, range 1200 |
 | **M109 Howitzer** | 3 x 3 x 7 | Tube artillery | 155 mm shells, cheap, less accurate, range 600 |
-| **Pantsir-S1** | 3 x 4 x 10 | Short-range air defence | Shoots down hostile drones and missiles up to 100 blocks above it |
+| **Pantsir-S1** | 3 x 4 x 10 | Short-range air defence | Missiles for far or fast targets, twin 30 mm cannons for close ones; reaches 100 blocks above itself |
+| **Flakpanzer Gepard** | 3 x 4 x 8 | Gun air defence | Radar-aimed twin 35 mm guns, 96 block range, cheap ammo |
+| **ZU-23-2** | 3 x 2 x 3 | Gun air defence | Twin 23 mm. Fires on its own, or sit on it and aim by hand |
 | **MIM-104 Patriot** | 3 x 4 x 9 | Long-range air defence | 400 block reach, any altitude; only fires at aircraft, cruise and ballistic missiles |
-| **EW Jammer** | 3 x 3 x 3 + mast | Electronic warfare | Knocks hostile drones off course while it has fuel |
+| **EW Jammer** | 3 x 3 x 3 + mast | Jammer | 64 block bubble |
+| **Krasukha-4** | 3 x 4 x 11 | Long-range jammer | 200 block bubble, burns fuel twenty times faster |
+| **Trench Jammer** | 1 x 2 x 1 | Jammer | 32 block bubble, cheap base protection |
 
 Ranges are in blocks and can be scaled in the config.
 
@@ -80,10 +85,53 @@ a motionless copy of you (same name, skin and armour) stands where you were. If 
 pulled straight back into your body and take the damage. You are also returned if the aircraft is lost or you
 log out. Your render distance needs to be at least 8 chunks to see the ground from cruise height.
 
-### FPV drone and Mavic
+### Air defence: nothing is hitscan
+Every shot is a real object with a flight time.
+
+- **Guns** fire individual shells (about 110-130 blocks a second, with a little drop). The fire-control computer
+  works out where the target will be when the shells arrive and points the barrels there; the shells go where the
+  barrels actually point, and only do damage if their path passes through the target. Drones and missiles have
+  hit points, so it usually takes several hits.
+- **Missiles** steer towards the predicted intercept point with a limited turn rate and carry a proximity fuse:
+  they only go off if they truly pass within a few blocks. There is no hit-chance roll anywhere.
+- **Manning the ZU-23-2**: right-click it with an empty hand to sit down (sneak + right-click opens its ammo
+  box instead). The guns follow where you look, hold attack to fire, sneak to get off. There is no lead marker:
+  judging the lead is up to you. The shells also hurt mobs and players.
+
+Ammo: 30 mm belts go in the Pantsir's second slot, 35 mm belts in the Gepard, 23 mm boxes in the ZU-23-2.
+
+### Jamming
+Jammers affect anything that depends on a radio or satellite signal and belongs to someone who is not you or on
+your scoreboard team. The effect fades in from the edge of the bubble and is total at 40% of its radius.
+
+| Thing | Effect inside a hostile bubble |
+| --- | --- |
+| Radio FPV drone, Mavic | Video static, sluggish weak controls, then the link is lost |
+| Shahed, Orlan, GMLRS (satellite guided) | Aim point drifts for as long as they are inside |
+| Reaper, Bayraktar, Global Hawk, Orlan | Sensors go blind, camera feed fills with static, they turn for home after 5 seconds |
+| Field Laptop | Cannot command launchers or aircraft |
+| Fiber-optic FPV, Tomahawk, Iskander, shells | Unaffected |
+
+| Jammer | Radius | Power |
+| --- | --- | --- |
+| **Jammer Backpack** | 24 | 10 minute battery. Right-click to switch on or off. Works from the Curios back slot or the inventory |
+| **Anti-Drone Gun** | 80, narrow cone | Hold use while aiming at a drone. 2 minute battery |
+| **Jammer Dome** | 14 | Right-click one of your vehicles with it to fit it. Needs no power |
+| **Trench Jammer** | 32 | Fuel or Drone Batteries |
+| **EW Jammer** | 64 | Fuel or Drone Batteries |
+| **Krasukha-4** | 200 | Fuel, about 10 mB a second: a full tank lasts 13 minutes |
+
+Block jammers have a power button in their screen. Recharge the backpack and the gun by crafting them together
+with a Drone Battery. A running jammer is a loud radio source: any enemy recon drone close enough marks it on
+their laptop map (yellow), even while that drone itself is being blinded.
+
+### Hand-flown drones
 1. Place the drone on the ground.
 2. Right-click it with the **FPV Goggles & Controller** to pair.
-3. Right-click the air with the controller to take off.
+3. Right-click the air with the controller to take off (you must be within 48 blocks of the drone).
+
+While you fly you are inside the drone, and a motionless copy of you stays where you stood, exactly as with the
+remote camera. If the copy is hit you are thrown out of the drone and take the damage, so fly from cover.
 
 | Control | Action |
 | --- | --- |
@@ -93,14 +141,19 @@ log out. Your render distance needs to be at least 8 chunks to see the ground fr
 | Jump / Sneak | Up / down |
 | Attack (left click) | FPV: detonate now. Mavic: drop the grenade |
 | Scroll wheel | Zoom |
-| X (rebindable) | Leave the drone camera |
+| X (rebindable) | Leave the drone |
 | F5 | Chase view |
 
-The **FPV drone** arms itself 1.5 seconds after take-off and explodes when it hits something at speed.
-The **Mavic** is reusable: right-click a parked one with a **Drone Grenade** to arm it, sneak + right-click to
-pick it up (it keeps its charge), and craft it together with a Drone Battery to recharge. If you let go of it in
-the air it settles to the ground by itself.
-Both have a limited battery (FPV 150 s, Mavic 360 s) and a 200 block control range.
+- The **FPV drone** arms itself 1.5 seconds after take-off and explodes when it hits something at speed.
+  Radio range is 500 blocks from where you stand; battery 150 s.
+- The **Fiber-Optic FPV Drone** needs a **Fiber Spool Backpack** (Curios back slot if you have Curios, otherwise
+  anywhere in your inventory). The pack holds up to 1000 blocks of cable; click **Fiber Spools** onto it in the
+  inventory to add 250 each. The cable is drawn in the world, wraps round corners as you fly behind things, and
+  the drone stops dead when the spool runs out. Cable you paid out is used up. The cable breaks if an explosion
+  goes off next to it or it gets wrapped round too many corners.
+- The **Mavic** is reusable: right-click a parked one with a **Drone Grenade** to arm it, sneak + right-click to
+  pick it up (it keeps its charge), and craft it together with a Drone Battery to recharge. If you let go of it in
+  the air it settles to the ground by itself. Battery 360 s.
 
 ### Fuel
 Launchers hold 8000 mB of fuel and burn some for every launch (aircraft take the most: 1000 for a Reaper,
@@ -138,13 +191,15 @@ Both need permission level 2.
 | `rangeMultiplier` | 1.0 | Maximum range of all launchers |
 | `chunkLoading` | true | Flying weapons load chunks along their path |
 | `laptopLinkRange` | 128 | Laptop to launcher distance |
-| `fpvRange` / `fpvBatterySeconds` | 200 / 150 | FPV drone limits |
+| `radioRange` / `fpvBatterySeconds` | 500 / 150 | Radio control range, FPV flight time |
+| `fiberMaxLength` | 1000 | Most cable a spool backpack holds |
 | `mavicBatterySeconds` | 360 | Mavic flight time |
-| `airDefenceRange` / `airDefenceCeiling` / `airDefenceHitChance` | 128 / 100 / 0.8 | Pantsir tuning |
-| `patriotRange` / `patriotHitChance` | 400 / 0.9 | Patriot tuning |
+| `airDefenceRange` / `airDefenceCeiling` | 128 / 100 | Pantsir missile reach |
+| `patriotRange` | 400 | Patriot reach |
+| `trenchJammerRange` / `strategicJammerRange` / `backpackJammerRange` / `domeJammerRange` | 32 / 200 / 24 / 14 | Jammer bubbles |
 | `reconMarksPlayers` | true | Turn off so recon drones never show enemy players |
 | `spottedSpreadMultiplier` | 0.2 | Accuracy bonus under a friendly recon drone |
-| `jammerRange` | 48 | Jammer radius |
+| `jammerRange` | 64 | EW Jammer bubble |
 | `requireFuel` | true | Turn fuel use off entirely |
 
 Every impact is written to the server log with its owner and coordinates.
@@ -166,3 +221,4 @@ python3 tools/gen_assets.py   # regenerate textures, models, recipes and languag
 - There are no custom sounds yet (vanilla sounds are used).
 - Create: Diesel Generators support is tag based and has not been tested with that mod installed.
 - Low-flying drones (Orlan, Shahed) can fly into steep mountains.
+- Curios is optional. With it the two backpacks go in the Back slot and show on your back.

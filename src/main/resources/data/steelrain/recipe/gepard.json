@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "UOU",
+    "MCM",
+    "BBB"
+  ],
+  "key": {
+    "U": {
+      "item": "steelrain:ammo_35mm"
+    },
+    "O": {
+      "item": "minecraft:observer"
+    },
+    "M": {
+      "item": "steelrain:electric_motor"
+    },
+    "C": {
+      "item": "steelrain:circuit_board"
+    },
+    "B": {
+      "item": "minecraft:iron_block"
+    }
+  },
+  "result": {
+    "id": "steelrain:gepard",
+    "count": 1
+  }
+}
