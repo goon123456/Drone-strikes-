@@ -41,6 +41,16 @@ neoForge {
 
 repositories {
     maven {
+        name = 'Modrinth'
+        url = 'https://api.modrinth.com/maven'
+        content { includeGroup 'maven.modrinth' }
+    }
+    maven {
+        name = 'Kotlin for Forge'
+        url = 'https://thedarkcolour.github.io/KotlinForForge/'
+        content { includeGroup 'thedarkcolour' }
+    }
+    maven {
         name = 'Curios API'
         url = 'https://maven.theillusivec4.top/'
         content { includeGroup 'top.theillusivec4.curios' }
@@ -48,11 +58,10 @@ repositories {
 }
 
 dependencies {
-    // Optional: the backpacks use the Curios "back" slot when Curios is installed.
+    // Steel Rain is an addon for Superb Warfare, which is written in Kotlin and bundles Curios and its model library.
+    implementation "maven.modrinth:superb-warfare:${sbw_version}"
+    implementation "thedarkcolour:kotlinforforge-neoforge:${kff_version}"
     compileOnly "top.theillusivec4.curios:curios-neoforge:${curios_version}:api"
-    if (project.hasProperty('withCurios')) {
-        runtimeOnly "top.theillusivec4.curios:curios-neoforge:${curios_version}"
-    }
 }
 
 tasks.withType(JavaCompile).configureEach {
