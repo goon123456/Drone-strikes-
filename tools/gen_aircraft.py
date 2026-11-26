@@ -38,6 +38,16 @@ def _gear(name, pivot, foot, dia, rim=STEEL, twin=False, door=None):
     return _bone(name, pivot, parts)
 
 
+def _head_fairings(mat, y, z, half_width, length, height):
+    """Smooth teardrop bulges either side of an engine cowling, where the cylinder heads sit underneath."""
+    out = []
+    for sx in (1, -1):
+        cx = sx * half_width
+        out.append(skin(mat, [(z + length * 0.5, cx * 0.8, y, 0, 0), (z + length * 0.3, cx * 0.92, y, height * 0.9, height * 0.8), (z, cx, y, height * 1.3, height),
+                              (z - length * 0.3, cx * 0.94, y, height * 0.9, height * 0.8), (z - length * 0.5, cx * 0.8, y, 0, 0)], seg=10))
+    return out
+
+
 def _cylinders(y, z_positions, inner, outer, radius, exhaust=None):
     """Air-cooled engine cylinders standing out either side of a crankcase: a finned barrel, a head with its
     rocker cover and spark plug, and optionally a short exhaust stub swept back underneath."""
@@ -135,7 +145,7 @@ def tb2():
     parts = [skin(g, [(3.25, 0, -0.05, 0, 0), (3.15, 0, -0.04, 0.2, 0.18), (2.8, 0, 0.0, 0.58, 0.46), (2.0, 0, 0.04, 0.82, 0.66), (1.2, 0, 0.05, 0.92, 0.72),
                       (-0.6, 0, 0.05, 0.95, 0.7), (-1.4, 0, 0.08, 0.76, 0.62), (-1.9, 0, 0.1, 0.56, 0.52), (-2.0, 0, 0.1, 0.46, 0.46)], power=2.6),
              lathe(STEEL_D, "z", 0, 0.1, [(-2.0, 0.2), (-2.25, 0.19), (-2.3, 0.1), (-2.34, 0.06), (-2.34, 0.0)]),   # pusher engine
-             *_cylinders(0.1, (-2.08, -2.22), 0.16, 0.32, 0.06, exhaust=-0.14),                                     # its four cylinders
+             *_head_fairings(STEEL_D, 0.1, -2.14, 0.22, 0.3, 0.07),                                                 # cylinder-head bulges
              B(g, 0.44, -0.12, 0.2, 0.006, 0.3, 1.2, plain=True, marks=[("left", "digits:T 253", 0.5, 0.5, 0)]),
              B(g, -0.446, -0.12, 0.2, 0.006, 0.3, 1.2, plain=True, marks=[("right", "digits:T 253", 0.5, 0.5, 0)])]
     # blended wing roots, long tapered panels and upturned tips
@@ -209,7 +219,7 @@ def global_hawk():
 def orlan():
     g = ORLAN_GREY
     parts = [lathe(STEEL_D, "z", 0, 0, [(0.8, 0.1), (0.9, 0.09), (0.95, 0.05), (0.95, 0.0)]),                       # engine nose
-             *_cylinders(0.0, (0.86,), 0.07, 0.17, 0.035),                                                          # its two cylinders
+             *_head_fairings(STEEL_D, 0.0, 0.84, 0.1, 0.12, 0.04),                                                  # cylinder-head bulges
              skin(g, [(0.8, 0, 0.0, 0.2, 0.22), (0.6, 0, -0.01, 0.26, 0.3), (0.2, 0, -0.01, 0.27, 0.32), (-0.15, 0, -0.01, 0.26, 0.3),
                       (-0.6, 0, 0.03, 0.14, 0.16), (-1.0, 0, 0.06, 0.08, 0.09), (-1.02, 0, 0.06, 0, 0)], power=2.6),
              skin(BLACK, [(0.42, 0, -0.16, 0, 0), (0.36, 0, -0.18, 0.1, 0.05), (0.25, 0, -0.19, 0.15, 0.08), (0.14, 0, -0.18, 0.12, 0.06),
@@ -231,12 +241,12 @@ def orlan():
 def shahed():
     g, d = SHAHED_WHITE, SHAHED_DARK
     parts = [skin(g, [(1.75, 0, 0, 0, 0), (1.68, 0, 0, 0.14, 0.14), (1.45, 0, 0, 0.32, 0.32), (0.9, 0, 0, 0.46, 0.46), (-0.6, 0, 0, 0.46, 0.44),
-                      (-1.0, 0, 0, 0.4, 0.38), (-1.22, 0, 0, 0.3, 0.29), (-1.26, 0, 0, 0.26, 0.25)]),
-             # the engine: a flat-four on the tail with its crankcase, four finned cylinders and the propeller shaft
-             lathe(STEEL_D, "z", 0, 0, [(-1.26, 0.12), (-1.3, 0.1), (-1.5, 0.1), (-1.53, 0.07), (-1.56, 0.05), (-1.56, 0.0)]),
-             B(STEEL_D, -0.06, 0.08, -1.48, 0.12, 0.05, 0.18, plain=True),                                          # carburettor
+                      (-1.0, 0, 0, 0.41, 0.39), (-1.2, 0, 0, 0.36, 0.34)]),
+             # engine cowling: a smooth tail cone in a darker finish, with a cooling-air slot each side
+             skin(d, [(-1.2, 0, 0, 0.36, 0.34), (-1.36, 0, 0, 0.31, 0.29), (-1.5, 0, 0, 0.22, 0.21), (-1.56, 0, 0, 0.15, 0.15)]),
+             B(BLACK, 0.158, -0.03, -1.36, 0.004, 0.06, 0.1, plain=True), B(BLACK, -0.162, -0.03, -1.36, 0.004, 0.06, 0.1, plain=True),
+             *_head_fairings(d, 0.0, -1.38, 0.17, 0.3, 0.07),
              bar(STEEL_D, (0, 0.2, 0.3), (0, 0.34, 0.28), 0.014),
-             *_cylinders(0.0, (-1.34, -1.46), 0.09, 0.25, 0.055, exhaust=-0.12),
              B(g, 0.232, -0.08, -0.4, 0.004, 0.16, 0.7, plain=True, marks=[("left", "digits:M 214", 0.5, 0.5, 0)]),
              B(g, -0.236, -0.08, -0.4, 0.004, 0.16, 0.7, plain=True, marks=[("right", "digits:M 214", 0.5, 0.5, 0)])]
     # cropped delta blended into the body, with elevons and fins on the tips above and below
