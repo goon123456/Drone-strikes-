@@ -357,9 +357,8 @@ def export(model, width, height):
                         else:
                             p, n = s["grid"][a, b], s["normals"][a, b]
                             u, v = b / (C - 1), a / (R - 1)
-                        # mirrored left to right, which is how the texture painter expects to be seen
-                        corners.append([round(-float(p[0]), 4), round(float(p[1]), 4), round(float(p[2]), 4),
-                                        round(-float(n[0]), 3), round(float(n[1]), 3), round(float(n[2]), 3),
+                        corners.append([round(float(p[0]), 4), round(float(p[1]), 4), round(float(p[2]), 4),
+                                        round(float(n[0]), 3), round(float(n[1]), 3), round(float(n[2]), 3),
                                         round((r["x"] + 0.5 + u * (r["w"] - 1)) / width, 5), round((r["y"] + 0.5 + v * (r["h"] - 1)) / height, 5)])
                     if len(corners) == 3:
                         corners.append(corners[0])
@@ -371,8 +370,7 @@ def export(model, width, height):
         return out
     bones = [{"name": "root", "pivot": [0, 0, 0], "faces": faces(model["base"])}]
     for b in model["bones"]:
-        px, py, pz = b["pivot"]
-        bones.append({"name": b["name"], "pivot": [round(-px, 4), round(py, 4), round(pz, 4)], "faces": faces(b["cubes"])})
+        bones.append({"name": b["name"], "pivot": [round(v, 4) for v in b["pivot"]], "faces": faces(b["cubes"])})
     return {"bones": bones}
 
 

@@ -308,7 +308,11 @@ python3 tools/gen_assets.py   # regenerate textures, models, recipes and languag
   renderer from `models/aircraft/*.json`. Propellers and rotors spin, landing gear retracts and aircraft bank.
 - Missiles, rockets, shells and grenades in flight are textured meshes too, in `tools/gen_munitions.py`: bodies of
   revolution with true ogive noses, aerofoil fins, nozzles, paint bands and stencilled designations.
-  The three launch sites and tracer rounds are still simple flat-coloured shapes.
+- The three launch sites are textured meshes as well, in `tools/gen_sites.py`: the Ground Station is a 6 m
+  equipment shelter on jacks with a satellite dish, a data-link mast, air conditioning and a cable drum; the
+  Orlan Catapult is an inclined folding rail on a base and A-frame with a carriage and launch cylinder; the
+  Shahed Launch Rail is a skid frame carrying twin inclined rails with a blast plate and firing box.
+  The worn backpacks, the Jammer Dome and tracer rounds are still simple flat-coloured shapes.
 - Ground vehicles are true meshes (Superb Warfare's `poly_mesh` format), not boxes: turned wheels with dished
   rims, round barrels, masts and dishes, and bevelled plate edges. Shapes are in `tools/gen_vehicles.py`; the kit
   of parts, the mesh builder and the texture painter are in `tools/vehicle_kit.py`.

@@ -1243,7 +1243,8 @@ def bake(model, name, px=None):
                 shared[key] = s["rect"]
     area = sum((r["w"] + 1) * (r["h"] + 1) for r in surfs)
     width = 512
-    while width * width < area * 1.12 and width < 4096:
+    widest = max(r["w"] for r in surfs) + 1
+    while (width * width < area * 1.12 or width < widest) and width < 4096:
         width *= 2
     surfs.sort(key=lambda r: -r["h"])
     x = y = shelf = 0

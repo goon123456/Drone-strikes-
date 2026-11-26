@@ -1024,7 +1024,8 @@ def aircraft():
     """Aircraft, drones and munitions: a mesh file and a painted texture each, read by Steel Rain's own renderer."""
     import gen_aircraft as GA
     import gen_munitions as GM
-    for name, (build, px) in {**GA.MODELS, **GM.MODELS}.items():
+    import gen_sites as GS
+    for name, (build, px) in {**GA.MODELS, **GM.MODELS, **GS.MODELS}.items():
         model = build()
         tex, tw, th = VK.bake(model, name, px)
         save(Image.fromarray(tex).convert("RGB"), f"{A}/textures/entity/aircraft/{name}.png")

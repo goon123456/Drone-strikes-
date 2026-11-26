@@ -36,7 +36,7 @@ public class WeaponRenderer implements BlockEntityRenderer<WeaponBlockEntity> {
         BoxModel.Group turret = model.get("turret"), gun = model.get("gun");
         if (turret != null) turret.yRot = -yaw;
         if (gun != null) gun.xRot = -pitch;
-        VertexConsumer vc = buffers.getBuffer(RenderType.entityCutoutNoCull(Models.PAINT));
+        VertexConsumer vc = buffers.getBuffer(RenderType.entityCutoutNoCull(model.texture()));
         model.render(pose, vc, light);
 
         if (be.loaded() >= 0) {

@@ -82,39 +82,7 @@ public final class Models {
 
     private static final Map<WeaponType, BoxModel> WEAPONS = new EnumMap<>(WeaponType.class);
     static {
-        WEAPONS.put(WeaponType.GROUND_STATION, new BoxModel()
-                .pair(STEEL_D, 1.0, 0, 0.2, 0.2, 0.2, 0.2).pair(STEEL_D, 1.0, 0, 5.6, 0.2, 0.2, 0.2)
-                .box(SAND, -1.2, 0.2, 0, 2.4, 2.5, 6.0)
-                .box(SAND_D, -0.45, 0.3, -0.03, 0.9, 2.0, 0.04)
-                .box(SAND_D, -1.22, 1.3, 0.5, 2.44, 0.15, 5.0)
-                .box(STEEL, -1.0, 1.4, 6.0, 0.9, 0.9, 0.4)
-                .box(STEEL_D, -0.05, 2.7, 4.8, 0.1, 1.6, 0.1)
-                .box(STEEL_D, 0.9, 2.7, 0.5, 0.05, 2.2, 0.05)
-                .group("dish", "root", 0, 4.3, 4.8).tilt(-0.6, 0, 0)
-                .box(WHITE, -0.9, 3.6, 4.7, 1.8, 1.4, 0.15)
-                .box(STEEL_D, -0.05, 4.25, 4.85, 0.1, 0.1, 0.6));
-
-        WEAPONS.put(WeaponType.ORLAN_CATAPULT, new BoxModel()
-                .box(STEEL_D, -0.3, 0, 0.2, 0.6, 0.3, 0.15)
-                .pair(STEEL_D, 0.2, 0, 3.3, 0.08, 1.15, 0.08)
-                .box(STEEL_D, -0.28, 1.1, 3.3, 0.56, 0.06, 0.08)
-                .group("rail", "root", 0, 0.3, 0.2).tilt(-D15, 0, 0)
-                .box(STEEL, -0.08, 0.3, 0.2, 0.16, 0.12, 3.7));
-
-
-
-
-
-
-
-        WEAPONS.put(WeaponType.SHAHED_LAUNCHER, new BoxModel()
-                .pair(STEEL_D, 0.9, 0, 0, 0.2, 0.2, 5.0)
-                .box(STEEL_D, -1.1, 0.1, 0.3, 2.2, 0.15, 0.2)
-                .box(STEEL_D, -1.1, 0.1, 4.5, 2.2, 0.15, 0.2)
-                .pair(STEEL_D, 0.3, 0.2, 4.3, 0.12, 1.6, 0.12)
-                .box(STEEL_D, -0.42, 1.7, 4.3, 0.84, 0.1, 0.12)
-                .group("rail", "root", 0, 0.4, 0.3).tilt(-D18, 0, 0)
-                .box(STEEL, -0.15, 0.4, 0.3, 0.3, 0.2, 4.6));
+        for (WeaponType type : WeaponType.values()) WEAPONS.put(type, BoxModel.load(type.id));
     }
 
     public static BoxModel weapon(WeaponType type) { return WEAPONS.get(type); }
