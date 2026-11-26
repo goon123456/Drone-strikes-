@@ -344,6 +344,151 @@ def truck_details(mat, dark, zs, x, dia, z_rear, z_front, bed):
     return c
 
 
+# ---------------------------------------------------------------- small fittings
+def bar(mat, p0, p1, dia=0.03, **opt):
+    """A straight bar between any two points, at any angle: struts, stays, hoses, cable runs, rails."""
+    d = [p1[i] - p0[i] for i in range(3)]
+    k = max(range(3), key=lambda i: abs(d[i]))               # run it along whichever way it mostly goes
+    axis = "xyz"[k]
+    others = [i for i in range(3) if i != k]
+    r = dia / 2
+    ring = lambda p: [(p[others[0]] + r * math.cos(t), p[others[1]] + r * math.sin(t)) for t in (0.52, 1.57, 2.62, 3.67, 4.71, 5.76)]
+    return loft(mat, axis, p0[k], ring(p0), p1[k], ring(p1), plain=True, **opt)
+
+
+def run(mat, points, dia=0.03):
+    """A hose or cable through a list of points."""
+    return [bar(mat, a, b, dia) for a, b in zip(points, points[1:])]
+
+
+def eye(x, y, z, mat=STEEL_D, along="z"):
+    """A lifting or lashing eye standing on a surface."""
+    if along == "z":
+        return [B(mat, x - 0.012, y, z - 0.06, 0.024, 0.09, 0.024, plain=True), B(mat, x - 0.012, y, z + 0.036, 0.024, 0.09, 0.024, plain=True),
+                B(mat, x - 0.012, y + 0.07, z - 0.06, 0.024, 0.024, 0.12, plain=True)]
+    return [B(mat, x - 0.06, y, z - 0.012, 0.024, 0.09, 0.024, plain=True), B(mat, x + 0.036, y, z - 0.012, 0.024, 0.09, 0.024, plain=True),
+            B(mat, x - 0.06, y + 0.07, z - 0.012, 0.12, 0.024, 0.024, plain=True)]
+
+
+def handrail(mat, p0, p1, height=0.0, posts=3, dia=0.028):
+    """A rail between two points standing `height` off the surface on posts (or a plain grab rail when 0.1 or so)."""
+    c = [bar(mat, (p0[0], p0[1] + height, p0[2]), (p1[0], p1[1] + height, p1[2]), dia)]
+    for i in range(posts):
+        f = i / max(1, posts - 1)
+        q = [p0[k] + (p1[k] - p0[k]) * f for k in range(3)]
+        c.append(bar(mat, tuple(q), (q[0], q[1] + height, q[2]), dia))
+    return c
+
+
+def ladder(mat, x, z, y0, y1, width=0.4, across="z", rungs=None):
+    """A ladder up a wall; `across` is the direction the rungs run."""
+    n = rungs or max(2, int((y1 - y0) / 0.28))
+    a, b = ((x, z), (x, z + width)) if across == "z" else ((x, z), (x + width, z))
+    c = [bar(mat, (a[0], y0, a[1]), (a[0], y1, a[1]), 0.035), bar(mat, (b[0], y0, b[1]), (b[0], y1, b[1]), 0.035)]
+    for i in range(n):
+        y = y0 + (y1 - y0) * (i + 0.5) / n
+        c.append(bar(mat, (a[0], y, a[1]), (b[0], y, b[1]), 0.028))
+    return c
+
+
+def jerrycan(x, y, z, mat=US_D, across="x"):
+    """A 20-litre can: pressed sides, three-bar handle and a cap."""
+    prof = [(0.0, 0.0), (0.0, 0.4), (0.03, 0.46), (0.3, 0.46), (0.34, 0.4), (0.34, 0.0)]
+    if across == "x":
+        c = [hull(mat, x, x + 0.16, [(z + a, y + b) for a, b in prof], marks=[("cap0", "panel", 0.5, 0.45, 0.2, 0.26), ("cap1", "panel", 0.5, 0.45, 0.2, 0.26)])]
+        c += [B(STEEL_D, x + 0.02 + i * 0.045, y + 0.46, z + 0.08, 0.02, 0.03, 0.14, plain=True) for i in range(3)]
+        c += rod_y(BLACK, x + 0.08, z + 0.29, y + 0.43, 0.06, 0.05)
+    else:
+        c = [loft(mat, "z", z, [(x + a, y + b) for a, b in prof], z + 0.16, None, marks=[("cap0", "panel", 0.5, 0.45, 0.2, 0.26), ("cap1", "panel", 0.5, 0.45, 0.2, 0.26)])]
+        c += [B(STEEL_D, x + 0.08, y + 0.46, z + 0.02 + i * 0.045, 0.14, 0.03, 0.02, plain=True) for i in range(3)]
+        c += rod_y(BLACK, x + 0.29, z + 0.08, y + 0.43, 0.06, 0.05)
+    return c
+
+
+def extinguisher(x, y, z):
+    """A red fire extinguisher standing in its bracket."""
+    c = [lathe(RED, "y", x, z, [(y, 0.0), (y, 0.06), (y + 0.34, 0.06), (y + 0.4, 0.035), (y + 0.44, 0.02), (y + 0.44, 0.0)])]
+    c += [B(BLACK, x - 0.02, y + 0.44, z - 0.02, 0.09, 0.03, 0.04, plain=True), B(STEEL_D, x - 0.07, y + 0.15, z - 0.07, 0.14, 0.025, 0.14, plain=True)]
+    return c
+
+
+def tools(y, z0, x, mat=STEEL_D):
+    """Pioneer tools clipped to a deck at height y, lying along the vehicle from z0: shovel, axe and pry bar."""
+    c = rod_z(WOOD, x, y + 0.03, z0, 0.9, 0.04) + [hull(mat, x - 0.1, x + 0.1, [(z0 + 0.9, y + 0.01), (z0 + 0.9, y + 0.05), (z0 + 1.15, y + 0.03), (z0 + 1.2, y + 0.01)], plain=True)]
+    c += rod_z(WOOD, x + 0.16, y + 0.03, z0 + 0.1, 0.75, 0.04) + [B(mat, x + 0.1, y + 0.01, z0 + 0.8, 0.2, 0.05, 0.1, plain=True)]
+    c += rod_z(mat, x - 0.16, y + 0.025, z0 + 0.05, 1.1, 0.03)
+    for z in (z0 + 0.25, z0 + 0.7):
+        c.append(B(BLACK, x - 0.2, y, z, 0.42, 0.07, 0.03, plain=True))
+    return c
+
+
+def whip(x, z, y, height, mat=BLACK):
+    """A radio aerial on a sprung base."""
+    return [lathe(mat, "y", x, z, [(y, 0.0), (y, 0.05), (y + 0.05, 0.05), (y + 0.06, 0.03), (y + 0.16, 0.03), (y + 0.18, 0.014),
+                                   (y + height * 0.7, 0.009), (y + height, 0.005), (y + height, 0.0)])]
+
+
+def round_hatch(x, z, y, dia, mat, handle=True):
+    """A circular hatch on a deck: raised coaming, domed lid, hinge and handle."""
+    r = dia / 2
+    c = [lathe(mat, "y", x, z, [(y, 0.0), (y, r), (y + 0.05, r), (y + 0.05, r * 0.92), (y + 0.09, r * 0.86), (y + 0.11, r * 0.5), (y + 0.11, 0.0)])]
+    c += [B(STEEL_D, x - 0.08, y + 0.04, z - r - 0.05, 0.16, 0.06, 0.08, plain=True)]
+    if handle:
+        c += [B(STEEL_D, x - 0.07, y + 0.11, z + r * 0.4, 0.14, 0.03, 0.025, plain=True)]
+    return c
+
+
+def periscope(x, y, z, facing="z"):
+    """A vision block: armoured hood with a strip of glass."""
+    if facing == "z":
+        return [hull(BLACK, x - 0.1, x + 0.1, [(z, y), (z, y + 0.1), (z + 0.08, y + 0.12), (z + 0.14, y + 0.1), (z + 0.14, y)], plain=True),
+                B(GLASS, x - 0.08, y + 0.03, z + 0.14, 0.16, 0.06, 0.008)]
+    s = 1 if facing == "x" else -1
+    return [B(BLACK, x - (0.0 if s > 0 else 0.14), y, z - 0.1, 0.14, 0.11, 0.2, plain=True), B(GLASS, x + (0.14 if s > 0 else -0.148), y + 0.03, z - 0.08, 0.008, 0.06, 0.16)]
+
+
+def lamp(colour, x, y, z, dia=0.16, facing=1):
+    """A round lamp in a bezel, pointing forwards (1) or backwards (-1)."""
+    r = dia / 2
+    z1 = z + facing * 0.08
+    return [lathe(STEEL_D, "z", x, y, [(z, 0.0), (z, r), (z1, r * 1.08), (z1, r * 0.86)]),
+            lathe(colour, "z", x, y, [(z1 - facing * 0.01, r * 0.86), (z1 + facing * 0.012, r * 0.5), (z1 + facing * 0.016, 0.0)])]
+
+
+def beacon(x, y, z):
+    """An amber warning beacon."""
+    return [lathe(STEEL_D, "y", x, z, [(y, 0.0), (y, 0.07), (y + 0.03, 0.07), (y + 0.03, 0.0)]),
+            lathe(AMBER, "y", x, z, [(y + 0.03, 0.06), (y + 0.12, 0.06), (y + 0.15, 0.03), (y + 0.15, 0.0)])]
+
+
+def bedroll(x0, x1, y, z, dia=0.28, mat=CANVAS):
+    """A rolled tarpaulin or camouflage net, strapped down."""
+    c = [lathe(mat, "x", y, z, [(x0, 0.0), (x0, dia * 0.42), (x0 + 0.04, dia / 2), (x1 - 0.04, dia / 2), (x1, dia * 0.42), (x1, 0.0)])]
+    for f in (0.25, 0.75):
+        xs = x0 + (x1 - x0) * f
+        c += [lathe(BLACK, "x", y, z, [(xs - 0.02, dia / 2 + 0.006), (xs + 0.02, dia / 2 + 0.006)])]
+    return c
+
+
+def spare_wheel(x, y, z, dia, rim, lying=False):
+    """A spare road wheel, upright against a wall or lying flat."""
+    w = wheel(x, dia * 0.36, y + dia / 2, z, dia, rim)[0]
+    if lying:
+        w["rot"], w["pivot"] = (0, 0, 90), (x, y, z)
+    return [w]
+
+
+def shackle(x, y, z, mat=STEEL_D):
+    """A towing shackle on its lug."""
+    return [B(mat, x - 0.05, y - 0.06, z, 0.1, 0.12, 0.1, plain=True)] + rod_x(STEEL, x - 0.08, 0.16, y, z + 0.1, 0.04) + [
+        B(STEEL, x - 0.08, y - 0.02, z + 0.08, 0.03, 0.04, 0.12, plain=True), B(STEEL, x + 0.05, y - 0.02, z + 0.08, 0.03, 0.04, 0.12, plain=True)]
+
+
+def chock(x, z, mat=BLACK):
+    """A wheel chock on the ground."""
+    return [hull(mat, x - 0.12, x + 0.12, [(z, 0.0), (z + 0.05, 0.18), (z + 0.12, 0.18), (z + 0.3, 0.0)], plain=True)]
+
+
 def mudguards(mat, x, width, zs, dia):
     c = []
     for z in zs:
@@ -417,7 +562,7 @@ ALIAS = {"front": "north", "rear": "south", "left": "east", "right": "west", "to
 _NORMAL = {"north": (0, 0, 1), "south": (0, 0, -1), "east": (1, 0, 0), "west": (-1, 0, 0), "up": (0, 1, 0), "down": (0, -1, 0)}
 
 
-def _face_corners(box, face, b):
+def _face_corners_raw(box, face, b):
     """Corners of one face of a box as a 2x2 grid (row 0 = top of the texture), pulled in by the bevel b."""
     x, y, z, w, h, d = box
     x0, x1, y0, y1, z0, z1 = x + b, x + w - b, y + b, y + h - b, z + b, z + d - b
@@ -427,6 +572,12 @@ def _face_corners(box, face, b):
     if face == "west":  return [[(x, y1, z1), (x, y1, z0)], [(x, y0, z1), (x, y0, z0)]], (d - 2 * b, h - 2 * b)
     if face == "up":    return [[(x0, y + h, z1), (x1, y + h, z1)], [(x0, y + h, z0), (x1, y + h, z0)]], (w - 2 * b, d - 2 * b)
     return [[(x0, y, z0), (x1, y, z0)], [(x0, y, z1), (x1, y, z1)]], (w - 2 * b, d - 2 * b)
+
+
+def _face_corners(box, face, b):
+    """As above, laid out so that the texture reads the right way round when the face is seen from outside."""
+    grid, size = _face_corners_raw(box, face, b)
+    return [row[::-1] for row in grid], size
 
 
 def _box_surfaces(part):
@@ -586,7 +737,10 @@ def _inside(poly, U, V):
 # ---------------------------------------------------------------- painting
 _FONT = {"0": "111101101101111", "1": "010110010010111", "2": "111001111100111", "3": "111001111001111", "4": "101101111001001",
          "5": "111100111001111", "6": "111100111101111", "7": "111001001010010", "8": "111101111101111", "9": "111101111001111",
-         "-": "000000111000000", "Y": "101101010010010", " ": "000000000000000"}
+         "-": "000000111000000", "Y": "101101010010010", " ": "000000000000000",
+         "A": "010101111101101", "E": "111100110100111", "J": "001001001101010", "K": "101101110101101", "M": "101111111101101",
+         "S": "011100010001110", "T": "111010010010010", "W": "101101111111101", "P": "110101110100100", "R": "110101110101101",
+         "Z": "111001010100111", "U": "101101101101111", "N": "101111111111101", "L": "100100100100111", "O": "111101101101111"}
 
 
 def _mark(img, wm, kind, cu, cv, size, size2=None):
@@ -610,7 +764,8 @@ def _mark(img, wm, kind, cu, cv, size, size2=None):
         rect(cx - w2, cy - h2, cx + w2, cy + h2, (20, 20, 20)); rect(cx - w2 + 2, cy - h2 + 2, cx + w2 - 2, cy + h2 - 2, (228, 228, 222))
         _text(img, "Y-301 428", cx, cy, h2 * 1.1, (22, 22, 22))
     elif kind.startswith("digits:"):
-        _text(img, kind[7:], cx, cy, max(4.0, 0.14 * k), (226, 226, 220))
+        # stencilled lettering: pale on dark paint, dark on a pale plate
+        _text(img, kind[7:], cx, cy, max(4.0, 0.14 * k), (226, 226, 220) if img.mean() < 150 else (26, 26, 26))
     elif kind in ("hatch", "panel"):                        # an outlined door, hatch or access panel
         w2, h2 = size * k / 2, (size2 or size) * k / 2
         t = max(1.0, k * 0.012)
