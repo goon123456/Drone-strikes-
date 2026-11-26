@@ -1,11 +1,5 @@
 package com.steelrain;
 
-import com.steelrain.block.WeaponBlock;
-import com.steelrain.block.WeaponBlockEntity;
-import com.steelrain.block.WeaponBlockItem;
-import com.steelrain.block.WeaponPartBlock;
-import com.steelrain.block.WeaponPartBlockEntity;
-import com.steelrain.block.WeaponMenu;
 import com.steelrain.entity.FpvDroneEntity;
 import com.steelrain.entity.InterceptorEntity;
 import com.steelrain.entity.MissileEntity;
@@ -16,7 +10,6 @@ import com.steelrain.item.FpvControllerItem;
 import com.steelrain.item.FpvDroneItem;
 import com.steelrain.item.LaptopItem;
 import com.steelrain.weapon.MissileProfile;
-import com.steelrain.weapon.WeaponType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.component.DataComponentType;
@@ -51,11 +44,8 @@ import java.util.function.Supplier;
 public final class ModRegistry {
     public static final String MODID = "steelrain";
 
-    public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(MODID);
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(MODID);
     public static final DeferredRegister<EntityType<?>> ENTITIES = DeferredRegister.create(Registries.ENTITY_TYPE, MODID);
-    public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES = DeferredRegister.create(Registries.BLOCK_ENTITY_TYPE, MODID);
-    public static final DeferredRegister<MenuType<?>> MENUS = DeferredRegister.create(Registries.MENU, MODID);
     public static final DeferredRegister<CreativeModeTab> TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MODID);
     public static final DeferredRegister<DataComponentType<?>> COMPONENTS = DeferredRegister.create(Registries.DATA_COMPONENT_TYPE, MODID);
 
@@ -151,36 +141,6 @@ public final class ModRegistry {
     public static final DeferredItem<Item> MAVIC = ITEMS.register("mavic",
             () -> new FpvDroneItem(new Item.Properties().stacksTo(1), 1));
 
-    // ---- weapon blocks ----
-    public static final Map<WeaponType, DeferredBlock<WeaponBlock>> WEAPON_BLOCKS = new EnumMap<>(WeaponType.class);
-    static {
-        for (WeaponType type : WeaponType.values()) {
-            DeferredBlock<WeaponBlock> block = BLOCKS.register(type.id, () -> new WeaponBlock(type,
-                    BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GREEN).strength(4f, 12f)
-                            .sound(SoundType.METAL).noOcclusion().requiresCorrectToolForDrops()
-                            .pushReaction(net.minecraft.world.level.material.PushReaction.BLOCK)
-                            .isSuffocating((st, l, p) -> false).isViewBlocking((st, l, p) -> false)));
-            WEAPON_BLOCKS.put(type, block);
-            ITEMS.register(type.id, () -> new WeaponBlockItem(block.get(), new Item.Properties().stacksTo(1)));
-        }
-    }
-
-    /** Invisible filler that makes the rest of a full-size weapon solid and clickable. */
-    public static final DeferredBlock<WeaponPartBlock> WEAPON_PART = BLOCKS.register("weapon_part",
-            () -> new WeaponPartBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GREEN).strength(4f, 12f)
-                    .sound(SoundType.METAL).noOcclusion().noLootTable()
-                    .pushReaction(net.minecraft.world.level.material.PushReaction.BLOCK)
-                            .isSuffocating((st, l, p) -> false).isViewBlocking((st, l, p) -> false)));
-    public static final Supplier<BlockEntityType<WeaponPartBlockEntity>> WEAPON_PART_BE = BLOCK_ENTITIES.register("weapon_part",
-            () -> BlockEntityType.Builder.of(WeaponPartBlockEntity::new, WEAPON_PART.get()).build(null));
-
-    public static final Supplier<BlockEntityType<WeaponBlockEntity>> WEAPON_BE = BLOCK_ENTITIES.register("weapon",
-            () -> BlockEntityType.Builder.of(WeaponBlockEntity::new,
-                    WEAPON_BLOCKS.values().stream().map(DeferredBlock::get).toArray(Block[]::new)).build(null));
-
-    public static final Supplier<MenuType<WeaponMenu>> WEAPON_MENU = MENUS.register("weapon",
-            () -> IMenuTypeExtension.create((id, inv, buf) -> new WeaponMenu(id, inv, buf.readBlockPos())));
-
     // ---- entities ----
     private static final Map<String, MissileProfile> PROFILE_BY_NAME = new HashMap<>();
     private static final Map<String, DeferredHolder<EntityType<?>, EntityType<MissileEntity>>> TYPE_BY_NAME = new HashMap<>();
@@ -259,11 +219,28 @@ public final class ModRegistry {
                 .setTrackingRange(512).setUpdateInterval(1).fireImmune().sized(width, height).build(name)));
     }
 
+    // ---- ground station, catapult and jammers ----
+    public static final Map<String, DeferredHolder<EntityType<?>, EntityType<com.steelrain.entity.SupportVehicle>>> SUPPORT = new java.util.LinkedHashMap<>();
+    static {
+        support("ground_station", 2.6f, 2.8f);
+        support("orlan_catapult", 1.0f, 1.2f);
+        support("jammer", 2.8f, 2.8f);
+        support("trench_jammer", 0.8f, 1.0f);
+        support("krasukha", 2.8f, 3.4f);
+    }
+
+    private static void support(String name, float width, float height) {
+        SUPPORT.put(name, ENTITIES.register(name, () -> EntityType.Builder
+                .<com.steelrain.entity.SupportVehicle>of(com.steelrain.entity.SupportVehicle::new, MobCategory.MISC)
+                .setTrackingRange(512).setUpdateInterval(1).fireImmune().sized(width, height).build(name)));
+    }
+
     /** Every Superb Warfare vehicle this mod adds, for containers and creative tabs. */
     public static java.util.List<EntityType<?>> vehicles() {
         java.util.List<EntityType<?>> all = new java.util.ArrayList<>();
         AIR_DEFENCE.values().forEach(v -> all.add(v.get()));
         STRIKE.values().forEach(v -> all.add(v.get()));
+        SUPPORT.values().forEach(v -> all.add(v.get()));
         return all;
     }
 
@@ -319,11 +296,8 @@ public final class ModRegistry {
     }
 
     public static void register(IEventBus bus) {
-        BLOCKS.register(bus);
         ITEMS.register(bus);
         ENTITIES.register(bus);
-        BLOCK_ENTITIES.register(bus);
-        MENUS.register(bus);
         TABS.register(bus);
         COMPONENTS.register(bus);
     }

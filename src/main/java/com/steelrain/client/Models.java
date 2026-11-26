@@ -2,7 +2,6 @@ package com.steelrain.client;
 
 import com.steelrain.ModRegistry;
 import com.steelrain.weapon.AircraftType;
-import com.steelrain.weapon.WeaponType;
 import net.minecraft.resources.ResourceLocation;
 
 import java.util.EnumMap;
@@ -230,71 +229,6 @@ public final class Models {
     }
 
     public static BoxModel aircraft(AircraftType type) { return AIRCRAFT.get(type); }
-
-    // ------------------------------------------------------------------ vehicles
-
-    private static final Map<WeaponType, BoxModel> WEAPONS = new EnumMap<>(WeaponType.class);
-    static {
-        WEAPONS.put(WeaponType.GROUND_STATION, new BoxModel()
-                .pair(STEEL_D, 1.0, 0, 0.2, 0.2, 0.2, 0.2).pair(STEEL_D, 1.0, 0, 5.6, 0.2, 0.2, 0.2)
-                .box(SAND, -1.2, 0.2, 0, 2.4, 2.5, 6.0)
-                .box(SAND_D, -0.45, 0.3, -0.03, 0.9, 2.0, 0.04)
-                .box(SAND_D, -1.22, 1.3, 0.5, 2.44, 0.15, 5.0)
-                .box(STEEL, -1.0, 1.4, 6.0, 0.9, 0.9, 0.4)
-                .box(STEEL_D, -0.05, 2.7, 4.8, 0.1, 1.6, 0.1)
-                .box(STEEL_D, 0.9, 2.7, 0.5, 0.05, 2.2, 0.05)
-                .group("dish", "root", 0, 4.3, 4.8).tilt(-0.6, 0, 0)
-                .box(WHITE, -0.9, 3.6, 4.7, 1.8, 1.4, 0.15)
-                .box(STEEL_D, -0.05, 4.25, 4.85, 0.1, 0.1, 0.6));
-
-        WEAPONS.put(WeaponType.ORLAN_CATAPULT, new BoxModel()
-                .box(STEEL_D, -0.3, 0, 0.2, 0.6, 0.3, 0.15)
-                .pair(STEEL_D, 0.2, 0, 3.3, 0.08, 1.15, 0.08)
-                .box(STEEL_D, -0.28, 1.1, 3.3, 0.56, 0.06, 0.08)
-                .group("rail", "root", 0, 0.3, 0.2).tilt(-D15, 0, 0)
-                .box(STEEL, -0.08, 0.3, 0.2, 0.16, 0.12, 3.7));
-
-
-
-        WEAPONS.put(WeaponType.JAMMER, new BoxModel()
-                .box(OLIVE, -1.4, 0.2, 0.1, 2.8, 2.4, 2.8)
-                .box(OLIVE_D, -0.4, 0.3, 0.07, 0.8, 1.9, 0.04)
-                .pair(STEEL_D, 1.1, 0, 0.3, 0.2, 0.2, 0.2).pair(STEEL_D, 1.1, 0, 2.5, 0.2, 0.2, 0.2)
-                .box(STEEL_D, -0.1, 2.6, 1.4, 0.2, 6.4, 0.2)
-                .box(STEEL_D, -1.5, 7.0, 1.45, 3.0, 0.1, 0.1)
-                .box(STEEL_D, -0.05, 8.2, 0.0, 0.1, 0.1, 3.0)
-                .pair(OLIVE_D, 1.3, 6.6, 1.2, 0.12, 0.9, 0.6)
-                .box(OLIVE_D, -0.3, 7.8, 0.0, 0.6, 0.9, 0.12)
-                .box(OLIVE_D, -0.3, 7.8, 2.88, 0.6, 0.9, 0.12)
-                .box(RED, -0.08, 9.0, 1.42, 0.16, 0.16, 0.16));
-
-
-
-        WEAPONS.put(WeaponType.TRENCH_JAMMER, new BoxModel()
-                .box(OLIVE, -0.35, 0, 0.15, 0.7, 0.6, 0.7)
-                .box(OLIVE_D, -0.3, 0.6, 0.2, 0.6, 0.06, 0.6)
-                .box(STEEL_D, -0.04, 0.66, 0.46, 0.08, 1.2, 0.08)
-                .box(STEEL_D, -0.3, 1.5, 0.48, 0.6, 0.04, 0.04)
-                .box(STEEL_D, -0.02, 1.3, 0.2, 0.04, 0.04, 0.6)
-                .box(RED, -0.05, 1.86, 0.45, 0.1, 0.1, 0.1));
-
-        WEAPONS.put(WeaponType.KRASUKHA, new BoxModel()
-                .pair(TYRE, 0.9, 0, 0.8, 0.4, 1.2, 1.2).pair(TYRE, 0.9, 0, 2.2, 0.4, 1.2, 1.2)
-                .pair(TYRE, 0.9, 0, 7.0, 0.4, 1.2, 1.2).pair(TYRE, 0.9, 0, 8.4, 0.4, 1.2, 1.2)
-                .box(OLIVE_D, -1.0, 0.6, 0, 2.0, 0.8, 11.0)
-                .box(OLIVE, -1.25, 1.4, 9.0, 2.5, 1.6, 2.0)
-                .box(GLASS, -1.05, 2.2, 10.98, 2.1, 0.6, 0.05)
-                .pair(GLASS, 1.23, 2.2, 9.5, 0.04, 0.55, 1.0)
-                .box(OLIVE, -1.25, 1.4, 3.0, 2.5, 1.9, 5.6)
-                .box(OLIVE_D, -0.6, 3.3, 5.0, 1.2, 0.5, 1.2)
-                .box(STEEL_D, -0.12, 1.4, 1.4, 0.24, 2.4, 0.24)
-                .group("dish", "root", 0, 3.6, 1.5).tilt(-0.45, 0, 0)
-                .box(OLIVE_L, -1.5, 2.4, 1.2, 3.0, 2.6, 0.25)
-                .box(OLIVE_D, -1.3, 2.6, 1.45, 2.6, 2.2, 0.06)
-                .box(STEEL_D, -0.06, 3.6, 1.45, 0.12, 0.12, 0.9));
-    }
-
-    public static BoxModel weapon(WeaponType type) { return WEAPONS.get(type); }
 
     private Models() {}
 }

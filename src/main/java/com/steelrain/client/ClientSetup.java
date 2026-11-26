@@ -11,7 +11,6 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
-import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 import org.lwjgl.glfw.GLFW;
 
 @EventBusSubscriber(modid = ModRegistry.MODID, value = Dist.CLIENT)
@@ -47,19 +46,15 @@ public final class ClientSetup {
                 com.atsuishio.superbwarfare.client.renderer.entity.BasicAutoAimableRenderer::new));
         ModRegistry.STRIKE.values().forEach(v -> e.registerEntityRenderer(v.get(),
                 com.atsuishio.superbwarfare.client.renderer.entity.BasicVehicleRenderer::new));
+        ModRegistry.SUPPORT.values().forEach(v -> e.registerEntityRenderer(v.get(),
+                com.atsuishio.superbwarfare.client.renderer.entity.BasicVehicleRenderer::new));
         e.registerEntityRenderer(ModRegistry.OPERATOR_BODY.get(), OperatorBodyRenderer::new);
-        e.registerBlockEntityRenderer(ModRegistry.WEAPON_BE.get(), c -> new WeaponRenderer());
     }
 
     /** With Curios installed, backpacks worn in the back slot are drawn on the player. */
     @SubscribeEvent
     public static void setup(net.neoforged.fml.event.lifecycle.FMLClientSetupEvent e) {
         if (com.steelrain.util.Gear.CURIOS) e.enqueueWork(CuriosClient::register);
-    }
-
-    @SubscribeEvent
-    public static void screens(RegisterMenuScreensEvent e) {
-        e.register(ModRegistry.WEAPON_MENU.get(), WeaponScreen::new);
     }
 
     @SubscribeEvent

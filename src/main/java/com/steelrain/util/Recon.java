@@ -1,7 +1,8 @@
 package com.steelrain.util;
 
 import com.steelrain.Config;
-import com.steelrain.block.WeaponBlockEntity;
+import com.atsuishio.superbwarfare.entity.vehicle.base.VehicleEntity;
+import com.steelrain.entity.SupportVehicle;
 import com.steelrain.entity.FlyingWeaponEntity;
 import com.steelrain.entity.OperatorBodyEntity;
 import com.steelrain.net.Payloads;
@@ -155,16 +156,21 @@ public final class Recon {
             data.add(Mth.floor(e.getZ()));
             data.add(kind);
         }
-        for (WeaponBlockEntity be : WeaponBlockEntity.loadedIn(level)) {
+        // Vehicles: anything built on Superb Warfare's vehicle base, ours or SBW's own.
+        for (VehicleEntity v : level.getEntitiesOfClass(VehicleEntity.class, box, v -> v.isAlive() && !v.isWreck())) {
             if (data.size() >= MAX_MARKERS * 3) break;
-            BlockPos p = be.getBlockPos();
-            double dx = p.getX() - x, dz = p.getZ() - z;
+            double dx = v.getX() - x, dz = v.getZ() - z;
             if (dx * dx + dz * dz > radius * radius) continue;
-            if (Teams.friendly(level, drone.ownerId(), drone.ownerName(), be.owner(), be.ownerName())) continue;
-            if (!underOpenSky(level, p.getX(), p.getY() + be.type().height, p.getZ())) continue;
-            if (com.steelrain.entity.SmokeCloudEntity.hides(level, p.getX(), p.getZ())) continue;
-            data.add(p.getX());
-            data.add(p.getZ());
+            UUID owner = v instanceof net.minecraft.world.entity.OwnableEntity o ? o.getOwnerUUID()
+                    : v instanceof SupportVehicle s ? s.ownerId()
+                    : v.getFirstPassenger() instanceof Player p ? p.getUUID() : null;
+            Player ownerPlayer = owner == null ? null : level.getPlayerByUUID(owner);
+            if (owner != null && Teams.friendly(level, drone.ownerId(), drone.ownerName(), owner,
+                    ownerPlayer == null ? null : ownerPlayer.getGameProfile().getName())) continue;
+            if (!underOpenSky(level, v.getX(), v.getY() + v.getBbHeight(), v.getZ())) continue;
+            if (com.steelrain.entity.SmokeCloudEntity.hides(level, v.getX(), v.getZ())) continue;
+            data.add(Mth.floor(v.getX()));
+            data.add(Mth.floor(v.getZ()));
             data.add(ENEMY_WEAPON);
         }
         Payloads.Markers packet = new Payloads.Markers(drone.getId(), Mth.floor(x), Mth.floor(z), radius, data.toIntArray());

@@ -1,6 +1,5 @@
 package com.steelrain;
 
-import com.steelrain.block.WeaponBlockEntity;
 import com.steelrain.command.SteelRainCommand;
 import com.steelrain.entity.OperatorBodyEntity;
 import com.steelrain.net.Payloads;
@@ -13,8 +12,6 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
-import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
@@ -25,7 +22,8 @@ public class SteelRain {
         ModRegistry.register(modBus);
         container.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
         modBus.addListener(RegisterPayloadHandlersEvent.class, Payloads::register);
-        modBus.addListener(RegisterCapabilitiesEvent.class, SteelRain::capabilities);
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.EntityInteract.class, SteelRain::fitDome);
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.event.tick.EntityTickEvent.Post.class, SteelRain::domeTick);
         modBus.addListener(EntityAttributeCreationEvent.class,
                 e -> e.put(ModRegistry.OPERATOR_BODY.get(), OperatorBodyEntity.attributes().build()));
         // Also list our vehicles in Superb Warfare's own vehicle tab.
@@ -51,17 +49,39 @@ public class SteelRain {
         });
     }
 
-    private static void capabilities(RegisterCapabilitiesEvent event) {
-        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModRegistry.WEAPON_BE.get(), (be, side) -> be.items);
-        event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, ModRegistry.WEAPON_BE.get(), (be, side) -> be.energyPort);
-        // Hoppers, pipes and cables can connect to any block of the vehicle, not just its core.
-        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModRegistry.WEAPON_PART_BE.get(), (part, side) -> {
-            WeaponBlockEntity core = part.coreEntity();
-            return core == null ? null : core.items;
-        });
-        event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, ModRegistry.WEAPON_PART_BE.get(), (part, side) -> {
-            WeaponBlockEntity core = part.coreEntity();
-            return core == null ? null : core.energyPort;
-        });
+    private static final String DOME = "SteelRainDome", DOME_OWNER = "SteelRainDomeOwner", DOME_NAME = "SteelRainDomeOwnerName";
+
+    /** A Jammer Dome can be fitted to any Superb Warfare vehicle by right-clicking it. */
+    private static void fitDome(net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.EntityInteract e) {
+        if (!(e.getTarget() instanceof com.atsuishio.superbwarfare.entity.vehicle.base.VehicleEntity v)
+                || !e.getItemStack().is(ModRegistry.JAMMER_DOME.get())) return;
+        e.setCanceled(true);
+        e.setCancellationResult(net.minecraft.world.InteractionResult.sidedSuccess(e.getLevel().isClientSide));
+        if (e.getLevel().isClientSide) return;
+        net.minecraft.nbt.CompoundTag data = v.getPersistentData();
+        if (data.getBoolean(DOME) || v instanceof com.steelrain.entity.SupportVehicle s && s.kind().ordinal() >= 2) {
+            e.getEntity().displayClientMessage(net.minecraft.network.chat.Component.translatable("message.steelrain.dome_refused"), true);
+            return;
+        }
+        data.putBoolean(DOME, true);
+        data.putUUID(DOME_OWNER, e.getEntity().getUUID());
+        data.putString(DOME_NAME, e.getEntity().getGameProfile().getName());
+        if (!e.getEntity().getAbilities().instabuild) e.getItemStack().shrink(1);
+        e.getEntity().displayClientMessage(net.minecraft.network.chat.Component.translatable("message.steelrain.dome_fitted"), true);
+    }
+
+    /** A fitted dome keeps a small bubble up while the vehicle has energy, drawing a trickle from it. */
+    private static void domeTick(net.neoforged.neoforge.event.tick.EntityTickEvent.Post e) {
+        if (!(e.getEntity() instanceof com.atsuishio.superbwarfare.entity.vehicle.base.VehicleEntity v)
+                || !(v.level() instanceof net.minecraft.server.level.ServerLevel level) || v.tickCount % 10 != 0) return;
+        net.minecraft.nbt.CompoundTag data = v.getPersistentData();
+        if (!data.getBoolean(DOME) || v.isWreck()) return;
+        if (Config.REQUIRE_ENERGY.get() && v.hasEnergyStorage()) {
+            if (v.getEnergy() < 250) return;
+            if (v.tickCount % 100 == 0) v.consumeEnergy(250);
+        }
+        com.steelrain.util.Jamming.emit(level, v.getUUID().toString() + "dome", v.position().add(0, v.getBbHeight(), 0),
+                Config.DOME_JAMMER_RANGE.get(), data.hasUUID(DOME_OWNER) ? data.getUUID(DOME_OWNER) : null,
+                data.contains(DOME_NAME) ? data.getString(DOME_NAME) : null);
     }
 }

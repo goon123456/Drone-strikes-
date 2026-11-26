@@ -2,7 +2,6 @@ package com.steelrain.net;
 
 import com.steelrain.Config;
 import com.steelrain.ModRegistry;
-import com.steelrain.block.WeaponBlockEntity;
 import com.steelrain.entity.AircraftEntity;
 import com.steelrain.entity.FpvDroneEntity;
 import com.steelrain.util.FeedManager;

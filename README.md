@@ -11,17 +11,17 @@ and tube artillery, and defend your base with air defence and jammers.
 
 The idea was inspired by the *Iron Drone* mod. All code, models and textures here are original.
 
-## Conversion status
-Steel Rain is being rebuilt on Superb Warfare's vehicle system in stages.
+## Built on Superb Warfare
+Every Steel Rain vehicle is a real Superb Warfare vehicle. There are no placed multiblock emplacements any more.
 
-| Stage | Systems | State |
-| --- | --- | --- |
-| 1 | Air defence: ZU-23-2, Flakpanzer Gepard, Pantsir-S1, MIM-104 Patriot | **Done: real SBW vehicles** |
-| 2 | Artillery and launchers: M109, HIMARS, Tomahawk, Iskander, Shahed rail | **Done: real SBW vehicles** |
-| 3 | Ground Station, Orlan Catapult, jammers | Still placed emplacements |
-
-Everything runs on **Superb Warfare energy (FE)**: charge with an SBW Charging Station or any FE cable. There is
-no liquid fuel any more.
+- **Getting one**: each comes packed in an SBW **container** (craftable; also in the Steel Rain and SBW vehicle
+  creative tabs). Place it and open it with an SBW **crowbar**. Sneak + crowbar packs the vehicle up again.
+- **Energy**: everything runs on SBW energy (FE). Park next to an SBW Charging Station or use any FE source.
+  There is no liquid fuel.
+- **Inventory**: sneak + right-click opens the vehicle's SBW inventory for ammunition, missiles and aircraft.
+- **Driving**: the Gepard and M109 (tracked) and the Pantsir, HIMARS, Iskander launcher and Krasukha (wheeled)
+  can be driven. The rest are static.
+- **Damage and repair** follow SBW's rules.
 
 ### SBW air defence vehicles
 - They come packed in a Superb Warfare **container** (craftable, or from the Steel Rain and SBW vehicle tabs).
@@ -43,8 +43,8 @@ no liquid fuel any more.
 
 ## What is in it
 
-Everything is built at real-world scale (1 block = 1 metre). Vehicles are placed from a single item and
-occupy their full footprint; turrets, pods and barrels physically swing onto the target before firing.
+Everything is built at real-world scale (1 block = 1 metre). Turrets, pods and barrels physically swing onto
+the target before firing.
 
 | System | Size (W x H x L) | Type | How it is used |
 | --- | --- | --- | --- |
@@ -72,13 +72,8 @@ Ranges are in blocks and can be scaled in the config.
 
 ## How to play
 
-### Placing vehicles
-Each vehicle is one item. Use it on the ground and the whole thing appears, extending away from you, with you
-standing at its rear. It needs its full footprint clear (the tooltip gives the size). Breaking any part removes
-the whole vehicle and gives the item back; one destroyed by an explosion is gone for good.
-
 ### Launchers and the Field Laptop
-1. Right-click any part of a launcher to open its inventory and load **ammo** and **fuel**.
+1. Load ammunition into the vehicle's SBW inventory and make sure it is charged.
 2. Right-click it while holding a **Field Laptop** to link it (up to 8 per laptop).
 3. Right-click the air with the laptop to open **Fire Control**:
    - left-click the map to pick a target, or type X / Z coordinates
@@ -199,20 +194,16 @@ and **Shahed launch rail** are static. Like the air defence vehicles they come i
   Tomahawk container and Iskander missile raise. Then it fires the salvo.
 - Energy per round: M109 12.5k, HIMARS 25k, Tomahawk 125k, Iskander 250k FE. The Shahed rail needs none.
 
-### Energy and loading (emplacements)
-The launchers and jammers that are still emplacements hold 2,000,000 FE and do nothing uncharged. Put an SBW
-Charging Station next to any block of one, or connect an FE cable.
-
-| What | Energy used |
-| --- | --- |
-| Aircraft from the Ground Station | Reaper 250k, Bayraktar 375k, Global Hawk 1M FE |
-| Jammers | EW and Trench 500 FE a second, Krasukha 2500 |
-| Jammer Dome | A trickle from the vehicle it is fitted to |
-
-The Orlan catapult is worked by hand and needs no power.
-
-**Loading by hand**: right-click any part of an emplacement while holding its ammunition and it goes straight
-in. The inventory screen works too, and hoppers can connect to any block of it.
+### SBW support vehicles
+- **UAV Ground Station** (static): put a Reaper, Bayraktar or Global Hawk in its inventory, plus Hellfires for the
+  Reaper. Link it to a Field Laptop by right-clicking it. The runway is the strip straight ahead of the direction
+  the station faces. Launch energy: Reaper 250k, Bayraktar 375k, Global Hawk 1M FE.
+- **Orlan Catapult** (static): put an Orlan-10 in it and link it the same way. Needs no energy.
+- **EW Jammer**, **Trench Jammer** (static) and **Krasukha-4** (drivable): sneak + right-click with an empty hand
+  switches them on or off; whoever does so becomes the owner, and the owner's and their team's drones are left
+  alone. They draw 500 FE a second (Krasukha 2500).
+- **Jammer Dome**: right-click **any Superb Warfare vehicle** with it, including SBW's own tanks and aircraft, to
+  give it a small jamming bubble that draws a trickle of that vehicle's energy.
 
 ### Ammunition
 Everything a vehicle fires has to be crafted and loaded. A slot holds one kind at a time; empty it to switch.
@@ -236,9 +227,8 @@ Propeller, Rocket Engine, Warhead, Guidance Unit. A recipe viewer such as JEI or
 
 ### Operator commands
 - `/steelrain launch <weapon> <from> <target>` fires a munition without a launcher
-- `/steelrain place <system> <pos> <north|south|east|west>` puts down a complete vehicle
 
-Both need permission level 2.
+It needs permission level 2. Vehicles can be spawned with `/summon steelrain:<name>`.
 
 ## Config
 `config/steelrain-common.toml`
@@ -276,10 +266,10 @@ python3 tools/gen_assets.py   # regenerate textures, models, recipes and languag
 ```
 
 ## Known limits
-- Models are simple blocky shapes built in code; there are no wheels turning or recoil animations.
-- Vehicles are static emplacements: they cannot be driven.
-- A vehicle's collision is one solid box the size of its footprint.
-- There are no custom sounds yet (vanilla sounds are used).
-- Create: Diesel Generators support is tag based and has not been tested with that mod installed.
+- Vehicle models are simple generated shapes in SBW's Blockbench format, each with one plain hit box. A model
+  rework is planned.
+- A loaded Iskander, Shahed, Orlan or parked aircraft is not drawn on its vehicle; aircraft appear when launched.
+- The Pantsir's missiles only fire in automatic mode.
+- A fitted Jammer Dome is not drawn.
+- There are no custom sounds yet.
 - Low-flying drones (Orlan, Shahed) can fly into steep mountains.
-- Curios is optional. With it the two backpacks go in the Back slot and show on your back.
