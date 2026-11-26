@@ -375,6 +375,13 @@ public class AircraftEntity extends FlyingWeaponEntity {
         discard();
     }
 
+    /** An aircraft comes down as a fuel fire, bigger the bigger it is, and worse if it still has missiles aboard. */
+    @Override
+    protected void crashBlast(ServerLevel level, Vec3 at) {
+        if (type == AircraftType.ORLAN) super.crashBlast(level, at);
+        else Blast.detonate(level, at, hellfires > 0 ? 3f : 2.2f, 0, hellfires > 0 ? 18f : 10f, hellfires > 0 ? 5 : 4, true, this, ownerPlayer());
+    }
+
     @Override
     public void shotDown() {
         if (level().getBlockEntity(home) instanceof WeaponBlockEntity station) station.aircraftLost();

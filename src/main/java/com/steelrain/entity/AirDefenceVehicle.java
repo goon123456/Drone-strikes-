@@ -148,7 +148,7 @@ public class AirDefenceVehicle extends AutoAimableEntity {
         long now = level.getGameTime();
 
         Entity target = targetId < 0 ? null : level.getEntity(targetId);
-        if (target == null || !target.isAlive() || ++trackTicks > 400) {
+        if (target == null || !target.isAlive() || (target instanceof FlyingWeaponEntity down && down.falling()) || ++trackTicks > 400) {
             targetId = -1;
             if (tickCount % (kind == Kind.PATRIOT ? 10 : 4) != 0) return;
             target = findTarget(level, centre, hasMissile ? Math.max(kind.missileRange, kind.gunRange * 1.3) : kind.gunRange * 1.3, !hasMissile, now);
@@ -236,7 +236,7 @@ com.steelrain.util.Sfx.gunfire(level, muzzle, "missile_start", "igla_9k38_far", 
             if (level.random.nextInt(3) == 0) com.steelrain.util.Sfx.play(level, at, "explosion_air", 3f, 1.3f);
             target.hurt(level.damageSources().explosion(shell, getOwner()), FRAGMENT_DAMAGE);
             shell.discard();
-            if (!target.isAlive()) return;
+            if (!target.isAlive() || ((FlyingWeaponEntity) target).falling()) return;
         }
     }
 
@@ -262,7 +262,7 @@ com.steelrain.util.Sfx.gunfire(level, muzzle, "missile_start", "igla_9k38_far", 
         if (!e.isAlive()) return false;
         UUID owner = getOwnerUUID();
         if (e instanceof FlyingWeaponEntity f) {
-            return f.interceptable() && (!kind.highValueOnly || f.highValue())
+            return !f.falling() && f.interceptable() && (!kind.highValueOnly || f.highValue())
                     && !Teams.friendly(level(), owner, ownerName, f.ownerId(), f.ownerName());
         }
         if (e instanceof VehicleEntity v) {

@@ -303,6 +303,19 @@ public class MissileEntity extends FlyingWeaponEntity {
         }
     }
 
+    /** A downed missile or drone still carries its warhead: it goes off at about half strength where it lands. */
+    @Override
+    protected void crashBlast(ServerLevel level, Vec3 at) {
+        if (profile == MissileProfile.SHELL_SMOKE || profile.blastPower() <= 0) {
+            super.crashBlast(level, at);
+            return;
+        }
+        LOGGER.info("{} (owner {}) was shot down and crashed at {} {} {}", profile.id(), ownerName == null ? "none" : ownerName,
+                Mth.floor(at.x), Mth.floor(at.y), Mth.floor(at.z));
+        Blast.detonate(level, at, profile.blastPower() * 0.5f, profile.craterRadius() / 2, profile.damage() * 0.5f,
+                profile.damageRadius() * 0.7, true, this, ownerPlayer());
+    }
+
     private void detonate(ServerLevel level, Vec3 at) {
         Player owner = ownerPlayer();
         discard();

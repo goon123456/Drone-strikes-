@@ -42,6 +42,8 @@ public class EntityModelRenderer<T extends Entity> extends EntityRenderer<T> {
         pose.mulPose(Axis.YP.rotationDegrees(-Mth.rotLerp(partialTick, entity.yRotO, entity.getYRot())));
         pose.mulPose(Axis.XP.rotationDegrees(Mth.lerp(partialTick, entity.xRotO, entity.getXRot()) * pitchFactor));
         float time = entity.tickCount + partialTick;
+        // a wreck tumbles as it falls
+        if (entity instanceof com.steelrain.entity.FlyingWeaponEntity f && f.falling()) pose.mulPose(Axis.ZP.rotationDegrees(time * 23f));
         if (model.has("prop")) model.get("prop").zRot = time * 1.9f;
         if (entity instanceof FpvDroneEntity drone) {
             if (drone.mavic()) model.get("grenade").visible = drone.hasGrenade();

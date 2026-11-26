@@ -12,6 +12,8 @@ import net.minecraft.world.phys.Vec3;
 
 /** Surface-to-air missile fired by the Pantsir. Chases one flying target. */
 public class InterceptorEntity extends FlyingWeaponEntity {
+    @Override protected boolean fallsWhenShotDown() { return false; }
+
     private final boolean patriot;
     private final double speed;
     private int targetId = -1;
@@ -39,7 +41,7 @@ public class InterceptorEntity extends FlyingWeaponEntity {
         Entity e = level.getEntity(targetId);
         FlyingWeaponEntity ours = e instanceof FlyingWeaponEntity f ? f : null;
         Entity target = e;
-        if (target == null || target.isRemoved() || !target.isAlive() || age > (patriot ? 220 : 130)) {
+        if (target == null || target.isRemoved() || !target.isAlive() || (target instanceof FlyingWeaponEntity down && down.falling()) || age > (patriot ? 220 : 130)) {
             Blast.airburst(level, position());
             discard();
             return;

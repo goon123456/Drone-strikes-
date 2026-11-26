@@ -2,6 +2,7 @@ package com.steelrain.entity;
 
 import com.steelrain.Config;
 import com.steelrain.util.Blast;
+import com.steelrain.util.Sfx;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
@@ -87,6 +88,19 @@ public abstract class FlyingWeaponEntity extends Entity implements net.minecraft
     /** Progress of this entity's recon sweep over the chunks below it. */
     public int scanIndex;
 
+    private static final net.minecraft.network.syncher.EntityDataAccessor<Boolean> FALLING = SynchedEntityData.defineId(
+            FlyingWeaponEntity.class, net.minecraft.network.syncher.EntityDataSerializers.BOOLEAN);
+
+    /** Shot down but still in one piece: tumbling to the ground on fire. */
+    public boolean falling() { return entityData.get(FALLING); }
+
+    private Vec3 fallVelocity = Vec3.ZERO;
+    private int fallTicks;
+    private float killingHit;
+
+    /** A single hit this hard blows the thing apart in the air instead of just bringing it down. */
+    private static final float SHATTERING_HIT = 10f;
+
     private static final net.minecraft.network.syncher.EntityDataAccessor<Integer> JAM = SynchedEntityData.defineId(
             FlyingWeaponEntity.class, net.minecraft.network.syncher.EntityDataSerializers.INT);
 
@@ -117,6 +131,7 @@ public abstract class FlyingWeaponEntity extends Entity implements net.minecraft
     @Override
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         builder.define(JAM, 0);
+        builder.define(FALLING, false);
     }
 
     @Override
@@ -133,6 +148,10 @@ public abstract class FlyingWeaponEntity extends Entity implements net.minecraft
             }
             clientTick();
         } else {
+            if (falling()) {
+                fallTick((ServerLevel) level());
+                return;
+            }
             if ((tickCount + getId()) % 3 == 0) updateJam((ServerLevel) level());
             serverTick((ServerLevel) level());
         }
@@ -242,15 +261,75 @@ public abstract class FlyingWeaponEntity extends Entity implements net.minecraft
     @Override
     public boolean hurt(DamageSource source, float amount) {
         if (level().isClientSide || isRemoved() || isInvulnerableTo(source)) return false;
+        if (falling()) {
+            // Already going down: only another heavy hit matters, and that finishes it in the air.
+            if (amount >= SHATTERING_HIT && level() instanceof ServerLevel sl) {
+                Blast.airburst(sl, position());
+                discard();
+            }
+            return true;
+        }
         health -= amount;
-        if (health <= 0) shotDown();
+        if (health <= 0) {
+            killingHit = amount;
+            shotDown();
+        }
         return true;
     }
 
-    /** Destroyed in flight: by default it just bursts without setting off the warhead. */
+    /**
+     * Destroyed in flight. A heavy hit (a missile, a direct cannon shell) blows it apart in the air without
+     * setting off the warhead. Being worn down by lighter hits leaves it in one piece: it falls, burning, and
+     * goes off at reduced strength where it lands.
+     */
     public void shotDown() {
-        if (level() instanceof ServerLevel sl) Blast.airburst(sl, position());
-        discard();
+        if (!(level() instanceof ServerLevel sl)) return;
+        if (killingHit >= SHATTERING_HIT || !fallsWhenShotDown()) {
+            Blast.airburst(sl, position());
+            discard();
+            return;
+        }
+        fallVelocity = new Vec3(getX() - xo, getY() - yo, getZ() - zo);
+        if (fallVelocity.lengthSqr() > 9) fallVelocity = fallVelocity.normalize().scale(3);
+        entityData.set(FALLING, true);
+        sl.sendParticles(net.minecraft.core.particles.ParticleTypes.EXPLOSION, getX(), getY(), getZ(), 2, 0.3, 0.3, 0.3, 0);
+        Sfx.tiered(sl, position(), "explosion_air", "explosion_far", "explosion_very_far", 48, 200, 400);
+    }
+
+    /** Small, fast things (interceptor missiles) simply burst. */
+    protected boolean fallsWhenShotDown() { return true; }
+
+    /** What happens where the wreck lands. By default a fuel fire and a small bang. */
+    protected void crashBlast(ServerLevel level, Vec3 at) {
+        Blast.detonate(level, at, 1.5f, 0, 6f, 3, true, this, ownerPlayer());
+    }
+
+    private void fallTick(ServerLevel level) {
+        fallTicks++;
+        // Loses its forward speed to drag and picks up speed downwards until it is falling almost straight.
+        fallVelocity = new Vec3(fallVelocity.x * 0.985, Math.max(-2.2, fallVelocity.y * 0.99 - 0.06), fallVelocity.z * 0.985);
+        Vec3 pos = position(), next = pos.add(fallVelocity);
+        if (next.y < level.getMinBuildHeight() - 8 || !level.isLoaded(net.minecraft.core.BlockPos.containing(next))) {
+            discard();      // fell out of the world, or into country nobody is near
+            return;
+        }
+        net.minecraft.world.phys.BlockHitResult hit = level.clip(new net.minecraft.world.level.ClipContext(pos, next,
+                net.minecraft.world.level.ClipContext.Block.COLLIDER, net.minecraft.world.level.ClipContext.Fluid.ANY, this));
+        if (hit.getType() != net.minecraft.world.phys.HitResult.Type.MISS || fallTicks > 1200) {
+            Vec3 at = hit.getType() != net.minecraft.world.phys.HitResult.Type.MISS ? hit.getLocation() : pos;
+            discard();
+            crashBlast(level, at);
+            return;
+        }
+        setPos(next);
+        faceAlong(fallVelocity);
+        // A trail of smoke and flame that can be seen from far off (ordinary particles stop at 32 blocks).
+        for (net.minecraft.server.level.ServerPlayer p : level.players()) {
+            if (p.distanceToSqr(pos) > 256 * 256) continue;
+            level.sendParticles(p, net.minecraft.core.particles.ParticleTypes.CAMPFIRE_SIGNAL_SMOKE, true, pos.x, pos.y, pos.z, 1, 0.1, 0.1, 0.1, 0.005);
+            level.sendParticles(p, net.minecraft.core.particles.ParticleTypes.LARGE_SMOKE, true, pos.x, pos.y, pos.z, 3, 0.2, 0.2, 0.2, 0.01);
+            level.sendParticles(p, net.minecraft.core.particles.ParticleTypes.FLAME, true, pos.x, pos.y, pos.z, 3, 0.25, 0.25, 0.25, 0.02);
+        }
     }
 
     @Override
@@ -260,6 +339,10 @@ public abstract class FlyingWeaponEntity extends Entity implements net.minecraft
     protected void readAdditionalSaveData(CompoundTag tag) {
         if (tag.hasUUID("Owner")) ownerId = tag.getUUID("Owner");
         if (tag.contains("OwnerName")) ownerName = tag.getString("OwnerName");
+        if (tag.getBoolean("Falling")) {
+            entityData.set(FALLING, true);
+            fallVelocity = new Vec3(tag.getDouble("FallX"), tag.getDouble("FallY"), tag.getDouble("FallZ"));
+        }
         health = tag.getFloat("Health");
     }
 
@@ -268,5 +351,9 @@ public abstract class FlyingWeaponEntity extends Entity implements net.minecraft
         if (ownerId != null) tag.putUUID("Owner", ownerId);
         if (ownerName != null) tag.putString("OwnerName", ownerName);
         tag.putFloat("Health", health);
+        if (falling()) {
+            tag.putBoolean("Falling", true);
+            tag.putDouble("FallX", fallVelocity.x); tag.putDouble("FallY", fallVelocity.y); tag.putDouble("FallZ", fallVelocity.z);
+        }
     }
 }

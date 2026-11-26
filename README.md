@@ -343,6 +343,12 @@ python3 tools/gen_assets.py   # regenerate textures, models, recipes and languag
   light fragment damage (eight bursts down a Shahed). Each gun's fuse is tuned separately: against a Shahed
   crossing overhead the Gepard downs nearly all around the closest point of the pass, the Pantsir's guns about
   six in ten, and the ZU-23-2 about one in ten.
+- Shooting things down: a single heavy hit (10 damage or more: an interceptor missile, a direct cannon shell)
+  blows a drone, aircraft or missile apart in the air without setting off its warhead. Being worn down by
+  lighter hits such as proximity bursts leaves it in one piece: it tumbles to the ground trailing smoke and
+  flame and goes off where it lands at about half strength (missiles and attack drones), or as a fuel fire
+  (unarmed drones and aircraft). Defences stop shooting at a falling wreck; another heavy hit finishes it in
+  the air. Interceptor missiles always just burst.
 - Animation, driven by `VehicleAnim` on top of Superb Warfare's renderer:
   the hull sits on its own bone above the running gear and squats when pulling away, dips under braking and
   rolls in turns; gun barrels slide back on firing and run out again; search radars turn and the Krasukha's

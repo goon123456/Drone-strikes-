@@ -387,6 +387,13 @@ public class FpvDroneEntity extends FlyingWeaponEntity {
         Blast.detonate(level, at, 3.5f, 1, 30f, 6, false, this, owner);
     }
 
+    /** An attack drone's charge goes off at half strength; a Mavic only if it still has its grenade. */
+    @Override
+    protected void crashBlast(ServerLevel level, Vec3 at) {
+        if (mavic() && !hasGrenade()) super.crashBlast(level, at);
+        else Blast.detonate(level, at, mavic() ? 1.5f : 1.8f, 0, mavic() ? 8f : 15f, mavic() ? 3 : 4, false, this, ownerPlayer());
+    }
+
     @Override
     public void shotDown() {
         releasePilot("message.steelrain.fpv_destroyed");
