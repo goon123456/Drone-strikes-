@@ -45,12 +45,8 @@ public final class Models {
             .box(0xFFE27A, -0.04, -0.04, -0.9, 0.08, 0.08, 1.4)
             .box(0xFFFFFF, -0.03, -0.03, 0.5, 0.06, 0.06, 0.25);
 
-    /** Small radome fitted on top of a vehicle. */
-    public static final BoxModel DOME = new BoxModel()
-            .box(GREY_D, -0.35, 0, -0.35, 0.7, 0.12, 0.7)
-            .box(GREY, -0.28, 0.12, -0.28, 0.56, 0.3, 0.56)
-            .box(STEEL_D, -0.03, 0.42, -0.03, 0.06, 0.6, 0.06)
-            .box(STEEL_D, 0.2, 0.42, 0.2, 0.04, 0.4, 0.04);
+    /** Drone jammer fitted on top of a vehicle. */
+    public static final BoxModel DOME = BoxModel.load("jammer_dome");
 
     /** Worn on the back. Origin at the middle of the wearer's back, +Z away from them. */
     public static final BoxModel FIBER_PACK = new BoxModel()

@@ -10,6 +10,8 @@ public final class ClientHooks {
         else FpvClient.stopIf(p.entityId());
     }
 
+    public static void onDome(Payloads.Dome p) { DomeClient.fitted(p.entityId()); }
+
     public static void onLaptopData(Payloads.LaptopData p) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.screen instanceof LaptopScreen screen) {

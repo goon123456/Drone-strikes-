@@ -125,6 +125,15 @@ public final class Payloads {
         @Override public Type<Cable> type() { return TYPE; }
     }
 
+    /** Server -> client: this vehicle has a Jammer Dome fitted, so draw one on its roof. */
+    public record Dome(int entityId) implements CustomPacketPayload {
+        public static final Type<Dome> TYPE = id("dome");
+        public static final StreamCodec<FriendlyByteBuf, Dome> CODEC = StreamCodec.ofMember(Dome::write, Dome::new);
+        Dome(FriendlyByteBuf b) { this(b.readVarInt()); }
+        void write(FriendlyByteBuf b) { b.writeVarInt(entityId); }
+        @Override public Type<Dome> type() { return TYPE; }
+    }
+
     /** Client -> server: leave the remote camera feed. */
     public record StopFeed() implements CustomPacketPayload {
         public static final Type<StopFeed> TYPE = id("stop_feed");
@@ -192,6 +201,9 @@ public final class Payloads {
         });
         r.playToClient(Cable.TYPE, Cable.CODEC, (p, ctx) -> {
             if (FMLEnvironment.dist.isClient()) com.steelrain.client.ClientHooks.onCable(p);
+        });
+        r.playToClient(Dome.TYPE, Dome.CODEC, (p, ctx) -> {
+            if (FMLEnvironment.dist.isClient()) com.steelrain.client.ClientHooks.onDome(p);
         });
         r.playToServer(StopFeed.TYPE, StopFeed.CODEC, (p, ctx) -> {
             if (ctx.player() instanceof ServerPlayer sp) FeedManager.stop(sp);

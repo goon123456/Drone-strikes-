@@ -25,6 +25,7 @@ public class SteelRain {
         modBus.addListener(net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent.class, SteelRain::capabilities);
         NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.EntityInteract.class, SteelRain::fitDome);
         NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.event.tick.EntityTickEvent.Post.class, SteelRain::domeTick);
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.event.entity.player.PlayerEvent.StartTracking.class, SteelRain::domeSeen);
         modBus.addListener(EntityAttributeCreationEvent.class,
                 e -> e.put(ModRegistry.OPERATOR_BODY.get(), OperatorBodyEntity.attributes().build()));
         // Also list our vehicles in Superb Warfare's own vehicle tab.
@@ -78,7 +79,16 @@ public class SteelRain {
         data.putUUID(DOME_OWNER, e.getEntity().getUUID());
         data.putString(DOME_NAME, e.getEntity().getGameProfile().getName());
         if (!e.getEntity().getAbilities().instabuild) e.getItemStack().shrink(1);
+        net.neoforged.neoforge.network.PacketDistributor.sendToPlayersTrackingEntity(v, new com.steelrain.net.Payloads.Dome(v.getId()));
         e.getEntity().displayClientMessage(net.minecraft.network.chat.Component.translatable("message.steelrain.dome_fitted"), true);
+    }
+
+    /** A player who comes within sight of a vehicle is told if it carries a dome, so their game can draw it. */
+    private static void domeSeen(net.neoforged.neoforge.event.entity.player.PlayerEvent.StartTracking e) {
+        if (e.getTarget() instanceof com.atsuishio.superbwarfare.entity.vehicle.base.VehicleEntity v && v.getPersistentData().getBoolean(DOME)
+                && e.getEntity() instanceof net.minecraft.server.level.ServerPlayer player) {
+            net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player, new com.steelrain.net.Payloads.Dome(v.getId()));
+        }
     }
 
     /** A fitted dome keeps a small bubble up while the vehicle has energy, drawing a trickle from it. */

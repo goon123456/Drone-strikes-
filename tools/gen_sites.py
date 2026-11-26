@@ -160,8 +160,35 @@ def shahed_launcher():
     return _model(p)
 
 
+# ---------------------------------------------------------------- Jammer Dome, fitted on a vehicle's roof
+def jammer_dome():
+    """A vehicle-mounted drone jammer: a mushroom radome on a short mast over a ring of stub aerials, on a
+    base plate with clamps, a control box and its lead. Origin at the middle of the base, on the roof."""
+    d = OLIVE_D
+    p = [tower(d, 0.0, [(-0.34, -0.3), (0.34, -0.3), (0.38, -0.2), (0.38, 0.2), (0.34, 0.3), (-0.34, 0.3), (-0.38, 0.2), (-0.38, -0.2)], 0.04, plain=True)]
+    for (x, z) in ((0.34, 0.24), (-0.34, 0.24), (0.34, -0.24), (-0.34, -0.24)):                           # clamps
+        p += [B(STEEL_D, x - 0.04, -0.03, z - 0.04, 0.08, 0.1, 0.08, plain=True)] + rod_y(STEEL, x, z, 0.07, 0.03, 0.03)
+    # mast and the mushroom radome with a rain lip
+    p += [lathe(d, "y", 0, 0, [(0.04, 0.0), (0.04, 0.14), (0.08, 0.12), (0.1, 0.07), (0.3, 0.06), (0.32, 0.09), (0.32, 0.0)]),
+          lathe(RADOME, "y", 0, 0, [(0.32, 0.0), (0.32, 0.27), (0.3, 0.3), (0.34, 0.31), (0.42, 0.29), (0.5, 0.24), (0.56, 0.15), (0.59, 0.06), (0.6, 0.0)]),
+          lathe(BLACK, "y", 0, 0, [(0.365, 0.306), (0.385, 0.302)], plain=True, open=True)]
+    # six stub aerials round the mast, each for its own band, on sprung bases
+    for i in range(6):
+        a = math.radians(60 * i)
+        x, z, h = 0.24 * math.sin(a), 0.2 * math.cos(a), (0.14, 0.17, 0.11, 0.16, 0.1, 0.17)[i]
+        p += [lathe(BLACK, "y", x, z, [(0.04, 0.0), (0.04, 0.03), (0.07, 0.03), (0.08, 0.02), (0.11, 0.02), (0.12, 0.014), (0.12 + h, 0.01), (0.12 + h, 0.0)], seg=8)]
+    # control box with a status lamp, cooling fins, and the lead down into the vehicle
+    p += [B(d, -0.16, 0.04, -0.29, 0.32, 0.12, 0.12, marks=[("rear", "panel", 0.5, 0.5, 0.24, 0.07)]),
+          B(RED, 0.1, 0.16, -0.26, 0.03, 0.02, 0.03, plain=True), B(STEEL, -0.13, 0.16, -0.26, 0.06, 0.015, 0.04, plain=True)]
+    p += [B(STEEL_D, -0.14 + i * 0.045, 0.16, -0.2, 0.012, 0.03, 0.06, plain=True) for i in range(4)]
+    p += run(BLACK, [(0.16, 0.1, -0.24), (0.3, 0.06, -0.26), (0.4, 0.02, -0.2), (0.44, -0.04, -0.1)], 0.025)
+    p += [B(WHITE, -0.1, 0.045, 0.3, 0.2, 0.06, 0.004, plain=True, marks=[("front", "digits:EW-14", 0.5, 0.5, 0)])]
+    return _model(p)
+
+
 #          model               builder          texels per metre
-MODELS = {"ground_station": (ground_station, 64), "orlan_catapult": (orlan_catapult, 160), "shahed_launcher": (shahed_launcher, 96)}
+MODELS = {"ground_station": (ground_station, 64), "orlan_catapult": (orlan_catapult, 160), "shahed_launcher": (shahed_launcher, 96),
+          "jammer_dome": (jammer_dome, 512)}
 
 
 if __name__ == "__main__":

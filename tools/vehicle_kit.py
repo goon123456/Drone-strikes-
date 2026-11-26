@@ -734,7 +734,10 @@ def _lathe_surfaces(part):
     ang = np.linspace(0, 2 * math.pi, seg + 1)
     rows, norms = [], []
     # which way the outline runs along the axis decides which side of it is the outside
-    run = next((1 if b[0] > a_[0] else -1 for a_, b in zip(prof, prof[1:]) if b[0] != a_[0]), 1)
+    # (the outline, closed back along the axis, encloses the solid: the way round it runs gives the outside)
+    loop = [(prof[0][0], 0.0)] + list(prof) + [(prof[-1][0], 0.0)]
+    area = sum(p0[0] * p1[1] - p1[0] * p0[1] for p0, p1 in zip(loop, loop[1:] + loop[:1]))
+    run = -1 if area > 0 else 1
     for i, (a, r) in enumerate(prof):
         # surface normal from the slope of the profile either side of this point
         a0, r0 = prof[max(0, i - 1)]; a1, r1 = prof[min(len(prof) - 1, i + 1)]

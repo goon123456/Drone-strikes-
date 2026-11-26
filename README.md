@@ -312,7 +312,9 @@ python3 tools/gen_assets.py   # regenerate textures, models, recipes and languag
   equipment shelter on jacks with a satellite dish, a data-link mast, air conditioning and a cable drum; the
   Orlan Catapult is an inclined folding rail on a base and A-frame with a carriage and launch cylinder; the
   Shahed Launch Rail is a skid frame carrying twin inclined rails with a blast plate and firing box.
-  The worn backpacks, the Jammer Dome and tracer rounds are still simple flat-coloured shapes.
+- A fitted Jammer Dome is drawn on the vehicle's roof (the top middle of its hit box): a mushroom radome on a
+  mast over a ring of stub aerials, with a control box and lead. The server tells each player which vehicles
+  carry one. The worn backpacks and tracer rounds are still simple flat-coloured shapes.
 - Ground vehicles are true meshes (Superb Warfare's `poly_mesh` format), not boxes: turned wheels with dished
   rims, round barrels, masts and dishes, and bevelled plate edges. Shapes are in `tools/gen_vehicles.py`; the kit
   of parts, the mesh builder and the texture painter are in `tools/vehicle_kit.py`.
@@ -342,7 +344,6 @@ python3 tools/gen_assets.py   # regenerate textures, models, recipes and languag
 - A file named `steelrain_animtest` in the game folder holds doors and hatches open, for checking models.
 - A loaded Iskander is not drawn on its launcher.
 - The Pantsir's missiles only fire in automatic mode.
-- A fitted Jammer Dome is not drawn.
 - The drone, engine, jammer, static and cable sounds are the files in `tools/sounds/`. Replace one there (mono
   `.ogg`, same name) and rerun `tools/gen_assets.py` to change it. They are synthesised, not field recordings.
 - Low-flying drones (Orlan, Shahed) can fly into steep mountains.
