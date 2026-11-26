@@ -412,6 +412,11 @@ def item_icons():
     d.rectangle([3, 5, 9, 8], fill=c((110, 116, 82)))
     d.line([(9, 6), (15, 3)], fill=c((80, 86, 60)))
     icons["m109"] = outlined(img)
+    img, d = canvas()   # mortar: baseplate, bipod, tube raised high
+    d.rectangle([2, 12, 9, 13], fill=c((60, 62, 58)))
+    d.line([(5, 12), (12, 2)], fill=c((80, 90, 60)), width=2)
+    d.line([(10, 6), (8, 13)], fill=c((120, 120, 116))); d.line([(10, 6), (12, 13)], fill=c((120, 120, 116)))
+    icons["mortar_120"] = outlined(img)
     for name, body, cap in (("jerrycan", (70, 84, 56), (60, 60, 60)), ("diesel_jerrycan", (180, 60, 40), (230, 190, 60))):
         img, d = canvas()
         d.rectangle([4, 4, 11, 14], fill=c(body)); d.line([(5, 9), (10, 9)], fill=c(tuple(v - 25 for v in body)))
@@ -540,6 +545,7 @@ def lang():
         "entity.steelrain.himars": "M142 HIMARS",
         "item.steelrain.himars": "M142 HIMARS",
         "item.steelrain.m109": "M109 Howitzer",
+        "item.steelrain.mortar_120": "120 mm Mortar",
         "key.steelrain.switch_seat": "Change seat in a vehicle",
         "key.steelrain.shell_type": "Gun: next shell type",
         "message.steelrain.seat_0": "Driver's seat",
@@ -975,17 +981,7 @@ def sbw_vehicles():
     SHELLS = ["shell_155mm", "shell_cluster", "shell_smoke", "shell_incendiary"]
 
     # 120 mm mortar: baseplate, bipod and tube. High-angle fire only, laid by the crewman sitting beside it.
-    sbw_vehicle("mortar_120",
-        base=[(SD, -0.45, 0, -0.55, 0.9, 0.1, 0.9)],
-        turret=pair(ST, 0.28, 0.1, 0.55, 0.05, 0.9, 0.05) + [(ST, -0.3, 0.95, 0.55, 0.6, 0.05, 0.05)],
-        barrel=[(SD, -0.08, 0.14, -0.1, 0.16, 0.16, 1.7), (BK, -0.1, 0.12, 1.5, 0.2, 0.2, 0.12)],
-        turret_pivot=(0, 0.1, -0.1), barrel_pivot=(0, 0.22, -0.1),
-        data={"MaxHealth": 40, "Mass": 2, "EngineType": "Fixed", "Type": "Artillery", "HudType": "@Land", "MaxEnergy": 0,
-              "VehicleContainerType": "Mini", "TurretTurnSpeed": [6, 4], "TurretPitchRange": [45, 85],
-              "Seats": [{"HidePassenger": False, "Transform": "Turret", "Position": [0.7, -0.1, -0.5], "CanRotateHead": True,
-                         "MinPitch": 45, "MaxPitch": 85, "Weapons": ["Charge1", "Charge2", "Charge3"]}],
-              "Weapons": charges([2.0, 3.0, 4.5], [0, 0, 1.7], ["mortar_shell"]),
-              "ContainerIcon": "superbwarfare:textures/gui/vehicle/type/defense.png"})
+    own_vehicle("mortar_120")   # laid and fired through Steel Rain itself
 
     own_vehicle("m109")   # driven, laid and fired through Steel Rain itself
 
@@ -1055,7 +1051,7 @@ def sbw_vehicles():
     crate("pantsir", ["UOU", "MCM", "BBB"], {"U": "guidance_unit", "O": MC + "observer", "M": "electric_motor", "C": "circuit_board", "B": B})
     crate("tomahawk_launcher", ["IHI", "BCB", "BBB"], {"I": I, "H": MC + "hopper", "B": B, "C": "circuit_board"})
     crate("iskander_launcher", ["IPI", "BCB", "BMB"], {"I": I, "P": MC + "piston", "B": B, "C": "circuit_board", "M": "electric_motor"})
-    crate("mortar_120", ["  I", " I ", "NBN"], {"I": I, "N": N, "B": B})
+    shaped("mortar_120", ["  I", " I ", "NBN"], {"I": I, "N": N, "B": B})
     shaped("himars", ["III", "MCM", "BBB"], {"I": I, "M": "electric_motor", "C": "circuit_board", "B": B})
     shaped("jerrycan", [" I ", "I I", "III"], {"I": I}, 2)
     write(f"{D}/recipe/diesel_jerrycan.json", {"type": "minecraft:crafting_shapeless", "category": "misc",

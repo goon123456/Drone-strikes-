@@ -27,7 +27,7 @@ full-size emplacements, and the drones and aircraft themselves are Steel Rain's 
 
 ### Steel Rain's own vehicles (moving off Superb Warfare)
 Linking to SBW caused too many problems, so the vehicles are being moved one at a time onto Steel Rain's own
-vehicle system. SBW stays required until the last one has moved. **Done so far: the M142 HIMARS and the M109.**
+vehicle system. SBW stays required until the last one has moved. **Done so far: the M142 HIMARS, the M109 and the 120 mm mortar.**
 
 - **Getting one**: craft it (or take it from the creative tab) and right-click the ground to put it down,
   facing the way you look. The owner sneak-hits it to pack it back into the item; the item keeps its damage,
@@ -207,19 +207,21 @@ remote camera. If the copy is hit you are thrown out of the drone and take the d
 These two are aimed and fired by a gunner, Arma Reforger style. Nothing guides the shell: it leaves the barrel
 at the charge's muzzle velocity and falls under gravity.
 
-- **Crew**: the **120 mm Mortar** (static, new) has one seat. The **M109** (Steel Rain's own vehicle, tracked)
+- **Crew**: the **120 mm Mortar** (Steel Rain's own, static) has one crewman kneeling beside it; craft it, place
+  it from the item and sneak-hit it to carry it away again. No fuel or battery. The **M109** (Steel Rain's own vehicle, tracked)
   has a driver, a gunner up in the turret and a passenger; press **Z** to change seat.
-- **M109 gunner**: look where the gun should point; the turret (2.5 degrees a tick) and barrel (1.5) follow at
+- **Gunner (M109 and mortar)**: look where the gun should point; the turret (2.5 degrees a tick) and barrel (1.5) follow at
   their own pace, and a marker on the sight shows where the barrel is pointing until it catches up (it turns green
   when laid). **Left click** fires, the **scroll wheel** picks the charge, **B** steps through the shell types.
-  The crew loads the next shell of the chosen type from the vehicle's storage in 6 seconds while anyone is aboard;
+  The crew loads the next round of the chosen type from the storage (sneak + right-click) while anyone is aboard,
+  6 seconds for the M109 and 3 for the mortar;
   the sight shows what is in the breech.
 - **Gun sight**: while seated you see the barrel's compass **bearing** (0 = north, 90 = east) and **elevation**,
   and a **range table** giving the elevation each charge needs for a distance on level ground.
-- **Charges**: Charge 1, 2 or 3 (M109: scroll wheel; mortar: switch weapon). More charge means more range and a flatter, faster shot.
+- **Charges**: Charge 1, 2 or 3 (scroll wheel). More charge means more range and a flatter, faster shot.
   M109 reaches about 180 / 350 / 600 blocks, the mortar about 80 / 180 / 400.
 - The mortar only fires high (45 to 85 degrees). The M109 uses a flat trajectory where it can (-3 to 70 degrees).
-- **Shells** come from the vehicle's inventory: mortar bombs for the mortar (switch ammo the SBW way); HE,
+- **Shells** come from the vehicle's inventory: mortar bombs for the mortar; HE,
   cluster, smoke or incendiary 155 mm shells for the M109 (B).
 - **Field Laptop**: link the gun, pick a target, press **SOLUTION**. The laptop cannot fire these guns; it gives
   the bearing, the range, and for every charge that can reach, the elevation and time of flight, corrected for

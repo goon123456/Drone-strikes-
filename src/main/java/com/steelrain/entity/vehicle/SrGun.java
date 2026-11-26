@@ -133,8 +133,9 @@ public abstract class SrGun extends SrVehicle implements Launcher {
             float dp = Mth.clamp(wantPitch - gunPitch(), -elevateRate(), elevateRate());
             if (Math.abs(dy) > 0.01f) setTurretYaw(turretYaw() + dy);
             if (Math.abs(dp) > 0.01f) setGunPitch(gunPitch() + dp);
-        } else if (getPassengers().isEmpty() && Math.abs(gunPitch()) > 0.01f) {
-            setGunPitch(gunPitch() - Mth.clamp(gunPitch(), -elevateRate(), elevateRate()));   // left alone: barrel down
+        } else if (getPassengers().isEmpty()) {
+            float rest = (float) Mth.clamp(0, minElevation(), maxElevation());       // left alone: barrel down
+            if (Math.abs(gunPitch() - rest) > 0.01f) setGunPitch(gunPitch() + Mth.clamp(rest - gunPitch(), -elevateRate(), elevateRate()));
         }
         loadTick(level);
     }

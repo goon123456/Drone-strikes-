@@ -129,6 +129,12 @@ public abstract class SrVehicle extends Entity implements OwnableEntity {
 
     protected double width() { return 2.4; }
 
+    /** Static weapons have no engine and nobody drives them. */
+    public boolean drivable() { return true; }
+
+    /** How far back the third-person camera sits while riding. */
+    public float cameraDistance() { return 10f; }
+
     /** Whether the crew in this seat are hidden inside the vehicle. */
     public boolean hidesSeat(int seat) { return true; }
 
@@ -236,7 +242,7 @@ public abstract class SrVehicle extends Entity implements OwnableEntity {
     @Nullable
     @Override
     public LivingEntity getControllingPassenger() {
-        return inSeat(0) instanceof Player p ? p : null;
+        return drivable() && inSeat(0) instanceof Player p ? p : null;
     }
 
     public boolean engineRunning() { return getControllingPassenger() != null && fuel() > 0 && !flooded(); }
@@ -510,7 +516,7 @@ public abstract class SrVehicle extends Entity implements OwnableEntity {
     @Override
     public InteractionResult interact(Player player, InteractionHand hand) {
         ItemStack held = player.getItemInHand(hand);
-        if (held.is(ModRegistry.DIESEL_JERRYCAN.get())) {
+        if (held.is(ModRegistry.DIESEL_JERRYCAN.get()) && tankLitres() > 0) {
             if (!level().isClientSide) {
                 if (fuel() >= tankLitres() - 0.5f) {
                     player.displayClientMessage(Component.translatable("message.steelrain.tank_full"), true);

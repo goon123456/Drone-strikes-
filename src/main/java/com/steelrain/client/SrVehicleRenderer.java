@@ -77,6 +77,7 @@ public class SrVehicleRenderer<T extends SrVehicle> extends EntityRenderer<T> {
 
     @Override
     public void render(T v, float entityYaw, float pt, PoseStack pose, MultiBufferSource buffers, int light) {
+        this.shadowRadius = Math.max(0.5f, v.getBbWidth() * 0.6f);
         float[] s = state.computeIfAbsent(v, k -> new float[]{1, 1, 0, 0, 0, -1});
         if (s[5] != v.tickCount) {
             // once a tick: parked after a second standing still; hatches open while it stands with a crew aboard

@@ -171,6 +171,8 @@ public final class ModRegistry {
     public static final DeferredItem<Item> DIESEL_JERRYCAN = simple("diesel_jerrycan", 4);
     public static final DeferredItem<Item> HIMARS_ITEM = ITEMS.register("himars",
             () -> new com.steelrain.item.VehicleItem(new Item.Properties().stacksTo(1), () -> ModRegistry.HIMARS.get()));
+    public static final DeferredItem<Item> MORTAR_ITEM = ITEMS.register("mortar_120",
+            () -> new com.steelrain.item.VehicleItem(new Item.Properties().stacksTo(1), () -> ModRegistry.MORTAR.get()));
     public static final DeferredItem<Item> M109_ITEM = ITEMS.register("m109",
             () -> new com.steelrain.item.VehicleItem(new Item.Properties().stacksTo(1), () -> ModRegistry.M109.get()));
 
@@ -282,7 +284,6 @@ public final class ModRegistry {
     // ---- artillery and missile launchers: Superb Warfare vehicles fired from the Field Laptop ----
     public static final Map<String, DeferredHolder<EntityType<?>, EntityType<com.steelrain.entity.StrikeVehicle>>> STRIKE = new java.util.LinkedHashMap<>();
     static {
-        strike("mortar_120", 0.9f, 1.0f);
         strike("tomahawk_launcher", 2.6f, 3.2f);
         strike("iskander_launcher", 3.1f, 3.3f);
     }
@@ -291,6 +292,9 @@ public final class ModRegistry {
     public static final DeferredHolder<EntityType<?>, EntityType<com.steelrain.entity.vehicle.Himars>> HIMARS = ENTITIES.register("himars",
             () -> EntityType.Builder.<com.steelrain.entity.vehicle.Himars>of(com.steelrain.entity.vehicle.Himars::new, MobCategory.MISC)
                     .setTrackingRange(512).setUpdateInterval(1).fireImmune().sized(2.6f, 3.0f).build("himars"));
+    public static final DeferredHolder<EntityType<?>, EntityType<com.steelrain.entity.vehicle.Mortar>> MORTAR = ENTITIES.register("mortar_120",
+            () -> EntityType.Builder.<com.steelrain.entity.vehicle.Mortar>of(com.steelrain.entity.vehicle.Mortar::new, MobCategory.MISC)
+                    .setTrackingRange(256).setUpdateInterval(1).sized(1.0f, 1.0f).build("mortar_120"));
     public static final DeferredHolder<EntityType<?>, EntityType<com.steelrain.entity.vehicle.M109>> M109 = ENTITIES.register("m109",
             () -> EntityType.Builder.<com.steelrain.entity.vehicle.M109>of(com.steelrain.entity.vehicle.M109::new, MobCategory.MISC)
                     .setTrackingRange(512).setUpdateInterval(1).fireImmune().sized(3.1f, 3.0f).build("m109"));

@@ -1,8 +1,0 @@
-{
-  "Models": [
-    {
-      "Model": "steelrain:models/bedrock/vehicle/mortar_120.geo.json",
-      "Texture": "steelrain:textures/bedrock/vehicle/mortar_120.png"
-    }
-  ]
-}

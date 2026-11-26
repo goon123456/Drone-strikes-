@@ -72,7 +72,7 @@ public final class VehicleClient {
 
     @SubscribeEvent
     public static void camera(CalculateDetachedCameraDistanceEvent e) {
-        if (e.getCamera().getEntity().getVehicle() instanceof SrVehicle) e.setDistance(Math.max(e.getDistance(), 10f));
+        if (e.getCamera().getEntity().getVehicle() instanceof SrVehicle v) e.setDistance(Math.max(e.getDistance(), v.cameraDistance()));
     }
 
     @SubscribeEvent
