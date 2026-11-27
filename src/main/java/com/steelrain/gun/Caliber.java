@@ -38,6 +38,22 @@ public enum Caliber {
         this.damage = damage; this.pierce = pierce; this.pellets = pellets;
     }
 
+    /**
+     * How much one solid hit takes off a vehicle's armour (before the damage config scale). Armour shrugs off
+     * ordinary rifle and pistol rounds; only the heavy anti-materiel round bites deep. Rockets are zero here and
+     * do their work through the warhead instead.
+     */
+    public float vehicleDamage() {
+        return switch (this) {
+            case B50 -> 26f;
+            case R762, R76251 -> 4f;
+            case R545, R556 -> 1.5f;
+            case G12 -> 1f;
+            case P9 -> 0.5f;
+            default -> 0f;
+        };
+    }
+
     /** Muzzle velocity in blocks per tick. */
     public double speed() { return metresPerSecond / 20.0; }
 

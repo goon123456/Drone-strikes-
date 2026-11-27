@@ -601,8 +601,9 @@ public abstract class SrVehicle extends Entity implements OwnableEntity {
             discard();
             return true;
         }
-        // Armour shrugs off small arms; explosions and heavy shells do the damage.
-        float dealt = source.is(DamageTypeTags.IS_EXPLOSION) ? amount : Math.max(0, amount * 0.4f - 3f);
+        // Armour shrugs off small arms; explosions and heavy shells do the damage. A bullet source already carries
+        // its calibre's armour bite (see Bullets), so it passes straight through without the generic reduction.
+        float dealt = (source.is(DamageTypeTags.IS_EXPLOSION) || source.is(com.steelrain.gun.Bullets.BULLET)) ? amount : Math.max(0, amount * 0.4f - 3f);
         if (dealt <= 0) return false;
         setHealth(health() - dealt);
         if (level() instanceof ServerLevel sl) {

@@ -353,6 +353,17 @@ bullets that fly, drop and go through cover.
   OG-7V), so it drops: the leaf sight sets 100 to 500 m. It arms 5 blocks out, destroys itself after 4.5 seconds,
   and its burst hurts entities but does not break blocks. **Backblast**: anyone within about 4 blocks behind the
   launcher is burned, and firing with a wall at your back hurts you.
+- **Against armour**: a vehicle's plating shrugs off rifle and pistol rounds (they spark and do almost nothing),
+  but the Barrett's .50 bites deep — about twenty hits to wreck a Gepard — and the PG-7V rocket does its full
+  anti-tank damage. 7.62 does a little; 5.56, 9 mm and buckshot next to nothing.
+- **Getting shot** throws your view up and to one side (recoverable, a "flinch"), more for a heavier round; a
+  short tick marks each of your own hits, deeper for a kill and brighter for a headshot. Reduced motion softens
+  the flinch.
+- **Barrel heat**: the belt guns (PKM, M249, M240) build heat under sustained fire — a bar by the round count
+  fills green to red. A hot barrel walks its shots wide, and about ninety rounds flat-out cooks off into a
+  stoppage (**JAMMED**); work the action with a reload to clear it.
+- **Muzzle against a wall**: press up close to cover and the gun comes up to a port position and will not fire,
+  so you cannot shoot through the wall at your own nose.
 - **Targets**: anything with a body, including Steel Rain's drones (a shotgun is a fair answer to an FPV).
   Vehicles' armour shrugs off small arms as before.
 - **Seen by others**: the gun is carried in both hands and shown with what is fitted to it; items in

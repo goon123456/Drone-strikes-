@@ -29,6 +29,12 @@ public final class GunHud {
 
     static void hit(boolean head, boolean kill) {
         hitAt = Util.getMillis(); hitHead = head; hitKill = kill;
+        // a short tick when a shot connects, deeper for a kill, brighter for a headshot
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player != null) {
+            float pitch = kill ? 0.7f : head ? 1.7f : 1.3f;
+            mc.player.playSound(net.minecraft.sounds.SoundEvents.NOTE_BLOCK_HAT.value(), 0.5f, pitch);
+        }
     }
 
     static void render(GuiGraphics g, DeltaTracker delta) {
@@ -121,6 +127,16 @@ public final class GunHud {
             Ui.textRight(g, font, Component.translatable("gui.steelrain.gun.zero", zero).getString(), right, y - 22, Ui.HUD_TEXT, zshow);
         }
         if (GunClient.bipod > 0.5f) Ui.textRight(g, font, Component.translatable("gui.steelrain.gun.bipod").getString(), right, y - 33, Ui.GREEN, 1);
+
+        // belt-gun barrel heat: a bar that fills amber then red, and a JAMMED warning when it has cooked off
+        if (type.beltFed() && (GunClient.heat > 0.02f || GunClient.jammed)) {
+            int bw = 44, bx = right - bw;
+            float hv = GunClient.heat;
+            int hc = GunClient.jammed ? Ui.RED : hv > 0.75f ? Ui.RED : hv > 0.4f ? Ui.AMBER : Ui.GREEN;
+            g.fill(bx - 1, y - 12, right + 1, y - 7, 0x90000000);
+            g.fill(bx, y - 11, bx + Math.round(bw * hv), y - 8, hc);
+            if (GunClient.jammed && Ui.blink()) Ui.textRight(g, font, Component.translatable("gui.steelrain.gun.jammed").getString(), right, y - 23, Ui.RED, 1);
+        }
 
         // the breath being held, under the sight picture
         if (a > 0.8f && (GunClient.holding || GunClient.breath < 0.98f)) {

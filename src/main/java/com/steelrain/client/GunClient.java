@@ -55,6 +55,8 @@ public final class GunClient {
     private static long lastFrame;
     /** 0 rested to 1 out of breath from running; and the lungful being held, 1 full to 0 spent. */
     static float fatigue, breath = 1f;
+    /** How far the muzzle is crowded against a wall, 0 clear to 1, for raising the gun to a port position. */
+    public static float blocked;
     static boolean holding;
     private static boolean winded;
     static float bipod, sprint;
@@ -104,7 +106,22 @@ public final class GunClient {
 
     // ------------------------------------------------------------------ recoil
     private static float kickPitch, kickYaw, settle;
+    /** View offset still to be bled back after a flinch punch, so the kick fully recovers. */
+    private static float flinchReturnPitch, flinchReturnYaw;
     static long lastShot;
+
+    /** Being shot throws the view: a punch applied at once, then returned over the next fraction of a second. */
+    public static void flinch(float punchPitch, float punchYaw) {
+        LocalPlayer p = Minecraft.getInstance().player;
+        if (p == null) return;
+        if (ClientConfig.calm()) { punchPitch *= 0.4f; punchYaw *= 0.4f; }
+        p.setXRot(Mth.clamp(p.getXRot() + punchPitch, -90, 90)); p.xRotO += punchPitch;
+        p.setYRot(p.getYRot() + punchYaw); p.yRotO += punchYaw;
+        flinchReturnPitch += punchPitch; flinchReturnYaw += punchYaw;
+    }
+    /** The firer's own barrel heat (0..1) and stoppage, mirrored for the gauge; belt guns only. */
+    public static float heat;
+    public static boolean jammed;
     /** The gun's own jump in the hands: back, muzzle up, a twist. Springs back by itself. */
     static float jolt, joltSide;
     private static int burst;
@@ -133,6 +150,7 @@ public final class GunClient {
         kickYaw += type.recoilSide * k * drift * (burst < 2 ? 0.5f : 1f);
         jolt = Math.min(1.6f, jolt + (calm ? 0.3f : 1f));
         joltSide = (r.nextFloat() - 0.5f) * 2f;
+        if (type.beltFed()) heat = Math.min(1f, heat + 0.011f);     // mirrors the server's HEAT_PER_SHOT for the gauge
     }
 
     /** Recoil and sway are applied to where the player looks, a little every frame, so they are smooth. */
@@ -144,6 +162,17 @@ public final class GunClient {
         float dt = Math.min(100, now - lastFrame);
         lastFrame = now;
         if (p == null || mc.isPaused()) return;
+        // the flinch bleed runs whether or not a gun is in the hands: anyone shot is thrown
+        if (flinchReturnPitch != 0 || flinchReturnYaw != 0) {
+            float f = 1 - (float) Math.exp(-dt / 130.0);
+            float dp = flinchReturnPitch * f, dy = flinchReturnYaw * f;
+            flinchReturnPitch -= dp; flinchReturnYaw -= dy;
+            p.setXRot(Mth.clamp(p.getXRot() - dp, -90, 90)); p.xRotO -= dp;
+            p.setYRot(p.getYRot() - dy); p.yRotO -= dy;
+            if (Math.abs(flinchReturnPitch) < 0.002f) flinchReturnPitch = 0;
+            if (Math.abs(flinchReturnYaw) < 0.002f) flinchReturnYaw = 0;
+        }
+        if (heat > 0 && now - lastShot > 60) heat = Math.max(0, heat - (float) (dt / 50.0 * 0.0045));
         if (held == null) {
             ads = 0; kickPitch = kickYaw = settle = 0; jolt = 0;
             return;
@@ -285,6 +314,12 @@ public final class GunClient {
                 CUES.removeIf(c -> c.entity == p.entityId());
                 if (mine) anim = ANIM_NONE;
             }
+            case GunLogic.EV_JAM -> {
+                boolean on = p.arg() == 1;
+                if (mine) { jammed = on; if (on) heat = 1f; else heat *= 0.3f; }
+                if (on) play(e, "gun_dry", 0.8f, 0.7f);
+                else play(e, "gun_bolt", 0.7f, 1f);
+            }
             default -> { }
         }
     }
@@ -345,6 +380,7 @@ public final class GunClient {
         if (type != held || slot != heldSlot) {
             held = type; heldSlot = slot;
             drawnAt = now; anim = ANIM_NONE;
+            heat = 0; jammed = false;
             sentTrigger = sentAim = false;
             ads = 0;
         }
@@ -387,6 +423,8 @@ public final class GunClient {
         while (ClientSetup.GUN_FIT.consumeClick()) if (free && !reloading()) mc.setScreen(new GunScreen());
         // running leaves the firer out of breath; a held breath steadies the sights for a few seconds
         fatigue = Mth.clamp(fatigue + (p.isSprinting() ? 0.009f : -0.0045f), 0, 1);
+        boolean crowd = mc.options.getCameraType().isFirstPerson() && com.steelrain.gun.GunLogic.muzzleBlocked(p, type);
+        blocked += ((crowd ? 1f : 0f) - blocked) * 0.4f;
         boolean wantHold = free && ClientSetup.GUN_BREATH.isDown() && ads > 0.8f && !winded;
         holding = wantHold && breath > 0;
         breath = Mth.clamp(breath + (holding ? -0.011f : 0.008f), 0, 1);

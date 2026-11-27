@@ -206,6 +206,9 @@ public final class GunHand {
         // a dead trigger or the selector: a small twitch
         float click = Math.max(0, 1 - (now - Math.max(GunClient.dryAt, GunClient.selectorAt)) / 140f);
         roll += 1.5f * click;
+        // crowded against a wall: the muzzle comes up to a port position and the gun draws back, and it cannot fire
+        float blk = GunClient.blocked;
+        if (blk > 0.01f) { pitch -= 40f * blk; roll += 8f * blk; at.add(0, 0.05f * blk, 0.07f * blk); }
 
         Vector3f grip = model.point("grip");
         pose.pushPose();

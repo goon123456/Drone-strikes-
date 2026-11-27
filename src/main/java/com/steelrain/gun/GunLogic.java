@@ -30,7 +30,7 @@ import java.util.UUID;
 public final class GunLogic {
     public static final int ACT_RELOAD = 0, ACT_MODE = 1, ACT_ZERO = 2, ACT_FIT = 3, ACT_REMOVE = 4, ACT_SIDE = 5;
     /** What everyone nearby is told about, so they can animate and hear it. */
-    public static final int EV_RELOAD = 0, EV_RELOAD_EMPTY = 1, EV_SHELL = 2, EV_PUMP = 3, EV_DRY = 4, EV_SELECTOR = 5, EV_CANCEL = 6, EV_ROCKET = 7, EV_BURST = 8;
+    public static final int EV_RELOAD = 0, EV_RELOAD_EMPTY = 1, EV_SHELL = 2, EV_PUMP = 3, EV_DRY = 4, EV_SELECTOR = 5, EV_CANCEL = 6, EV_ROCKET = 7, EV_BURST = 8, EV_JAM = 9;
 
     private static final class State {
         GunType type;
@@ -45,7 +45,13 @@ public final class GunLogic {
         @javax.annotation.Nullable net.minecraft.core.BlockPos lit;
         int shots;
         long lastShot;
+        /** Barrel heat 0..1 and whether it has cooked off into a stoppage. Only the belt guns build it up. */
+        float heat;
+        boolean jammed;
     }
+
+    /** Heat one shot adds to a sustained-fire gun's barrel; about ninety rounds flat-out before it cooks off. */
+    private static final float HEAT_PER_SHOT = 0.011f, HEAT_COOL = 0.0045f;
 
     private static final Map<UUID, State> STATES = new HashMap<>();
 
@@ -187,11 +193,23 @@ public final class GunLogic {
             if (st.reload >= 0) event(player, EV_CANCEL, 0);
             st.type = gun.type; st.slot = slot; st.reload = -1; st.latched = st.trigger; st.shots = 0;
             st.nextShot = now + 7;
+            st.heat = 0; st.jammed = false;                   // heat and a stoppage belong to the gun just put away
+        }
+        // the barrel cools whenever it is not being fired this tick
+        if (gun.type.beltFed() && st.heat > 0 && now - st.lastShot > 1) {
+            st.heat = Math.max(0, st.heat - HEAT_COOL);
+            if (st.heat < 0.001f && st.heat != 0) st.heat = 0;
         }
         if (st.reload >= 0) { reloadTick(player, stack, gun.type, st); return; }
         if (now - st.lastShot > 6) st.shots = 0;
         if (!pulled || st.latched) return;
         int mode = GunItem.mode(stack);
+        if (st.jammed) {                                            // cooked off: nothing happens until it is cleared
+            if (!st.dry) { st.dry = true; event(player, EV_JAM, 1); player.displayClientMessage(Component.translatable("message.steelrain.gun_jammed"), true); }
+            st.latched = true;
+            return;
+        }
+        if (muzzleBlocked(player, gun.type)) return;              // barrel against a wall: can't fire, but not latched
         while (st.nextShot <= now + 1e-6) {
             if (mode == GunType.Mode.SAFE || !ready(stack, gun.type)) {
                 if (!st.dry) {
@@ -205,12 +223,27 @@ public final class GunLogic {
             }
             shoot(player, stack, gun.type, st);
             st.nextShot = Math.max(st.nextShot, now - 1) + gun.type.interval();
+            if (gun.type.beltFed()) {
+                st.heat = Math.min(1f, st.heat + HEAT_PER_SHOT);
+                if (st.heat >= 1f) { st.jammed = true; event(player, EV_JAM, 1); st.latched = true; break; }
+            }
             if (mode != GunType.Mode.AUTO) { st.latched = true; break; }
         }
     }
 
     private static boolean ready(ItemStack stack, GunType type) {
         return type.firesFromFeed() ? GunItem.rounds(stack) > 0 : GunItem.chambered(stack);
+    }
+
+    /** How far the muzzle reaches in front of the eye, for the "barrel against a wall" check. */
+    public static double muzzleReach(GunType type) { return type.pistol() ? 0.55 : 1.2; }
+
+    /** True when there is a solid block right in front of the muzzle, so the shot would hit the wall at the firer's nose. */
+    public static boolean muzzleBlocked(net.minecraft.world.entity.player.Player player, GunType type) {
+        net.minecraft.world.phys.Vec3 eye = player.getEyePosition(), look = player.getLookAngle();
+        var hit = player.level().clip(new net.minecraft.world.level.ClipContext(eye, eye.add(look.scale(muzzleReach(type))),
+                net.minecraft.world.level.ClipContext.Block.COLLIDER, net.minecraft.world.level.ClipContext.Fluid.NONE, player));
+        return hit.getType() == net.minecraft.world.phys.HitResult.Type.BLOCK;
     }
 
     private static void shoot(ServerPlayer player, ItemStack stack, GunType type, State st) {
@@ -238,6 +271,7 @@ public final class GunLogic {
         Vec3 moved = player.getKnownMovement();
         sigma += Math.min(0.05, Math.hypot(moved.x, moved.z) * 0.12);
         if (!player.onGround() && !player.isPassenger()) sigma += Math.toRadians(2.5);
+        if (st.heat > 0.4f) sigma += Math.toRadians(2.2) * (st.heat - 0.4f) / 0.6f;    // a hot barrel walks its shots
         Vec3 eye = player.getEyePosition();
         double speed = cal.speed() * type.velocityFactor;
         float damage = kind == GunItem.KIND_TRAINING ? 0f : type == GunType.SVD || type == GunType.M110 ? 1.1f : 1f;
@@ -323,6 +357,8 @@ public final class GunLogic {
 
     private static void startReload(ServerPlayer player, ItemStack stack, GunType type, State st) {
         if (st.reload >= 0) return;
+        if (st.jammed) { st.jammed = false; event(player, EV_JAM, 0); }     // working the action clears the stoppage
+        st.heat *= 0.3f;
         boolean creative = player.getAbilities().instabuild;
         if (type.action == GunType.Action.SINGLE) {
             // an empty tube takes a rocket; a loaded one has its rocket drawn and the other kind put in

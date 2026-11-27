@@ -239,8 +239,20 @@ public final class Payloads {
         @Override public Type<GunHit> type() { return TYPE; }
     }
 
+    /** Server -> client: you were shot; punch the victim's view. */
+    public record Flinch(float pitch, float yaw) implements CustomPacketPayload {
+        public static final Type<Flinch> TYPE = id("flinch");
+        public static final StreamCodec<FriendlyByteBuf, Flinch> CODEC = StreamCodec.ofMember(Flinch::write, Flinch::new);
+        Flinch(FriendlyByteBuf b) { this(b.readFloat(), b.readFloat()); }
+        void write(FriendlyByteBuf b) { b.writeFloat(pitch); b.writeFloat(yaw); }
+        @Override public Type<Flinch> type() { return TYPE; }
+    }
+
     public static void register(RegisterPayloadHandlersEvent event) {
         PayloadRegistrar r = event.registrar("1");
+        r.playToClient(Flinch.TYPE, Flinch.CODEC, (p, ctx) -> {
+            if (FMLEnvironment.dist.isClient()) com.steelrain.client.GunClient.flinch(p.pitch(), p.yaw());
+        });
         r.playToServer(GunInput.TYPE, GunInput.CODEC, (p, ctx) -> {
             if (ctx.player() instanceof ServerPlayer sp) com.steelrain.gun.GunLogic.input(sp, p.trigger(), p.aiming());
         });

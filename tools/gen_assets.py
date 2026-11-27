@@ -598,6 +598,8 @@ GUN_LANG = {
     "item.steelrain.m240_magazine": "M240 Belt Can (100)", "item.steelrain.m110_magazine": "M110 Magazine (20)",
     "item.steelrain.ammo_76251": "7.62x51 Round",
     "gui.steelrain.gun.reloading": "RELOADING",
+    "gui.steelrain.gun.jammed": "JAMMED - RELOAD",
+    "message.steelrain.gun_jammed": "Weapon jammed: reload to clear it",
     **{f"item.steelrain.{r}_tracer": f"{n} Tracer Round" for r, n in ROUND_NAMES.items()},
     **{f"item.steelrain.{r}_training": f"{n} Training Round" for r, n in ROUND_NAMES.items()},
     "gun.steelrain.kind.ball": "Ball", "gun.steelrain.kind.tracer": "Tracer", "gun.steelrain.kind.training": "Training",

@@ -1,7 +1,7 @@
 # Handoff: small arms work (branch `claude/youthful-hamilton-vv974c`)
 
 For whoever picks this up next. Everything described here is committed and pushed; the working tree was clean at
-the time of writing. Current version: **0.50.1** (`dist/steelrain-1.21.1-0.50.1.jar`). No pull request is open.
+the time of writing. Current version: **0.51.0** (`dist/steelrain-1.21.1-0.51.0.jar`). No pull request is open.
 
 ## What was added in this stretch of work
 All of it is the small-arms system (README section "Small arms" is the user-facing description):
@@ -56,6 +56,22 @@ into `run/dev_script.txt` (one command per line: `wait N`, `cmd <command>`, `sho
 screenshots to `run/screenshots/`. **Delete that file again before building the jar for `dist/`.**
 Give a loaded gun with e.g. `/give @s steelrain:m4a1[steelrain:rounds=30,steelrain:chamber=true,steelrain:fire_mode=1,steelrain:parts=[7,13],steelrain:active=true]`
 (`parts` are `Attachment` ordinals; `load` is the round kind: 0 ball, 1 tracer, 2 training).
+
+## 0.51.0: gun-system improvements (all four verified in game)
+- **Caliber vs armour**: `Caliber.vehicleDamage()` gives each round an armour-bite; `Bullets.hitBody` uses it for
+  `SrVehicle`/SBW targets and `SrVehicle.hurt` lets a BULLET source through without the generic reduction. Tuned
+  so the .50 does ~26/hit to a vehicle (~19 to kill a 500-HP Gepard), 5.56 ~1.3 (bounces). Verified: .50 500->448
+  in two hits; M249 spray 500->489.
+- **Hit flinch + feedback**: `Payloads.Flinch` punches a shot victim's view (`GunClient.flinch`, fully recovers);
+  a hit-marker tick (`GunHud.hit`, note-block hat sound). Flinch only fires for ServerPlayer victims, so it was
+  NOT multiplayer-tested — the code path is simple but unproven against a real second player.
+- **MG overheat & jams**: belt guns only. `GunLogic.State.heat/jammed`, `HEAT_PER_SHOT`/`HEAT_COOL`; heat adds
+  spread above 0.4, cooks off at 1.0 into a stoppage cleared by reload (`EV_JAM`). Client mirrors heat for the
+  gauge (`GunClient.heat/jammed`, `GunHud`). Verified: jams after ~114 continuous rounds, gauge green->red.
+- **Weapon collision**: `GunLogic.muzzleBlocked` (raycast eye->muzzleReach) blocks firing server-side and
+  `GunClient.blocked`/`GunHand` raise the gun to port. Verified: pressed to a wall, held fire, muzzle up.
+- **Bug fixed**: heat/jam lived in the per-player `State` and carried across a gun swap (a jammed M249 made the
+  next gun unfireable). The gun-change reset now clears `st.heat`/`st.jammed`.
 
 ## Verified in game since 0.50.0 (0.50.1 pass)
 M240 belt-change reload; magnifier flip, light and laser toggles through their keys; weapon light lights the

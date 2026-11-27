@@ -31,6 +31,8 @@
   "item.steelrain.m110_magazine": "M110 Magazine (20)",
   "item.steelrain.ammo_76251": "7.62x51 Round",
   "gui.steelrain.gun.reloading": "RELOADING",
+  "gui.steelrain.gun.jammed": "JAMMED - RELOAD",
+  "message.steelrain.gun_jammed": "Weapon jammed: reload to clear it",
   "item.steelrain.ammo_545_tracer": "5.45x39 Tracer Round",
   "item.steelrain.ammo_556_tracer": "5.56x45 Tracer Round",
   "item.steelrain.ammo_762_tracer": "7.62x54R Tracer Round",

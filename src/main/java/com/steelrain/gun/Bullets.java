@@ -24,6 +24,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
+import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -163,6 +164,9 @@ public final class Bullets {
         float damage = (float) (b.caliber.damage * b.damageScale * Math.pow(speed, 1.5) * Config.GUN_DAMAGE.get());
         boolean head = e instanceof LivingEntity living && living.getBbHeight() > 1.0f && at.y >= living.getEyeY() - 0.2;
         if (head) damage *= 1.8f;
+        // a vehicle's armour takes a flat bite that depends on the calibre, not the raw body damage
+        boolean armored = e instanceof com.steelrain.entity.vehicle.SrVehicle || com.steelrain.compat.Sbw.isVehicle(e);
+        if (armored) damage = (float) (b.caliber.vehicleDamage() * b.damageScale * Math.max(0.4, speed) * Config.GUN_DAMAGE.get());
         DamageSource source = new DamageSource(level.registryAccess().registryOrThrow(Registries.DAMAGE_TYPE).getHolderOrThrow(BULLET),
                 null, b.shooter, b.origin);
         boolean wasAlive = e.isAlive();
@@ -171,6 +175,12 @@ public final class Bullets {
         else level.sendParticles(ParticleTypes.ELECTRIC_SPARK, at.x, at.y, at.z, 3, 0.05, 0.05, 0.05, 0.2);
         if ((hurt || damage <= 0) && b.shooter instanceof ServerPlayer sp) {
             PacketDistributor.sendToPlayer(sp, new Payloads.GunHit(head, wasAlive && !e.isAlive()));
+        }
+        // the one shot throws their view: up, and to one side away from the bullet's path
+        if (hurt && e instanceof ServerPlayer victim && !armored) {
+            float up = -(0.8f + damage * 0.12f);
+            float side = (float) ((level.random.nextBoolean() ? 1 : -1) * (0.4 + damage * 0.06));
+            PacketDistributor.sendToPlayer(victim, new Payloads.Flinch(Math.max(up, -6f), Mth.clamp(side, -4f, 4f)));
         }
         // a full-power rifle bullet goes through a body and may hit what is behind it
         return e instanceof LivingEntity && b.caliber.pierce >= 1f && speed > 0.5;
