@@ -1,7 +1,7 @@
 # Handoff: small arms work (branch `claude/youthful-hamilton-vv974c`)
 
 For whoever picks this up next. Everything described here is committed and pushed; the working tree was clean at
-the time of writing. Current version: **0.50.0** (`dist/steelrain-1.21.1-0.50.0.jar`). No pull request is open.
+the time of writing. Current version: **0.50.1** (`dist/steelrain-1.21.1-0.50.1.jar`). No pull request is open.
 
 ## What was added in this stretch of work
 All of it is the small-arms system (README section "Small arms" is the user-facing description):
@@ -57,12 +57,25 @@ screenshots to `run/screenshots/`. **Delete that file again before building the 
 Give a loaded gun with e.g. `/give @s steelrain:m4a1[steelrain:rounds=30,steelrain:chamber=true,steelrain:fire_mode=1,steelrain:parts=[7,13],steelrain:active=true]`
 (`parts` are `Attachment` ordinals; `load` is the round kind: 0 ball, 1 tracer, 2 training).
 
+## Verified in game since 0.50.0 (0.50.1 pass)
+M240 belt-change reload; magnifier flip, light and laser toggles through their keys; weapon light lights the
+ground; reduced motion (same burst lifts the view 1.60 deg normally, 0.70 deg with it on); HEAT rocket does its
+full 70 damage to a Gepard at 100 m; OG-7V burst kills animals within 7.5 blocks and spares one 8 m away; wall
+backblast hurts the firer (5 damage). The .50 damages vehicles (about 9 per hit, so roughly 55 hits for a
+500-HP Gepard; raise `Caliber.B50` damage if that feels weak).
+Bugs found and fixed: the side-slot key defaulted to **L** (vanilla Advancements) and is now **U**
+(anyone who ran 0.50.0 keeps L in their saved options and must rebind); a quick one-tick trigger tap could be lost
+between server ticks (now remembered with a `pulse` flag in `GunLogic`).
+Testing notes: scripts run against the *same world* unless you restart the client, so `/give`n guns pile up in the
+inventory and slot 0 may be an old, emptied gun; the test world is created on Peaceful, which makes `player.hurt`
+return false (use `/difficulty normal` to test anything that hurts the player); animals stand below eye level, so
+aim rockets at the ground to hit them.
+
 ## Not verified, and known gaps
 - Sounds are synthesised and have never been listened to.
 - Animations were judged from still screenshots only, never in motion.
-- Not exercised in game: M240 reload, the magnifier / light / laser keys and the scroll-wheel zoom (states were
-  set directly), angled grip and clip-on bipod effects, reduced-motion setting, backblast against a wall, guns
-  against vehicles, the OG-7V rocket, multiplayer of any kind.
+- Not exercised in game: the scroll-wheel zoom of the variable scope, angled grip and clip-on bipod effects,
+  multiplayer of any kind (other players' gun rendering, laser and light as seen by others).
 - The old PKM belt always shows six rounds if any are left.
 - The PKM stock is rounded limbs, not the solid thumbhole board of the real gun.
 - The weapon light is a moving invisible light block; a server crash could leave one behind.

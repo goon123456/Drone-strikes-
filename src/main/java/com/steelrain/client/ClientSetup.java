@@ -39,7 +39,7 @@ public final class ClientSetup {
     public static final KeyMapping GUN_MAGNIFIER = new KeyMapping("key.steelrain.gun_magnifier",
             InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_H, "key.categories.steelrain");
     public static final KeyMapping GUN_SIDE = new KeyMapping("key.steelrain.gun_side",
-            InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_L, "key.categories.steelrain");
+            InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_U, "key.categories.steelrain");
     public static final KeyMapping GUN_BREATH = new KeyMapping("key.steelrain.gun_breath",
             InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_LEFT_ALT, "key.categories.steelrain");
 

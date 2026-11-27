@@ -36,6 +36,8 @@ public final class GunLogic {
         GunType type;
         int slot = -1;
         boolean trigger, aiming, latched, dry;
+        /** The trigger went down at some point since the last tick, even if it is already up again: a quick tap. */
+        boolean pulse;
         double nextShot;
         int reload = -1, reloadTotal;
         boolean reloadEmpty, magOut, magIn;
@@ -92,6 +94,7 @@ public final class GunLogic {
     public static void input(ServerPlayer player, boolean trigger, boolean aiming) {
         State st = STATES.computeIfAbsent(player.getUUID(), u -> new State());
         if (trigger != st.trigger) { st.latched = false; st.dry = false; }       // a fresh pull, or the finger came off
+        if (trigger) st.pulse = true;
         st.trigger = trigger;
         st.aiming = aiming;
     }
@@ -176,6 +179,8 @@ public final class GunLogic {
         }
         State st = STATES.computeIfAbsent(player.getUUID(), u -> new State());
         shine(player, stack, st);
+        boolean pulled = st.trigger || st.pulse;                 // a tap that was over before this tick still counts, once
+        st.pulse = false;
         long now = player.serverLevel().getGameTime();
         int slot = player.getInventory().selected;
         if (st.type != gun.type || st.slot != slot) {                       // just drawn: it takes a moment to bring up
@@ -185,7 +190,7 @@ public final class GunLogic {
         }
         if (st.reload >= 0) { reloadTick(player, stack, gun.type, st); return; }
         if (now - st.lastShot > 6) st.shots = 0;
-        if (!st.trigger || st.latched) return;
+        if (!pulled || st.latched) return;
         int mode = GunItem.mode(stack);
         while (st.nextShot <= now + 1e-6) {
             if (mode == GunType.Mode.SAFE || !ready(stack, gun.type)) {

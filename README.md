@@ -322,7 +322,7 @@ bullets that fly, drop and go through cover.
   Magnifier**, which goes in its own slot behind a red dot or holographic sight and swings in or aside with
   **H**. The **Night Sight** (4x) sees in the dark, in green; the **Thermal Sight** (3x) dulls the scene to grey
   and shows every living thing that is in view and in the open as a bright warm shape.
-- **Side slot** (**L** switches it): a **Weapon Light** lights what the gun points at out to 14 blocks; a
+- **Side slot** (**U** switches it): a **Weapon Light** lights what the gun points at out to 14 blocks; a
   **Laser Pointer** puts a red spot where the gun points, which others can see, and steadies fire from the hip.
 - **Under the fore-end**: the vertical foregrip (least muzzle climb), an **Angled Foregrip** (sights come up
   quicker, a little less climb) or a **Clip-on Bipod** (crouch and keep still to rest the gun, as on the
