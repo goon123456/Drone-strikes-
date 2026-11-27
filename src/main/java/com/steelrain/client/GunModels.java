@@ -37,6 +37,8 @@ public final class GunModels {
         /** Null: as the stack says. Otherwise forces the magazine (or the shell in the hand) shown or hidden. */
         public Boolean magShown;
         public Boolean beltShown;
+        /** For the launcher: which kind of rocket is in the hand while {@link #magShown} is forced, or -1. */
+        public int loadKind = -1;
         /** The belt lifted off the feed tray and let down towards its box (m, negative is down). */
         public float beltY;
         /** Machine-gun feed cover, 0 shut to 1 open. */
@@ -90,14 +92,22 @@ public final class GunModels {
             g.xRot = 0; g.oz = 0;
             switch (type) {
                 case AK74M, SVD -> g.xRot = mode == GunType.Mode.SAFE ? 0f : mode == GunType.Mode.AUTO ? 0.16f : 0.30f;
-                case M4A1, PKM -> g.xRot = mode == GunType.Mode.SAFE ? 0f : mode == GunType.Mode.SEMI ? -1.57f : -3.14f;
+                case M4A1, PKM, M107 -> g.xRot = mode == GunType.Mode.SAFE ? 0f : mode == GunType.Mode.SEMI ? -1.57f : -3.14f;
                 case M17 -> g.xRot = mode == GunType.Mode.SAFE ? -0.3f : 0f;
                 case M590 -> g.oz = mode == GunType.Mode.SAFE ? 0f : 0.008f;
             }
         });
         boolean pump = type.action == GunType.Action.PUMP;
+        boolean single = type.action == GunType.Action.SINGLE;
+        // a launcher shows the rocket that is in it (or on its way in): the anti-tank one, or the slim fragmentation one
+        int kind = p.magShown != null && p.loadKind >= 0 ? p.loadKind : stack.getOrDefault(com.steelrain.ModRegistry.LOAD.get(), 0);
+        boolean seated = p.magShown != null ? p.magShown : (single ? rounds > 0 : !pump && mag);
         set(m, "mag", g -> {
-            g.visible = p.magShown != null ? p.magShown : (!pump && mag);
+            g.visible = seated && (!single || kind == 0);
+            g.ox = p.magX; g.oy = p.magY; g.oz = p.magZ; g.xRot = p.magRock;
+        });
+        set(m, "frag", g -> {
+            g.visible = seated && single && kind == 1;
             g.ox = p.magX; g.oy = p.magY; g.oz = p.magZ; g.xRot = p.magRock;
         });
         set(m, "belt", g -> {

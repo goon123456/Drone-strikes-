@@ -269,6 +269,8 @@ bullets that fly, drop and go through cover.
 | **PKM** | 7.62x54R | 100-round belt box | safe / auto | 650 | 825 m/s | bipod (built in) |
 | **M17** | 9x19 | 17-round magazine | safe / semi | 420 | 375 m/s | pistol suppressor |
 | **M590A1** | 12 gauge | 8-shell tube, pump | safe / semi | 70 | 400 m/s | - |
+| **Barrett M107** | 12.7x99 | 10-round magazine | safe / semi | 90 | 853 m/s | 10x scope, bipod (built in) |
+| **RPG-7** | PG-7V / OG-7V rocket | one rocket at the muzzle | safe / fire | - | 115, then 295 m/s | - |
 
 - **Keys** (all rebindable): **left click** is the trigger, **hold right click** brings the sights up, **R**
   reloads, **V** moves the fire selector, **Page Up / Page Down** set the sights' range, **G** opens the fittings
@@ -314,6 +316,17 @@ bullets that fly, drop and go through cover.
   late by the speed of sound; bullets passing near you crack (or buzz, if slow); ricochets whine. Spent cases
   are thrown clear and ring on the ground. The last three rounds of a rifle magazine and every fifth round of a
   PKM belt are tracers, green for the Russian guns and red for the American.
+- **Barrett M107**: the .50 hits about four times as hard as a rifle, goes through three blocks of wood or a body
+  and on into the next, and is the one small arm that hurts vehicles through their armour. It kicks very hard
+  standing; crouch and keep still to rest it on its bipod. Sights go to 1800 m. The **10x Scope** (also fits the
+  SVD and M4A1) has a mil-dot reticle and its own drum to 1800 m.
+- **RPG-7**: one rocket is pushed in at the muzzle (**R**). With rockets of both kinds in your pack, **R** on a
+  loaded launcher draws the rocket and puts in the other kind. The **PG-7V** anti-tank rocket does most of its
+  damage to what it strikes and wrecks vehicles; the **OG-7V** fragmentation rocket has a 7.5-block burst against
+  people and little effect on armour. A rocket leaves at 115 m/s and its motor takes it to 295 (250 for the
+  OG-7V), so it drops: the leaf sight sets 100 to 500 m. It arms 5 blocks out, destroys itself after 4.5 seconds,
+  and its burst hurts entities but does not break blocks. **Backblast**: anyone within about 4 blocks behind the
+  launcher is burned, and firing with a wall at your back hurts you.
 - **Targets**: anything with a body, including Steel Rain's drones (a shotgun is a fair answer to an FPV).
   Vehicles' armour shrugs off small arms as before.
 - **Seen by others**: the gun is carried in both hands and shown with what is fitted to it; items in
@@ -422,6 +435,8 @@ on recon drones; and its recordings stand in for sounds Steel Rain does not have
 using `./gradlew runClient -PwithSbw`.
 
 ## Known limits
+- Rockets from the RPG-7 are flown as points like bullets and drawn by each player's game, not entities, so
+  air defence does not see them and they cannot be shot down.
 - Small arms: the guns are textured meshes from `tools/gen_guns.py` (rounded receivers and handguards through
   rows of cross-sections, grips, magazines and stock limbs swept along a path, pressed parts with rolled edges),
   drawn by Steel Rain's own renderer. The

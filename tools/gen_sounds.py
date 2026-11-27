@@ -22,14 +22,14 @@ EVENTS = {
 }
 
 # small arms, made by gen_gun_sounds.py: event -> (attenuation distance, subtitle)
-for _gun in ("ak74m", "m4a1", "svd", "pkm", "m17", "m590"):
+for _gun in ("ak74m", "m4a1", "svd", "pkm", "m17", "m590", "m107", "rpg7"):
     EVENTS[f"gun_{_gun}_fire"] = ([f"gun_{_gun}_fire"], None, "gun_fire")
 for _far in ("gun_rifle_far", "gun_heavy_far", "gun_pistol_far"):
     EVENTS[_far] = ([_far], None, "gun_far")
 for _quiet in ("gun_suppressed", "gun_pistol_suppressed"):
     EVENTS[_quiet] = ([_quiet], None, "gun_fire")
 for _mech in ("gun_mag_out", "gun_mag_in", "gun_bolt", "gun_bolt_release", "gun_dry", "gun_selector", "gun_pump", "gun_shell_in",
-              "gun_round_in", "gun_belt", "gun_cover", "gun_casing"):
+              "gun_round_in", "gun_belt", "gun_cover", "gun_casing", "gun_rocket_in"):
     EVENTS[_mech] = ([_mech], None, "gun_handling")
 for _pass in ("bullet_crack", "bullet_whizz", "bullet_ricochet"):
     EVENTS[_pass] = ([_pass], None, "bullet_pass")

@@ -152,6 +152,11 @@ def build():
         "gun_pkm_fire": report(4, crack=1.0, blast_hz=(320, 4800), blast_decay=0.050, thump_hz=(150, 50), thump=1.1, thump_decay=0.10, tail=1.0),
         "gun_m17_fire": report(5, crack=1.4, blast_hz=(700, 5200), blast_decay=0.022, thump_hz=(210, 90), thump=0.5, thump_decay=0.04, tail=0.5, tail_decay=0.16, length=0.2),
         "gun_m590_fire": report(6, crack=0.8, blast_hz=(180, 3600), blast_decay=0.075, thump_hz=(120, 38), thump=1.5, thump_decay=0.14, tail=1.2, tail_decay=0.34, tone=1700, length=0.4),
+        "gun_m107_fire": report(7, crack=1.5, blast_hz=(140, 4200), blast_decay=0.085, thump_hz=(110, 32), thump=1.8, thump_decay=0.18, tail=1.5, tail_decay=0.45,
+                                tone=1900, length=0.5),
+        "gun_rpg7_fire": np.concatenate([report(8, crack=0.5, blast_hz=(120, 2600), blast_decay=0.10, thump_hz=(100, 36), thump=1.6, thump_decay=0.16, tail=0.6,
+                                                tail_decay=0.3, tone=1500, length=0.45)[:int(0.5 * SR)] * 1.0, slide(9, 0.9, 300, 3200, 0.5) * np.linspace(1, 0, int(0.9 * SR)) ** 1.5]),
+        "gun_rocket_in": seq([(0.0, slide(74, 0.22, 300, 1800, 0.5)), (0.22, c(75, 700, 0.03, 1.2)), (0.26, c(76, 1700, 0.012, 0.8))], 0.5),
         "gun_rifle_far": far(11, 800, 0.45), "gun_heavy_far": far(12, 520, 0.6, 1.7), "gun_pistol_far": far(13, 1000, 0.3, 0.9),
         "gun_suppressed": suppressed(21), "gun_pistol_suppressed": suppressed(22, (700, 3200), 0.022),
         # handling

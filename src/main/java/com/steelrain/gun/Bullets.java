@@ -75,7 +75,9 @@ public final class Bullets {
 
     /** Moves a bullet one tick. Returns false when it has stopped. */
     private static boolean step(ServerLevel level, Bullet b) {
-        if (++b.age > 100 || b.vel.lengthSqr() < 2.0 * 2.0) return false;                 // spent: under 40 m/s
+        if (b.caliber.rocket()) {
+            if (++b.age > 90) { burst(level, b, b.pos, null); return false; }              // self-destructs after 4.5 s
+        } else if (++b.age > 100 || b.vel.lengthSqr() < 2.0 * 2.0) return false;          // spent: under 40 m/s
         Vec3 to = b.pos.add(b.vel);
         for (int pass = 0; pass < 5; pass++) {
             if (!level.isLoaded(BlockPos.containing(b.pos))) return false;
@@ -93,6 +95,11 @@ public final class Bullets {
                 if (at.isEmpty()) continue;
                 double d = b.pos.distanceToSqr(at.get());
                 if (d < best) { best = d; body = e; bodyAt = at.get(); }
+            }
+            if (b.caliber.rocket()) {
+                if (body != null) { burst(level, b, bodyAt, body); return false; }
+                if (block.getType() != HitResult.Type.MISS) { burst(level, b, block.getLocation(), null); return false; }
+                break;
             }
             if (body != null) {
                 boolean through = hitBody(level, b, body, bodyAt);
@@ -113,6 +120,35 @@ public final class Bullets {
         b.pos = to;
         b.vel = b.caliber.advance(b.vel);
         return true;
+    }
+
+    /**
+     * A rocket's warhead going off: a shaped charge that does most of its work on what it strikes, or a fragmentation
+     * charge that reaches wide. Neither breaks blocks. A rocket that has not flown far enough to arm just falls dead.
+     */
+    private static void burst(ServerLevel level, Bullet b, Vec3 at, @Nullable Entity struck) {
+        if (b.shooter != null) GunLogic.rocketEnded(level, b.shooter, at);
+        if (at.distanceToSqr(b.origin) < 5 * 5) {
+            level.sendParticles(ParticleTypes.SMOKE, at.x, at.y, at.z, 6, 0.1, 0.1, 0.1, 0.02);
+            level.playSound(null, at.x, at.y, at.z, net.minecraft.sounds.SoundEvents.ANVIL_LAND, SoundSource.NEUTRAL, 0.4f, 1.6f);
+            return;
+        }
+        Caliber c = b.caliber;
+        float scale = Config.GUN_DAMAGE.get().floatValue();
+        DamageSource source = level.damageSources().explosion(b.shooter, b.shooter);
+        if (struck != null) struck.hurt(source, c.damage * scale);
+        for (Entity e : level.getEntities((Entity) null, new AABB(at, at).inflate(c.blastRadius + 1), x -> x.isAlive() && x != struck && !x.isSpectator())) {
+            double d = e.getBoundingBox().getCenter().distanceTo(at);
+            if (d >= c.blastRadius) continue;
+            // what is behind solid cover is spared
+            if (level.clip(new ClipContext(at, e.getBoundingBox().getCenter(), ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE,
+                    net.minecraft.world.phys.shapes.CollisionContext.empty())).getType() != HitResult.Type.MISS && d > 1.5) continue;
+            e.hurt(source, (float) (c.blastDamage * scale * (1 - d / c.blastRadius)) + 1);
+        }
+        level.sendParticles(c == Caliber.OG7V ? ParticleTypes.EXPLOSION_EMITTER : ParticleTypes.EXPLOSION, at.x, at.y, at.z, c == Caliber.OG7V ? 1 : 3, 0.3, 0.3, 0.3, 0);
+        level.sendParticles(ParticleTypes.LARGE_SMOKE, at.x, at.y, at.z, 24, 0.6, 0.6, 0.6, 0.04);
+        level.sendParticles(ParticleTypes.LAVA, at.x, at.y, at.z, 10, 0.3, 0.3, 0.3, 0);
+        com.steelrain.util.Sfx.explosion(level, at, c == Caliber.OG7V ? 1 : 0);
     }
 
     private static boolean canHit(Bullet b, Entity e) {

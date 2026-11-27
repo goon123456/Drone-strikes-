@@ -7,7 +7,8 @@ public enum Attachment {
     PSO1("pso1", Slot.OPTIC, 4f, new int[]{100, 200, 300, 400, 500, 600, 700, 800, 900, 1000}),
     SUPPRESSOR("suppressor", Slot.MUZZLE, 1f, null),
     PISTOL_SUPPRESSOR("pistol_suppressor", Slot.MUZZLE, 1f, null),
-    FOREGRIP("foregrip", Slot.UNDER, 1f, null);
+    FOREGRIP("foregrip", Slot.UNDER, 1f, null),
+    SCOPE10("scope_10x", Slot.OPTIC, 10f, new int[]{100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800});
 
     public enum Slot { OPTIC, MUZZLE, UNDER }
 

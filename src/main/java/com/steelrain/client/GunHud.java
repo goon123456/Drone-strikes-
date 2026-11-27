@@ -68,21 +68,21 @@ public final class GunHud {
         for (int i = 0; i < inv.getContainerSize(); i++) {
             ItemStack s = inv.getItem(i);
             if (s.getItem() instanceof MagazineItem m && m.gun == type) spare.add(MagazineItem.rounds(s));
-            else if (s.is(com.steelrain.ModRegistry.AMMO.get(type.caliber).get())) loose += s.getCount();
+            else for (Caliber c : type.loads()) if (s.is(com.steelrain.ModRegistry.AMMO.get(c).get())) loose += s.getCount();
         }
         spare.sort((x, y) -> y - x);
         float show = Math.max(GUN_INFO.update(List.of(type, mode, rounds, chambered, spare, loose, GunClient.reloading())), GunClient.triggerHeld ? 1 : 0.55f);
         int right = w - 8, y = h - 46;
         String count;
         if (type.magazineFed() && rounds < 0) count = "--";
-        else if (type.action == GunType.Action.OPEN_BOLT) count = Integer.toString(rounds);
+        else if (type.firesFromFeed()) count = Integer.toString(rounds);
         else count = Math.max(0, rounds) + (chambered ? "+1" : "+0");
         int total = GunItem.loaded(stack);
         int colour = total == 0 ? Ui.RED : total <= type.capacity / 5 ? Ui.AMBER : Ui.HUD_TEXT;
         Ui.bigRight(g, font, count, right, y, colour, show);
         Ui.textRight(g, font, Component.translatable("item.steelrain." + type.id).getString().toUpperCase(java.util.Locale.ROOT), right, y - 11, Ui.HUD_DIM, show);
         String sel = Component.translatable("gun.steelrain.mode." + GunType.Mode.KEY[mode]).getString().toUpperCase(java.util.Locale.ROOT);
-        Ui.textRight(g, font, sel + "  " + type.caliber.label, right, y + 15, mode == GunType.Mode.SAFE ? Ui.AMBER : Ui.HUD_DIM, show);
+        Ui.textRight(g, font, sel + "  " + GunItem.caliber(stack).label, right, y + 15, mode == GunType.Mode.SAFE ? Ui.AMBER : Ui.HUD_DIM, show);
         // the magazines in the pack, fullest first, each a small bar showing how full it is
         int mx = right;
         if (type.magazineFed()) {
@@ -95,7 +95,7 @@ public final class GunHud {
             if (spare.size() > 8) Ui.textRight(g, font, "+" + (spare.size() - 8), mx - 3, y + 27, Ui.HUD_DIM, show);
             if (spare.isEmpty()) Ui.textRight(g, font, Component.translatable("gui.steelrain.gun.no_spare").getString(), right, y + 27, Ui.AMBER, show);
         } else {
-            Ui.textRight(g, font, Component.translatable("gui.steelrain.gun.shells", loose).getString(), right, y + 27, loose == 0 ? Ui.AMBER : Ui.HUD_DIM, show);
+            Ui.textRight(g, font, Component.translatable(type.action == GunType.Action.SINGLE ? "gui.steelrain.gun.rockets" : "gui.steelrain.gun.shells", loose).getString(), right, y + 27, loose == 0 ? Ui.AMBER : Ui.HUD_DIM, show);
         }
 
         // the sights' range setting: shown when it changes and while aiming through adjustable sights
@@ -141,7 +141,7 @@ public final class GunHud {
         // soft dark ring just inside the edge
         for (int i = 0; i < 6; i++) ring(g, cx, cy, r - i, Ui.fade(black, 0.5f - i * 0.08f));
         double pxPerMil = (h / 2.0) / Math.tan(Math.toRadians(GunClient.worldFov / 2)) / 1000.0;
-        Caliber cal = type.caliber;
+        Caliber cal = GunItem.caliber(stack);
         double zeroLift = cal.elevation(GunItem.zeroRange(stack), type.velocityFactor);
         if (optic == Attachment.PSO1) {
             int ink = 0xFF101010;
@@ -169,6 +169,18 @@ public final class GunHud {
                     g.drawString(font, Integer.toString(range / 100), 0, 0, ink, false);
                     g.pose().popPose();
                 }
+            }
+        } else if (optic == Attachment.SCOPE10) {
+            // 10x telescope: fine cross-hairs thickening towards the edge, with a dot every mil for range and lead
+            int ink = 0xFF101010;
+            int gap = (int) Math.round(6 * pxPerMil);
+            g.fill(cx - gap, cy, cx + gap + 1, cy + 1, ink); g.fill(cx, cy - gap, cx + 1, cy + gap + 1, ink);
+            g.fill(cx - r, cy - 1, cx - gap, cy + 2, ink); g.fill(cx + gap, cy - 1, cx + r, cy + 2, ink);
+            g.fill(cx - 1, cy - r, cx + 2, cy - gap, ink); g.fill(cx - 1, cy + gap, cx + 2, cy + r, ink);
+            for (int i = 1; i <= 5; i++) {
+                int d = (int) Math.round(i * pxPerMil);
+                g.fill(cx + d - 1, cy - 1, cx + d + 2, cy + 2, ink); g.fill(cx - d - 1, cy - 1, cx - d + 2, cy + 2, ink);
+                g.fill(cx - 1, cy + d - 1, cx + 2, cy + d + 2, ink); g.fill(cx - 1, cy - d - 1, cx + 2, cy - d + 2, ink);
             }
         } else {
             // 4x prism sight: a lit chevron with hold-over bars below it for each further hundred metres,

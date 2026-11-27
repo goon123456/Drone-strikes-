@@ -33,6 +33,8 @@ public class GunItemRenderer extends BlockEntityWithoutLevelRenderer {
             case PKM -> new float[]{1.20f, 0.22f, -0.05f};
             case M17 -> new float[]{0.24f, 0.0f, -0.05f};
             case M590 -> new float[]{1.06f, 0.11f, -0.04f};
+            case M107 -> new float[]{1.46f, 0.35f, -0.03f};
+            case RPG7 -> new float[]{1.32f, 0.16f, -0.02f};
         };
     }
 
@@ -85,6 +87,7 @@ public class GunItemRenderer extends BlockEntityWithoutLevelRenderer {
                 case ACOG -> { place(ctx, pose, 5.6f); pose.translate(0, -0.035, 0); }
                 case PSO1 -> { place(ctx, pose, 2.5f); pose.translate(0, -0.01, 0); }
                 case FOREGRIP -> { place(ctx, pose, 7.5f); pose.translate(0, 0.055, 0); }
+                case SCOPE10 -> { place(ctx, pose, 2.6f); pose.translate(0, -0.04, 0); }
                 default -> { place(ctx, pose, 5.2f); pose.translate(0, 0, -0.08); }
             }
             m.render(pose, buffers.getBuffer(RenderType.entityCutoutNoCull(m.texture())), light);
@@ -92,8 +95,8 @@ public class GunItemRenderer extends BlockEntityWithoutLevelRenderer {
             for (Caliber c : Caliber.values()) {
                 if (!stack.is(com.steelrain.ModRegistry.AMMO.get(c).get())) continue;
                 BoxModel m = GunModels.ammo(c);
-                place(ctx, pose, c == Caliber.G12 ? 9f : c == Caliber.P9 ? 20f : c == Caliber.R762 ? 9f : 12f);
-                pose.mulPose(Axis.XP.rotationDegrees(c == Caliber.G12 ? 0 : -20));
+                place(ctx, pose, c.rocket() ? 1.35f : c == Caliber.B50 ? 5.5f : c == Caliber.G12 ? 9f : c == Caliber.P9 ? 20f : c == Caliber.R762 ? 9f : 12f);
+                pose.mulPose(Axis.XP.rotationDegrees(c == Caliber.G12 ? 0 : c.rocket() ? -30 : -20));
                 m.render(pose, buffers.getBuffer(RenderType.entityCutoutNoCull(m.texture())), light);
             }
         }

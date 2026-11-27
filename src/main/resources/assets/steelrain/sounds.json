@@ -211,6 +211,22 @@
       }
     ]
   },
+  "gun_m107_fire": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_m107_fire"
+      }
+    ]
+  },
+  "gun_rpg7_fire": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_rpg7_fire"
+      }
+    ]
+  },
   "gun_rifle_far": {
     "subtitle": "subtitles.steelrain.gun_far",
     "sounds": [
@@ -344,6 +360,14 @@
     "sounds": [
       {
         "name": "steelrain:gun_casing"
+      }
+    ]
+  },
+  "gun_rocket_in": {
+    "subtitle": "subtitles.steelrain.gun_handling",
+    "sounds": [
+      {
+        "name": "steelrain:gun_rocket_in"
       }
     ]
   },

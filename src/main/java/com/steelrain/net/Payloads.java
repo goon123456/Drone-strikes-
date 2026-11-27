@@ -212,6 +212,8 @@ public final class Payloads {
     /** Server -> client: a bullet left a gun. Clients fly their own copy for the tracer, flash, sound and recoil. */
     public record GunShot(int shooter, int gun, int flags, net.minecraft.world.phys.Vec3 from, net.minecraft.world.phys.Vec3 velocity) implements CustomPacketPayload {
         public static final int PRIMARY = 1, TRACER = 2, SUPPRESSED = 4;
+        /** The round's calibre sits above the flag bits. */
+        public static final int CALIBER_SHIFT = 4;
         public static final Type<GunShot> TYPE = id("gun_shot");
         public static final StreamCodec<FriendlyByteBuf, GunShot> CODEC = StreamCodec.ofMember(GunShot::write, GunShot::new);
         GunShot(FriendlyByteBuf b) { this(b.readVarInt(), b.readVarInt(), b.readVarInt(), b.readVec3(), b.readVec3()); }

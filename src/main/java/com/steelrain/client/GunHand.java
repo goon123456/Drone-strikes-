@@ -68,7 +68,7 @@ public final class GunHand {
 
         // ---- the action in hand: where the magazine, bolt and left hand are
         GunModels.Pose bp = POSE;
-        bp.bolt = bp.charge = bp.cover = 0; bp.magX = bp.magY = bp.magZ = bp.magRock = 0; bp.magShown = null; bp.beltShown = null; bp.beltY = 0;
+        bp.bolt = bp.charge = bp.cover = 0; bp.magX = bp.magY = bp.magZ = bp.magRock = 0; bp.magShown = null; bp.beltShown = null; bp.beltY = 0; bp.loadKind = -1;
         bp.trigger = GunClient.triggerHeld ? 1 : 0;
         bp.bipod = GunClient.bipod;
         float sinceShot = now - GunClient.lastShot;
@@ -128,6 +128,16 @@ public final class GunHand {
                     left.lerp(handle, onBolt);
                 }
             }
+        } else if (p >= 0 && anim == GunClient.ANIM_SHELL && type.action == GunType.Action.SINGLE) {
+            // a rocket brought up in front of the muzzle, lined up and pushed back into the tube until it latches
+            bp.magShown = true;
+            bp.loadKind = GunClient.animLoad;
+            float up = ramp(p, 0.12f, 0.55f), in = ramp(p, 0.60f, 0.82f);
+            bp.magY = -0.34f * (1 - up);
+            bp.magX = 0.10f * (1 - up);
+            bp.magZ = 0.20f * (1 - in) - 0.10f * (1 - up);
+            float onRocket = ramp(p, 0.0f, 0.12f) * (1 - ramp(p, 0.84f, 0.97f));
+            left.lerp(new Vector3f(model.point("mag")).add(bp.magX, bp.magY - 0.03f, bp.magZ + 0.10f), onRocket);
         } else if (p >= 0 && anim == GunClient.ANIM_SHELL) {
             // a shell brought up from the belt to the loading port and thumbed forward into the tube
             bp.magShown = p < 0.82f;
@@ -144,8 +154,9 @@ public final class GunHand {
         // ---- where the gun is: at the shoulder, or up so the eye looks along the sights
         Vector3f sight = GunModels.sight(stack, type);
         // the eye sits over the stock, never behind the butt
-        float relief = pistol ? 0.46f : optic != null ? 0.14f : type == GunType.M4A1 ? 0.17f : type == GunType.PKM ? 0.20f : 0.33f;
-        Vector3f hip = pistol ? new Vector3f(0.105f, -0.115f, -0.44f) : new Vector3f(0.115f, -0.128f, -0.34f);
+        float relief = pistol ? 0.46f : optic != null ? 0.14f : type == GunType.M4A1 ? 0.17f : type == GunType.PKM ? 0.20f : type == GunType.RPG7 ? 0.22f : type == GunType.M107 ? 0.26f : 0.33f;
+        Vector3f hip = pistol ? new Vector3f(0.105f, -0.115f, -0.44f) : type == GunType.RPG7 ? new Vector3f(0.135f, -0.085f, -0.30f)
+                : type == GunType.M107 ? new Vector3f(0.12f, -0.14f, -0.40f) : new Vector3f(0.115f, -0.128f, -0.34f);
         Vector3f aim = new Vector3f(sight.x, -sight.y, sight.z - relief);
         Vector3f at = new Vector3f(hip).lerp(aim, a);
         float yaw = -4f * (1 - a), pitch = 0, roll = 3f * (1 - a);
@@ -172,12 +183,14 @@ public final class GunHand {
         pitch += 32f * drawn;
         // the kick: back into the shoulder, muzzle up
         float j = GunClient.jolt;
-        float heavy = pistol ? 2.6f : type == GunType.M590 ? 2.2f : type == GunType.SVD ? 1.5f : 1f;
+        float heavy = pistol ? 2.6f : type == GunType.M590 ? 2.2f : type == GunType.M107 ? 2.6f : type == GunType.SVD || type == GunType.RPG7 ? 1.5f : 1f;
         pitch -= j * 0.9f * heavy * (1 - 0.45f * a);
         roll += GunClient.joltSide * j * 0.8f;
         // reloading: tipped up and rolled so the magazine well shows
         float env = reloadEnv;
         if (type.action == GunType.Action.PUMP) { pitch -= 22f * env; roll += 55f * env; at.add(-0.03f * env, 0.03f * env, 0); }
+        // the launcher is tipped muzzle-up and across, so the rocket can be fed in from the front
+        else if (type.action == GunType.Action.SINGLE) { pitch -= 16f * env; yaw += 26f * env; roll += 10f * env; at.add(-0.05f * env, -0.06f * env, 0.12f * env); }
         // the belt feeds from the right: the gun is swung across so its feed side and open cover face the firer
         else if (type == GunType.PKM) { yaw -= 42f * env; roll += 12f * env; pitch -= 4f * env; at.add(-0.25f * env, 0.02f * env, -0.13f * env); }
         else if (pistol) { pitch -= 24f * env; roll += 22f * env; at.add(-0.04f * env, 0.02f * env, 0.05f * env); }

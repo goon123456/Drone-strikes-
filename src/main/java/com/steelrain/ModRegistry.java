@@ -80,7 +80,7 @@ public final class ModRegistry {
     public static final Supplier<net.minecraft.sounds.SoundEvent> STATIC_HEAVY = sound("static_heavy");
     public static final Supplier<net.minecraft.sounds.SoundEvent> CABLE_SNAP = sound("cable_snap");
     /** Small-arms sounds, made by tools/gen_gun_sounds.py and looked up by name. */
-    public static final String[] GUN_SOUNDS = {"gun_ak74m_fire", "gun_m4a1_fire", "gun_svd_fire", "gun_pkm_fire", "gun_m17_fire", "gun_m590_fire",
+    public static final String[] GUN_SOUNDS = {"gun_m107_fire", "gun_rpg7_fire", "gun_rocket_in", "gun_ak74m_fire", "gun_m4a1_fire", "gun_svd_fire", "gun_pkm_fire", "gun_m17_fire", "gun_m590_fire",
             "gun_rifle_far", "gun_heavy_far", "gun_pistol_far", "gun_suppressed", "gun_pistol_suppressed",
             "gun_mag_out", "gun_mag_in", "gun_bolt", "gun_bolt_release", "gun_dry", "gun_selector", "gun_pump", "gun_shell_in", "gun_round_in",
             "gun_belt", "gun_cover", "bullet_crack", "bullet_whizz", "bullet_ricochet", "gun_casing"};
@@ -133,6 +133,8 @@ public final class ModRegistry {
     public static final Supplier<DataComponentType<Integer>> ROUNDS = intComponent("rounds");
     public static final Supplier<DataComponentType<Integer>> FIRE_MODE = intComponent("fire_mode");
     public static final Supplier<DataComponentType<Integer>> ZERO = intComponent("zero");
+    /** Which of a launcher's kinds of rocket is loaded. */
+    public static final Supplier<DataComponentType<Integer>> LOAD = intComponent("load");
     public static final Supplier<DataComponentType<Boolean>> CHAMBER = COMPONENTS.register("chamber",
             () -> DataComponentType.<Boolean>builder()
                     .persistent(com.mojang.serialization.Codec.BOOL)
@@ -207,7 +209,7 @@ public final class ModRegistry {
             if (type.magazineFed()) MAGAZINES.put(type, ITEMS.register(type.id + "_magazine",
                     () -> new com.steelrain.gun.MagazineItem(type, new Item.Properties().stacksTo(1))));
         }
-        for (com.steelrain.gun.Caliber c : com.steelrain.gun.Caliber.values()) AMMO.put(c, simple(c.ammoId, 64));
+        for (com.steelrain.gun.Caliber c : com.steelrain.gun.Caliber.values()) AMMO.put(c, simple(c.ammoId, c.stack()));
         for (com.steelrain.gun.Attachment a : com.steelrain.gun.Attachment.VALUES) {
             ATTACHMENTS.put(a, ITEMS.register(a.id, () -> new com.steelrain.gun.AttachmentItem(a, new Item.Properties().stacksTo(1))));
         }

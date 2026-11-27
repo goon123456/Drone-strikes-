@@ -96,8 +96,8 @@ public class GunScreen extends Screen {
         Ui.well(g, x, top + 14, w - 122, 122);
         // the gun, turning
         if (!dragging) spin += partialTick * 0.35f;
-        float len = switch (type) { case M17 -> 0.26f; case SVD, PKM -> 1.25f; case M590 -> 1.06f; default -> 0.98f; };
-        float mid = switch (type) { case M17 -> 0f; case SVD -> 0.19f; case PKM -> 0.22f; case AK74M -> 0.13f; case M590 -> 0.11f; default -> 0.08f; };
+        float len = switch (type) { case M17 -> 0.26f; case SVD, PKM -> 1.25f; case M590 -> 1.06f; case M107 -> 1.5f; case RPG7 -> 1.35f; default -> 0.98f; };
+        float mid = switch (type) { case M17 -> 0f; case SVD -> 0.19f; case PKM -> 0.22f; case AK74M -> 0.13f; case M590 -> 0.11f; case M107 -> 0.35f; case RPG7 -> 0.16f; default -> 0.08f; };
         float scale = (type.pistol() ? 170f : 300f) / len;
         g.pose().pushPose();
         g.pose().translate(x + (w - 122) / 2f, top + 78, 150);
@@ -114,7 +114,7 @@ public class GunScreen extends Screen {
         // figures
         int fx = x + w - 116, fy = top + 15;
         Ui.panel(g, fx, top + 13, 116, 124);
-        var cal = type.caliber;
+        var cal = GunItem.caliber(stack);
         String[][] rows = {
                 {"gui.steelrain.gun.s_calibre", cal.label},
                 {"gui.steelrain.gun.s_velocity", Math.round(cal.metresPerSecond * type.velocityFactor) + " m/s"},

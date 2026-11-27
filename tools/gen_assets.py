@@ -577,14 +577,21 @@ def tags():
 
 
 # ---------------------------------------------------------------- small arms
-GUN_ITEMS = ["ak74m", "m4a1", "svd", "pkm", "m17", "m590"]
-GUN_MAGS = ["ak74m", "m4a1", "svd", "pkm", "m17"]
-GUN_PARTS = ["red_dot", "acog", "pso1", "suppressor", "pistol_suppressor", "foregrip"]
-GUN_AMMO = ["ammo_545", "ammo_556", "ammo_762", "ammo_9mm", "ammo_12g"]
+GUN_ITEMS = ["ak74m", "m4a1", "svd", "pkm", "m17", "m590", "m107", "rpg7"]
+GUN_MAGS = ["ak74m", "m4a1", "svd", "pkm", "m17", "m107"]
+GUN_PARTS = ["red_dot", "acog", "pso1", "suppressor", "pistol_suppressor", "foregrip", "scope_10x"]
+GUN_AMMO = ["ammo_545", "ammo_556", "ammo_762", "ammo_9mm", "ammo_12g", "ammo_50", "rocket_pg7v", "rocket_og7v"]
 
 GUN_LANG = {
     "item.steelrain.ak74m": "AK-74M", "item.steelrain.m4a1": "M4A1", "item.steelrain.svd": "SVD", "item.steelrain.pkm": "PKM",
-    "item.steelrain.m17": "M17", "item.steelrain.m590": "M590A1",
+    "item.steelrain.m17": "M17", "item.steelrain.m590": "M590A1", "item.steelrain.m107": "Barrett M107", "item.steelrain.rpg7": "RPG-7",
+    "item.steelrain.m107_magazine": "M107 Magazine (10)", "item.steelrain.ammo_50": ".50 BMG Round",
+    "item.steelrain.rocket_pg7v": "PG-7V Anti-Tank Rocket", "item.steelrain.rocket_og7v": "OG-7V Fragmentation Rocket",
+    "item.steelrain.scope_10x": "10x Scope",
+    "tooltip.steelrain.scope_10x": "10x telescope with a mil-dot reticle and an elevation drum, 100 to 1800 m",
+    "message.steelrain.gun_no_rockets": "No rockets",
+    "message.steelrain.gun_backblast": "Backblast: there is a wall behind you",
+    "gui.steelrain.gun.rockets": "ROCKETS %s",
     "item.steelrain.ak74m_magazine": "AK-74 Magazine (30)", "item.steelrain.m4a1_magazine": "STANAG Magazine (30)",
     "item.steelrain.svd_magazine": "SVD Magazine (10)", "item.steelrain.pkm_magazine": "PKM Belt Box (100)",
     "item.steelrain.m17_magazine": "M17 Magazine (17)",
@@ -679,6 +686,13 @@ def guns():
     shaped("pkm", ["IIB", "WBI", " I "], {"W": W, "I": I, "B": B})
     shaped("m17", ["II", "KI"], {"K": K, "I": I})
     shaped("m590", ["III", "WII"], {"W": W, "I": I})
+    shaped("m107", ["IIB", "KBB", " II"], {"K": K, "I": I, "B": B})
+    shaped("rpg7", ["IWI", " W "], {"W": W, "I": I})
+    shaped("m107_magazine", ["II", "N ", "N "], {"N": N, "I": I})
+    shaped("ammo_50", ["I", "P", "G"], {"I": I, "P": P, "G": MC + "gold_ingot"}, 10)
+    shaped("rocket_pg7v", [" C ", "ITI", " P "], {"C": C, "I": I, "T": MC + "tnt", "P": P}, 2)
+    shaped("rocket_og7v", [" N ", "ITI", " P "], {"N": N, "I": I, "T": MC + "tnt", "P": P}, 2)
+    shaped("scope_10x", ["GIG", "IRI", " I "], {"R": R, "I": I, "G": G})
     shaped("ak74m_magazine", ["N ", "NN", " N"], {"N": N})
     shaped("m4a1_magazine", ["NN", "N ", "N "], {"N": N})
     shaped("svd_magazine", ["NN", "NN"], {"N": N})

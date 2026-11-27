@@ -10,7 +10,11 @@ public enum Caliber {
     R556("5.56x45", "ammo_556", 890, 0.00145, 7.5f, 0.40f, 1),
     R762("7.62x54R", "ammo_762", 830, 0.00100, 12.5f, 1.10f, 1),
     P9("9x19", "ammo_9mm", 375, 0.00220, 5.0f, 0.12f, 1),
-    G12("12 gauge", "ammo_12g", 400, 0.00900, 3.4f, 0.05f, 8);
+    G12("12 gauge", "ammo_12g", 400, 0.00900, 3.4f, 0.05f, 8),
+    B50("12.7x99", "ammo_50", 853, 0.00050, 32f, 3.2f, 1),
+    /** RPG-7 rockets: thrown out at 115 m/s, then the motor takes them to their flying speed. */
+    PG7V("PG-7V HEAT", "rocket_pg7v", 115, 0.00010, 70f, 0f, 1, 295, 3.5f, 14f),
+    OG7V("OG-7V frag", "rocket_og7v", 115, 0.00010, 18f, 0f, 1, 250, 7.5f, 24f);
 
     /** Gravity in blocks per tick squared (9.81 m/s2). */
     public static final double GRAVITY = 9.81 / 400.0;
@@ -19,8 +23,16 @@ public enum Caliber {
     public final int metresPerSecond, pellets;
     public final double drag;
     public final float damage, pierce;
+    /** Rockets only: speed under power (m/s), and the radius and strength of the burst. Zero for bullets. */
+    public final int cruise;
+    public final float blastRadius, blastDamage;
 
     Caliber(String label, String ammoId, int mps, double drag, float damage, float pierce, int pellets) {
+        this(label, ammoId, mps, drag, damage, pierce, pellets, 0, 0f, 0f);
+    }
+
+    Caliber(String label, String ammoId, int mps, double drag, float damage, float pierce, int pellets, int cruise, float blastRadius, float blastDamage) {
+        this.cruise = cruise; this.blastRadius = blastRadius; this.blastDamage = blastDamage;
         this.label = label; this.ammoId = ammoId; this.metresPerSecond = mps; this.drag = drag;
         this.damage = damage; this.pierce = pierce; this.pellets = pellets;
     }
@@ -28,9 +40,17 @@ public enum Caliber {
     /** Muzzle velocity in blocks per tick. */
     public double speed() { return metresPerSecond / 20.0; }
 
+    public boolean rocket() { return cruise > 0; }
+
+    /** How many of these stack. */
+    public int stack() { return rocket() ? 4 : 64; }
+
     /** The velocity one tick later: air drag takes a fixed share per metre flown, gravity pulls down. */
     public net.minecraft.world.phys.Vec3 advance(net.minecraft.world.phys.Vec3 v) {
-        double keep = Math.exp(-drag * v.length());
+        double speed = v.length();
+        double keep = Math.exp(-drag * speed);
+        // a rocket's motor pushes it along its path until it is up to speed, and holds it there
+        if (cruise > 0 && speed > 1e-6 && speed < cruise / 20.0) keep = Math.min(cruise / 20.0, speed + 0.9) / speed;
         return new net.minecraft.world.phys.Vec3(v.x * keep, v.y * keep - GRAVITY, v.z * keep);
     }
 
@@ -73,6 +93,6 @@ public enum Caliber {
     }
 
     @SuppressWarnings("unchecked")
-    private static final java.util.Map<Long, Double>[] ELEVATION = new java.util.Map[5];
+    private static final java.util.Map<Long, Double>[] ELEVATION = new java.util.Map[values().length];
     static { for (int i = 0; i < ELEVATION.length; i++) ELEVATION[i] = new java.util.concurrent.ConcurrentHashMap<>(); }
 }

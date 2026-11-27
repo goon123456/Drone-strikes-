@@ -183,6 +183,8 @@ public final class GunClient {
     static long dryAt, selectorAt;
     /** Whether the magazine coming off at the start of this reload still had rounds in it. */
     static boolean animHadRounds;
+    /** Which kind of rocket is being loaded. */
+    static int animLoad;
 
     public static boolean reloading() { return anim == ANIM_RELOAD || anim == ANIM_RELOAD_EMPTY || anim == ANIM_SHELL; }
 
@@ -239,6 +241,12 @@ public final class GunClient {
                 if (mine) { anim = ANIM_SHELL; animAt = now; animMs = type.reloadTicks * 50L; }
                 cue(p.entityId(), type.reloadTicks - 3, "gun_shell_in");
             }
+            case GunLogic.EV_ROCKET -> {
+                if (type == null) return;
+                if (mine) { anim = ANIM_SHELL; animAt = now; animMs = type.reloadTicks * 50L; animLoad = p.arg(); }
+                cue(p.entityId(), type.reloadTicks - 14, "gun_rocket_in");
+            }
+            case GunLogic.EV_BURST -> GunFx.rocketEnded(p.entityId());
             case GunLogic.EV_PUMP -> {
                 if (mine) { anim = ANIM_PUMP; animAt = now; animMs = 450; }
                 cue(p.entityId(), 2, "gun_pump");

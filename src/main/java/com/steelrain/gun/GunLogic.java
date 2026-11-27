@@ -30,7 +30,7 @@ import java.util.UUID;
 public final class GunLogic {
     public static final int ACT_RELOAD = 0, ACT_MODE = 1, ACT_ZERO = 2, ACT_FIT = 3, ACT_REMOVE = 4;
     /** What everyone nearby is told about, so they can animate and hear it. */
-    public static final int EV_RELOAD = 0, EV_RELOAD_EMPTY = 1, EV_SHELL = 2, EV_PUMP = 3, EV_DRY = 4, EV_SELECTOR = 5, EV_CANCEL = 6;
+    public static final int EV_RELOAD = 0, EV_RELOAD_EMPTY = 1, EV_SHELL = 2, EV_PUMP = 3, EV_DRY = 4, EV_SELECTOR = 5, EV_CANCEL = 6, EV_ROCKET = 7, EV_BURST = 8;
 
     private static final class State {
         GunType type;
@@ -39,6 +39,7 @@ public final class GunLogic {
         double nextShot;
         int reload = -1, reloadTotal;
         boolean reloadEmpty, magOut, magIn;
+        int pendingLoad;
         int shots;
         long lastShot;
     }
@@ -162,7 +163,7 @@ public final class GunLogic {
     }
 
     private static boolean ready(ItemStack stack, GunType type) {
-        return type.action == GunType.Action.OPEN_BOLT ? GunItem.rounds(stack) > 0 : GunItem.chambered(stack);
+        return type.firesFromFeed() ? GunItem.rounds(stack) > 0 : GunItem.chambered(stack);
     }
 
     private static void shoot(ServerPlayer player, ItemStack stack, GunType type, State st) {
@@ -170,8 +171,9 @@ public final class GunLogic {
         boolean creative = player.getAbilities().instabuild;
         int rounds = GunItem.rounds(stack);
         int before = GunItem.loaded(stack);
-        if (type.action == GunType.Action.OPEN_BOLT) {
-            if (!creative) stack.set(ModRegistry.ROUNDS.get(), rounds - 1);
+        Caliber cal = GunItem.caliber(stack);
+        if (type.firesFromFeed()) {
+            if (!creative || type.action == GunType.Action.SINGLE) stack.set(ModRegistry.ROUNDS.get(), rounds - 1);
         } else if (!creative) {
             if (rounds > 0) stack.set(ModRegistry.ROUNDS.get(), rounds - 1);     // the action feeds the next round
             else stack.set(ModRegistry.CHAMBER.get(), false);
@@ -181,7 +183,6 @@ public final class GunLogic {
 
         // where the barrel points: the line of sight, raised for the range the sights are set to, plus the gun's
         // own scatter and the firer's unsteadiness
-        Caliber cal = type.caliber;
         double lift = Math.toDegrees(cal.elevation(GunItem.zeroRange(stack), type.velocityFactor));
         double sigma = type.moa * 0.000291 / 2;
         if (!st.aiming) sigma += Math.toRadians(type.pistol() ? 1.1 : 1.6);
@@ -196,14 +197,44 @@ public final class GunLogic {
             float pitch = player.getXRot() - (float) lift + (float) Math.toDegrees(level.random.nextGaussian() * spread);
             float yaw = player.getYRot() + (float) Math.toDegrees(level.random.nextGaussian() * spread);
             Vec3 vel = Vec3.directionFromRotation(pitch, yaw).scale(speed * (0.985 + level.random.nextDouble() * 0.03));
-            int flags = (i == 0 ? Payloads.GunShot.PRIMARY : 0) | (tracer ? Payloads.GunShot.TRACER : 0) | (suppressed ? Payloads.GunShot.SUPPRESSED : 0);
+            int flags = (i == 0 ? Payloads.GunShot.PRIMARY : 0) | (tracer ? Payloads.GunShot.TRACER : 0) | (suppressed ? Payloads.GunShot.SUPPRESSED : 0)
+                    | cal.ordinal() << Payloads.GunShot.CALIBER_SHIFT;
             PacketDistributor.sendToPlayersNear(level, null, eye.x, eye.y, eye.z, suppressed ? 160 : 420,
                     new Payloads.GunShot(player.getId(), type.ordinal(), flags, eye, vel));
             Bullets.fire(level, player, eye, vel, cal, damage);
         }
+        if (cal.rocket()) backblast(level, player, eye);
         st.shots++;
         st.lastShot = level.getGameTime();
         level.gameEvent(player, net.minecraft.world.level.gameevent.GameEvent.PROJECTILE_SHOOT, eye);
+    }
+
+    /**
+     * The launcher throws as much gas backwards as rocket forwards: anyone close behind it is burned, and with a
+     * wall at the firer's back the blast comes straight back at them.
+     */
+    private static void backblast(ServerLevel level, ServerPlayer player, Vec3 eye) {
+        Vec3 back = player.getLookAngle().scale(-1);
+        Vec3 from = eye.add(0, -0.1, 0);
+        for (int i = 1; i <= 6; i++) {
+            Vec3 at = from.add(back.scale(i * 0.6));
+            level.sendParticles(net.minecraft.core.particles.ParticleTypes.LARGE_SMOKE, at.x, at.y, at.z, 2, 0.15 * i * 0.3, 0.1, 0.15 * i * 0.3, 0.01);
+        }
+        level.sendParticles(net.minecraft.core.particles.ParticleTypes.FLAME, from.x + back.x, from.y + back.y, from.z + back.z, 12, 0.2, 0.15, 0.2, 0.08);
+        for (net.minecraft.world.entity.LivingEntity e : level.getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class,
+                new net.minecraft.world.phys.AABB(from, from).inflate(5), x -> x != player && x.isAlive())) {
+            Vec3 to = e.position().add(0, e.getBbHeight() / 2, 0).subtract(from);
+            double d = to.length();
+            if (d > 4.5 || d < 1e-3 || to.dot(back) / d < 0.82) continue;                  // within about 35 degrees of straight back
+            e.hurt(level.damageSources().explosion(player, player), (float) (9 * (1 - d / 4.5)) + 1);
+            e.igniteForSeconds(2);
+        }
+        var wall = level.clip(new net.minecraft.world.level.ClipContext(from, from.add(back.scale(1.8)), net.minecraft.world.level.ClipContext.Block.COLLIDER,
+                net.minecraft.world.level.ClipContext.Fluid.NONE, player));
+        if (wall.getType() != net.minecraft.world.phys.HitResult.Type.MISS && !player.getAbilities().invulnerable) {
+            player.hurt(level.damageSources().explosion(null, null), 5f);
+            player.displayClientMessage(Component.translatable("message.steelrain.gun_backblast"), true);
+        }
     }
 
     // ------------------------------------------------------------------ reloading
@@ -218,16 +249,48 @@ public final class GunLogic {
         return best;
     }
 
-    private static int findAmmo(ServerPlayer player, GunType type) {
-        Item ammo = ModRegistry.AMMO.get(type.caliber).get();
+    private static int findAmmo(ServerPlayer player, GunType type) { return findAmmo(player, type.caliber); }
+
+    private static int findAmmo(ServerPlayer player, Caliber cal) {
+        Item ammo = ModRegistry.AMMO.get(cal).get();
         Inventory inv = player.getInventory();
         for (int i = 0; i < inv.getContainerSize(); i++) if (inv.getItem(i).is(ammo)) return i;
+        return -1;
+    }
+
+    /** Which rocket a launcher would be loaded with next: the kind it does not hold now if the firer has one, else any. */
+    private static int nextLoad(ServerPlayer player, ItemStack stack, GunType type) {
+        Caliber[] loads = type.loads();
+        boolean creative = player.getAbilities().instabuild;
+        boolean loaded = GunItem.rounds(stack) > 0;
+        int now = stack.getOrDefault(ModRegistry.LOAD.get(), 0);
+        // an empty tube takes the kind it last held if there is one; a loaded tube is changed to the other kind
+        for (int k = loaded ? 1 : 0; k < loads.length + (loaded ? 0 : 0); k++) {
+            int i = (now + k) % loads.length;
+            if (creative || findAmmo(player, loads[i]) >= 0) return i;
+        }
         return -1;
     }
 
     private static void startReload(ServerPlayer player, ItemStack stack, GunType type, State st) {
         if (st.reload >= 0) return;
         boolean creative = player.getAbilities().instabuild;
+        if (type.action == GunType.Action.SINGLE) {
+            // an empty tube takes a rocket; a loaded one has its rocket drawn and the other kind put in
+            int load = nextLoad(player, stack, type);
+            if (load < 0) {
+                if (GunItem.rounds(stack) <= 0) player.displayClientMessage(Component.translatable("message.steelrain.gun_no_rockets"), true);
+                return;
+            }
+            if (GunItem.rounds(stack) > 0) {
+                stack.set(ModRegistry.ROUNDS.get(), 0);
+                if (!creative) give(player, new ItemStack(ModRegistry.AMMO.get(GunItem.caliber(stack)).get()));
+            }
+            st.reload = 0; st.reloadTotal = type.reloadTicks; st.magIn = false;
+            st.pendingLoad = load;
+            event(player, EV_ROCKET, load);
+            return;
+        }
         if (type.action == GunType.Action.PUMP) {
             if (GunItem.rounds(stack) >= type.capacity) return;
             if (!creative && findAmmo(player, type) < 0) { player.displayClientMessage(Component.translatable("message.steelrain.gun_no_ammo"), true); return; }
@@ -242,7 +305,7 @@ public final class GunLogic {
         } else if (GunItem.rounds(stack) >= type.capacity) {
             return;
         }
-        st.reloadEmpty = type.action == GunType.Action.OPEN_BOLT || !GunItem.chambered(stack);
+        st.reloadEmpty = type.firesFromFeed() || !GunItem.chambered(stack);
         st.reloadTotal = st.reloadEmpty ? type.reloadEmptyTicks : type.reloadTicks;
         st.reload = 0; st.magOut = false; st.magIn = false;
         event(player, st.reloadEmpty ? EV_RELOAD_EMPTY : EV_RELOAD, st.reloadTotal);
@@ -251,6 +314,19 @@ public final class GunLogic {
     private static void reloadTick(ServerPlayer player, ItemStack stack, GunType type, State st) {
         boolean creative = player.getAbilities().instabuild;
         st.reload++;
+        if (type.action == GunType.Action.SINGLE) {
+            if (!st.magIn && st.reload >= st.reloadTotal - 12) {
+                st.magIn = true;
+                Caliber cal = type.loads()[st.pendingLoad];
+                int slot = findAmmo(player, cal);
+                if (slot < 0 && !creative) { st.reload = -1; event(player, EV_CANCEL, 0); return; }
+                if (!creative) player.getInventory().getItem(slot).shrink(1);
+                stack.set(ModRegistry.LOAD.get(), st.pendingLoad);
+                stack.set(ModRegistry.ROUNDS.get(), 1);
+            }
+            if (st.reload >= st.reloadTotal) { st.reload = -1; st.latched = st.trigger; }
+            return;
+        }
         if (type.action == GunType.Action.PUMP) {
             // one shell per cycle; pulling the trigger stops the loading after the shell in hand
             if (st.reload == st.reloadTotal - 3) {
@@ -303,6 +379,11 @@ public final class GunLogic {
                 stack.set(ModRegistry.CHAMBER.get(), true);
             }
         }
+    }
+
+    /** A rocket went off (or fell dead): the firer's game stops drawing it. */
+    static void rocketEnded(ServerLevel level, net.minecraft.world.entity.Entity shooter, Vec3 at) {
+        PacketDistributor.sendToPlayersNear(level, null, at.x, at.y, at.z, 420, new Payloads.GunEvent(shooter.getId(), EV_BURST, 0));
     }
 
     private static void event(ServerPlayer player, int kind, int arg) {

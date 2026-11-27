@@ -71,6 +71,12 @@ public class GunItem extends Item {
         return z[Math.max(0, Math.min(z.length - 1, s.getOrDefault(ModRegistry.ZERO.get(), 0)))];
     }
 
+    /** What is loaded: the gun's own cartridge, or for the launcher whichever rocket was pushed in. */
+    public static Caliber caliber(ItemStack s) {
+        Caliber[] loads = ((GunItem) s.getItem()).type.loads();
+        return loads[Math.max(0, Math.min(loads.length - 1, s.getOrDefault(ModRegistry.LOAD.get(), 0)))];
+    }
+
     /** Rounds ready to fire, counting the one in the chamber. */
     public static int loaded(ItemStack s) { return Math.max(0, rounds(s)) + (chambered(s) ? 1 : 0); }
 
@@ -78,7 +84,7 @@ public class GunItem extends Item {
     public ItemStack loadedStack() {
         ItemStack s = new ItemStack(this);
         s.set(ModRegistry.ROUNDS.get(), type.capacity);
-        if (type.action != GunType.Action.OPEN_BOLT) s.set(ModRegistry.CHAMBER.get(), true);
+        if (!type.firesFromFeed()) s.set(ModRegistry.CHAMBER.get(), true);
         s.set(ModRegistry.FIRE_MODE.get(), 1);
         return s;
     }
@@ -98,9 +104,9 @@ public class GunItem extends Item {
 
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
-        Caliber c = type.caliber;
+        Caliber c = caliber(stack);
         tooltip.add(Component.translatable("tooltip.steelrain.gun.calibre", c.label).withStyle(ChatFormatting.GRAY));
-        String load = type.magazineFed() && !hasMagazine(stack) ? "-" : rounds(stack) + (type.action == GunType.Action.OPEN_BOLT ? "" : chambered(stack) ? "+1" : "+0");
+        String load = type.magazineFed() && !hasMagazine(stack) ? "-" : rounds(stack) + (type.firesFromFeed() ? "" : chambered(stack) ? "+1" : "+0");
         tooltip.add(Component.translatable("tooltip.steelrain.gun.loaded", load, type.capacity).withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.translatable("tooltip.steelrain.gun.mode", Component.translatable("gun.steelrain.mode." + GunType.Mode.KEY[mode(stack)]))
                 .withStyle(ChatFormatting.GRAY));

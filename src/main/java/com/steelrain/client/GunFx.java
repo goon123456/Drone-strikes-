@@ -46,7 +46,7 @@ public final class GunFx {
         final Caliber caliber;
         final boolean tracer, mine;
         boolean heard, done;
-        int age;
+        int age, shooter;
         Round(Vec3 from, Vec3 vel, Caliber c, boolean tracer, boolean mine) {
             this.from = from; this.pos = from; this.prev = from; this.vel = vel; this.caliber = c; this.tracer = tracer; this.mine = mine;
         }
@@ -82,7 +82,11 @@ public final class GunFx {
         boolean mine = shooter == mc.player;
         boolean suppressed = (p.flags() & Payloads.GunShot.SUPPRESSED) != 0;
         Vec3 dir = p.velocity().normalize();
-        ROUNDS.add(new Round(p.from(), p.velocity(), type.caliber, (p.flags() & Payloads.GunShot.TRACER) != 0, mine));
+        int calId = p.flags() >> Payloads.GunShot.CALIBER_SHIFT;
+        Caliber cal = calId >= 0 && calId < Caliber.values().length ? Caliber.values()[calId] : type.caliber;
+        Round round = new Round(p.from(), p.velocity(), cal, (p.flags() & Payloads.GunShot.TRACER) != 0, mine);
+        round.shooter = p.shooter();
+        ROUNDS.add(round);
         if ((p.flags() & Payloads.GunShot.PRIMARY) == 0) return;
 
         // the report: the gun's own voice close by, a duller thump from far off, and late by the speed of sound
@@ -99,7 +103,7 @@ public final class GunFx {
             sound = "gun_" + type.id + "_fire";
             volume = 7f;
         } else {
-            sound = type.pistol() ? "gun_pistol_far" : type.caliber == Caliber.R762 || type.caliber == Caliber.G12 ? "gun_heavy_far" : "gun_rifle_far";
+            sound = type.pistol() ? "gun_pistol_far" : cal == Caliber.R762 || cal == Caliber.G12 || cal == Caliber.B50 || cal.rocket() ? "gun_heavy_far" : "gun_rifle_far";
             volume = 28f;
         }
         REPORTS.add(new Report(mine ? now : now + (long) (d / 343.0 * 1000), p.from(), sound, volume, pitch));
@@ -112,7 +116,12 @@ public final class GunFx {
             mc.level.addParticle(ParticleTypes.WHITE_SMOKE, muzzle.x, muzzle.y, muzzle.z, dir.x * 0.05, 0.01, dir.z * 0.05);
         }
         // the empty case: at once from a self-loader, when the action is worked on a pump gun
-        EJECTIONS.add(new Ejection(now + (type.action == GunType.Action.PUMP ? 330 : 0), p.shooter(), type));
+        if (!cal.rocket()) EJECTIONS.add(new Ejection(now + (type.action == GunType.Action.PUMP ? 330 : 0), p.shooter(), type));
+    }
+
+    /** The server says this firer's rocket has gone off: stop drawing it. */
+    static void rocketEnded(int shooter) {
+        for (Round r : ROUNDS) if (r.shooter == shooter && r.caliber.rocket()) { r.done = true; break; }
     }
 
     /** The firer's right, level with the ground. */
@@ -130,7 +139,7 @@ public final class GunFx {
         Vec3 at = e.getEyePosition().add(dir.scale(ej.type.pistol() ? 0.5 : 0.42)).add(right.scale(0.2)).add(0, -0.13, 0);
         Vec3 vel = right.scale(0.11 + r.nextDouble() * 0.05).add(0, 0.09 + r.nextDouble() * 0.05, 0).add(dir.scale(-0.03 + r.nextDouble() * 0.05))
                 .add(e.getDeltaMovement());
-        float size = switch (ej.type.caliber) { case R762 -> 0.054f; case G12 -> 0.068f; case P9 -> 0.02f; default -> 0.042f; };
+        float size = switch (ej.type.caliber) { case R762 -> 0.054f; case G12 -> 0.068f; case P9 -> 0.02f; case B50 -> 0.10f; default -> 0.042f; };
         int colour = switch (ej.type.caliber) { case R545, R762 -> 0x5C6848; case G12 -> 0xA8201E; default -> 0xC8A04A; };
         Case c = new Case(at, vel, size, colour);
         c.turn = (r.nextFloat() - 0.5f) * 1.6f;
@@ -160,7 +169,13 @@ public final class GunFx {
         Vec3 ear = mc.gameRenderer.getMainCamera().getPosition();
         for (Iterator<Round> it = ROUNDS.iterator(); it.hasNext(); ) {
             Round r = it.next();
-            if (r.done || ++r.age > 100 || r.vel.lengthSqr() < 4) { it.remove(); continue; }
+            if (r.done || ++r.age > (r.caliber.rocket() ? 90 : 100) || r.vel.lengthSqr() < 4) { it.remove(); continue; }
+            if (r.caliber.rocket() && r.age > 1) {                                   // the motor's smoke, strung out behind it
+                for (int k = 0; k < 3; k++) {
+                    Vec3 at = r.pos.subtract(r.vel.scale(k / 3.0));
+                    mc.level.addParticle(k == 0 ? ParticleTypes.FLAME : ParticleTypes.SMOKE, true, at.x, at.y, at.z, 0, 0.005, 0);
+                }
+            }
             r.prev = r.pos;
             Vec3 to = r.pos.add(r.vel);
             BlockHitResult hit = mc.level.clip(new ClipContext(r.pos, to, ClipContext.Block.COLLIDER, ClipContext.Fluid.ANY, net.minecraft.world.phys.shapes.CollisionContext.empty()));
@@ -173,7 +188,7 @@ public final class GunFx {
                 Vec3 near = r.pos.add(seg.scale(t));
                 if (near.distanceToSqr(ear) < 3.2 * 3.2 && near.distanceToSqr(r.from) > 10 * 10) {
                     r.heard = true;
-                    boolean fast = r.vel.length() > 17.2;
+                    boolean fast = r.vel.length() > 17.2 && !r.caliber.rocket();
                     mc.level.playLocalSound(near.x, near.y, near.z, GunLogic.sound(fast ? "bullet_crack" : "bullet_whizz"), SoundSource.PLAYERS,
                             fast ? 1.0f : 0.8f, 0.9f + mc.level.random.nextFloat() * 0.25f, false);
                 }
@@ -233,6 +248,19 @@ public final class GunFx {
             buffers.endBatch(RenderType.entityCutoutNoCull(Models.PAINT));
         }
 
+        for (Round r : ROUNDS) {                                                   // rockets in flight are drawn as themselves
+            if (!r.caliber.rocket() || r.age < 1) continue;
+            Vec3 at = r.prev.lerp(r.pos, pt);
+            if (r.mine && at.distanceToSqr(r.from) < 2.5 * 2.5) continue;
+            BoxModel rocket = GunModels.ammo(r.caliber);
+            Vec3 d = r.vel.normalize();
+            pose.pushPose();
+            pose.translate(at.x, at.y, at.z);
+            pose.mulPose(Axis.YP.rotation((float) Mth.atan2(d.x, d.z)));
+            pose.mulPose(Axis.XP.rotation((float) -Math.asin(Mth.clamp(d.y, -1, 1))));
+            rocket.render(pose, buffers.getBuffer(RenderType.entityCutoutNoCull(rocket.texture())), LevelRenderer.getLightColor(mc.level, BlockPos.containing(at)));
+            pose.popPose();
+        }
         VertexConsumer glow = buffers.getBuffer(RenderType.lightning());
         Matrix4f m = pose.last().pose();
         for (Round r : ROUNDS) {
@@ -295,7 +323,7 @@ public final class GunFx {
     private static void flashQuads(PoseStack pose, VertexConsumer vc, GunType type, long seed, float strength) {
         if (strength <= 0) return;
         java.util.Random rnd = new java.util.Random(seed * 31 + type.ordinal());
-        float size = (type.pistol() ? 0.09f : type == GunType.M590 ? 0.2f : type.caliber == Caliber.R762 ? 0.19f : 0.15f) * (0.8f + rnd.nextFloat() * 0.5f);
+        float size = (type.pistol() ? 0.09f : type == GunType.M590 ? 0.2f : type == GunType.M107 || type == GunType.RPG7 ? 0.34f : type.caliber == Caliber.R762 ? 0.19f : 0.15f) * (0.8f + rnd.nextFloat() * 0.5f);
         int petals = type == GunType.AK74M ? 4 : 3;
         float a = Mth.clamp(strength, 0, 1);
         pose.pushPose();
