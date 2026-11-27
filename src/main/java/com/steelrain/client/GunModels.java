@@ -37,6 +37,8 @@ public final class GunModels {
         /** Null: as the stack says. Otherwise forces the magazine (or the shell in the hand) shown or hidden. */
         public Boolean magShown;
         public Boolean beltShown;
+        /** The belt lifted off the feed tray and let down towards its box (m, negative is down). */
+        public float beltY;
         /** Machine-gun feed cover, 0 shut to 1 open. */
         public float cover;
         /** Bipod legs, 0 folded to 1 down. */
@@ -100,9 +102,9 @@ public final class GunModels {
         });
         set(m, "belt", g -> {
             g.visible = p.beltShown != null ? p.beltShown : (mag && rounds > 0);
-            g.ox = p.magX; g.oy = p.magY; g.oz = p.magZ;
+            g.ox = p.magX; g.oy = p.magY + p.beltY; g.oz = p.magZ;
         });
-        set(m, "cover", g -> g.xRot = -1.15f * p.cover);
+        set(m, "cover", g -> g.xRot = 1.15f * p.cover);
         set(m, "bipod", g -> g.xRot = 1.75f * p.bipod);
         Attachment optic = GunItem.part(stack, Attachment.Slot.OPTIC);
         set(m, "irons", g -> g.xRot = optic != null ? 1.5f : 0f);

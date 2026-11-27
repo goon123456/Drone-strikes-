@@ -68,7 +68,7 @@ public final class GunHand {
 
         // ---- the action in hand: where the magazine, bolt and left hand are
         GunModels.Pose bp = POSE;
-        bp.bolt = bp.charge = bp.cover = 0; bp.magX = bp.magY = bp.magZ = bp.magRock = 0; bp.magShown = null; bp.beltShown = null;
+        bp.bolt = bp.charge = bp.cover = 0; bp.magX = bp.magY = bp.magZ = bp.magRock = 0; bp.magShown = null; bp.beltShown = null; bp.beltY = 0;
         bp.trigger = GunClient.triggerHeld ? 1 : 0;
         bp.bipod = GunClient.bipod;
         float sinceShot = now - GunClient.lastShot;
@@ -99,18 +99,34 @@ public final class GunHand {
             bp.magZ = -0.05f * Mth.clamp(down / 0.2f, 0, 1);
             bp.magX = 0.05f * Mth.clamp((down - 0.11f) / 0.3f, 0, 1);
             if (type == GunType.AK74M || type == GunType.SVD) bp.magRock = 0.30f * Mth.clamp(down / 0.11f, 0, 1) * (down < 0.2f ? 1 : 0.5f);
-            if (type == GunType.PKM) {
-                bp.cover = ramp(p, 0.10f, 0.20f) * (1 - ramp(p, 0.74f, 0.82f));
-                bp.beltShown = p < out ? null : p > 0.70f;
-            }
             float onMag = ramp(p, out - 0.12f, out) * (1 - ramp(p, in + 0.03f, in + 0.14f));
             Vector3f carried = new Vector3f(magAt).add(bp.magX, bp.magY, bp.magZ);
-            left.lerp(carried, onMag);
-            if (empty && (type == GunType.AK74M || type == GunType.SVD || type == GunType.PKM)) {
-                float onBolt = ramp(p, rack - 0.10f, rack - 0.02f) * (1 - ramp(p, rack + 0.07f, 0.98f));
-                bp.bolt = Math.max(bp.bolt, ramp(p, rack - 0.02f, rack + 0.03f) * (1 - ramp(p, rack + 0.03f, rack + 0.06f)));
-                Vector3f handle = new Vector3f(model.point("charge")).add(0, -0.02f, -type.boltTravel() * bp.bolt);
-                left.lerp(handle, onBolt);
+            if (type == GunType.PKM) {
+                // belt-fed: the feed cover is lifted, what is left of the old belt is taken off the tray and goes
+                // away with its box, the new box is hung, its belt drawn up and laid in the tray, the cover is
+                // shut and the gun is cocked
+                boolean oldBox = p <= out + 0.20f;
+                bp.cover = ramp(p, 0.06f, 0.16f) * (1 - ramp(p, 0.76f, 0.84f));
+                bp.beltShown = oldBox ? GunClient.animHadRounds : !away;
+                bp.beltY = oldBox ? -0.045f * ramp(p, 0.19f, 0.26f) : -0.075f * (1 - ramp(p, 0.65f, 0.72f));
+                Vector3f lid = new Vector3f(model.point("cover")).add(0, 0.07f * bp.cover, 0.02f * bp.cover);
+                Vector3f belt = new Vector3f(model.point("belt")).add(bp.magX, bp.magY + bp.beltY, bp.magZ);
+                left.lerp(lid, ramp(p, 0.02f, 0.06f) * (1 - ramp(p, 0.16f, 0.19f)));
+                if (GunClient.animHadRounds) left.lerp(belt, ramp(p, 0.16f, 0.19f) * (1 - ramp(p, 0.26f, 0.29f)));
+                left.lerp(carried, ramp(p, 0.26f, 0.30f) * (1 - ramp(p, in + 0.005f, in + 0.03f)));
+                left.lerp(belt, ramp(p, in + 0.005f, in + 0.03f) * (1 - ramp(p, 0.725f, 0.755f)));
+                left.lerp(lid, ramp(p, 0.725f, 0.755f) * (1 - ramp(p, 0.84f, 0.865f)));
+                float onBolt = ramp(p, 0.84f, 0.865f) * (1 - ramp(p, rack + 0.07f, 0.98f));
+                bp.bolt = Math.max(bp.bolt, ramp(p, rack - 0.015f, rack + 0.03f) * (1 - ramp(p, rack + 0.03f, rack + 0.06f)));
+                left.lerp(new Vector3f(model.point("charge")).add(0, -0.02f, -type.boltTravel() * bp.bolt), onBolt);
+            } else {
+                left.lerp(carried, onMag);
+                if (empty && (type == GunType.AK74M || type == GunType.SVD)) {
+                    float onBolt = ramp(p, rack - 0.10f, rack - 0.02f) * (1 - ramp(p, rack + 0.07f, 0.98f));
+                    bp.bolt = Math.max(bp.bolt, ramp(p, rack - 0.02f, rack + 0.03f) * (1 - ramp(p, rack + 0.03f, rack + 0.06f)));
+                    Vector3f handle = new Vector3f(model.point("charge")).add(0, -0.02f, -type.boltTravel() * bp.bolt);
+                    left.lerp(handle, onBolt);
+                }
             }
         } else if (p >= 0 && anim == GunClient.ANIM_SHELL) {
             // a shell brought up from the belt to the loading port and thumbed forward into the tube
@@ -162,6 +178,8 @@ public final class GunHand {
         // reloading: tipped up and rolled so the magazine well shows
         float env = reloadEnv;
         if (type.action == GunType.Action.PUMP) { pitch -= 22f * env; roll += 55f * env; at.add(-0.03f * env, 0.03f * env, 0); }
+        // the belt feeds from the right: the gun is swung across so its feed side and open cover face the firer
+        else if (type == GunType.PKM) { yaw -= 42f * env; roll += 12f * env; pitch -= 4f * env; at.add(-0.25f * env, 0.02f * env, -0.13f * env); }
         else if (pistol) { pitch -= 24f * env; roll += 22f * env; at.add(-0.04f * env, 0.02f * env, 0.05f * env); }
         else { pitch -= 14f * env; roll += 32f * env; yaw += 6f * env; at.add(-0.02f * env, 0.03f * env, 0); }
         // a dead trigger or the selector: a small twitch
@@ -190,6 +208,7 @@ public final class GunHand {
             Vector3f rightElbow = pistol ? new Vector3f(-0.10f, -0.22f, -0.50f) : new Vector3f(-0.16f, -0.30f, -0.42f);
             Vector3f leftElbow = pistol ? new Vector3f(0.30f, -0.22f, -0.50f) : new Vector3f(0.26f, -0.30f, -0.50f);
             arm(pose, buffers, light, player, true, new Vector3f(grip).add(-0.004f, 0.012f, 0.0f), rightElbow, size);
+            if (type == GunType.PKM) leftElbow.lerp(new Vector3f(-0.30f, -0.42f, -0.30f), env);     // reaching in from underneath
             arm(pose, buffers, light, player, false, new Vector3f(left).add(0.006f, -0.028f, 0), leftElbow, size);
         }
 

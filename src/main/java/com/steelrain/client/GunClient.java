@@ -181,6 +181,8 @@ public final class GunClient {
     static int anim;
     static long animAt, animMs;
     static long dryAt, selectorAt;
+    /** Whether the magazine coming off at the start of this reload still had rounds in it. */
+    static boolean animHadRounds;
 
     public static boolean reloading() { return anim == ANIM_RELOAD || anim == ANIM_RELOAD_EMPTY || anim == ANIM_SHELL; }
 
@@ -217,13 +219,14 @@ public final class GunClient {
                 if (type == null) return;
                 boolean empty = p.kind() == GunLogic.EV_RELOAD_EMPTY;
                 int total = p.arg();
-                if (mine) { anim = empty ? ANIM_RELOAD_EMPTY : ANIM_RELOAD; animAt = now; animMs = total * 50L; }
+                if (mine) { anim = empty ? ANIM_RELOAD_EMPTY : ANIM_RELOAD; animAt = now; animMs = total * 50L; animHadRounds = GunItem.rounds(stack()) > 0; }
                 if (type == GunType.PKM) {
-                    cue(p.entityId(), total * 0.12f, "gun_cover");
+                    cue(p.entityId(), total * 0.08f, "gun_cover");
+                    if (!mine || animHadRounds) cue(p.entityId(), total * 0.20f, "gun_belt");
                     cue(p.entityId(), total * type.magOutAt(), "gun_mag_out");
                     cue(p.entityId(), total * type.magInAt(true), "gun_mag_in");
-                    cue(p.entityId(), total * 0.70f, "gun_belt");
-                    cue(p.entityId(), total * 0.79f, "gun_cover");
+                    cue(p.entityId(), total * 0.68f, "gun_belt");
+                    cue(p.entityId(), total * 0.80f, "gun_cover");
                     cue(p.entityId(), total * type.boltAt(), "gun_bolt");
                 } else {
                     cue(p.entityId(), total * type.magOutAt(), "gun_mag_out");

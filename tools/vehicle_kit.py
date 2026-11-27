@@ -95,6 +95,7 @@ CASE_BRASS = _mat("case_brass", (190, 150, 70), "gunmetal", wear=(230, 200, 120)
 CASE_STEEL = _mat("case_steel", (78, 88, 62), "gunmetal", wear=(110, 118, 96))    # lacquered steel cases
 BULLET = _mat("bullet", (176, 110, 70), "gunmetal", wear=(214, 150, 110))
 SHELL_RED = _mat("shell_red", (160, 30, 28), "polymer")
+AMMO_GREEN = _mat("ammo_green", (86, 92, 52), "gunmetal", wear=(128, 130, 104))   # painted ammunition can
 
 DUST = np.array([132, 120, 94], dtype=float)
 

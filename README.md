@@ -281,7 +281,10 @@ bullets that fly, drop and go through cover.
   puts the one you took off back in it, still holding what it had left; the left hand carries each one. With a
   round still chambered the change is quick and leaves you one in the chamber (shown as `30+1`); from empty the
   bolt has to be worked as well. Hold use on a magazine to thumb loose rounds into it, sneak + use to empty it.
-  The PKM takes a 100-round box: the cover opens, the box is changed and the belt laid in. The M590A1 has no
+  The PKM takes a 100-round box, an olive can hung across the gun under the receiver with the belt coming
+  up out of a mouth in its lid into the feed tray. To change it the gun is swung feed side towards you, the
+  cover is lifted, what is left of the old belt is taken off the tray and goes away with its box, the new box
+  is hung, its belt drawn up and laid in, the cover shut and the gun cocked. The M590A1 has no
   magazine: shells go into the tube one at a time (pull the trigger to stop loading) and the action is pumped
   after every shot.
 - **Ballistics**: every bullet is flown by the server, not hitscan. It leaves at its muzzle velocity, loses a

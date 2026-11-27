@@ -444,8 +444,9 @@ def pkm():
         p += slab(K, 0.0016, [(z, -0.036), (z + 0.030, -0.036), (z + 0.030, 0.014), (z, 0.014)], x=-HW - 0.0004, edge=0.0006, r=0.004)
     p += [label(K, "PKM 7.62", HW + 0.0014, -0.012, 0.100, 0.045, 0.0045)]
     # feed tray, with the belt entering from the right and the links leaving on the left
-    p += slab(S, 0.016, [(0.048, 0.016), (0.122, 0.016), (0.122, 0.032), (0.048, 0.032)], x=-0.029, edge=0.003, r=0.003)
-    p += [B(BLACK, HW + 0.0004, 0.004, 0.060, 0.0008, 0.018, 0.050, plain=True)]
+    p += slab(S, 0.022, [(0.050, 0.026), (0.140, 0.026), (0.140, 0.034), (0.050, 0.034)], x=-0.033, edge=0.003, r=0.003)
+    p += slab(S, 0.004, [(0.050, 0.006), (0.140, 0.006), (0.140, 0.034), (0.050, 0.034)], x=-0.0235, edge=0.001, r=0.003)
+    p += [B(BLACK, HW + 0.0004, 0.004, 0.066, 0.0008, 0.018, 0.050, plain=True)]
     # trigger guard, pistol grip
     p += sweep(S, [(-0.024, -0.052), (-0.012, -0.083), (0.042, -0.085), (0.054, -0.078), (0.056, -0.048)], 0.015, 0.0026, power=6, seg=8, ends="flat")
     p += sweep(BAKELITE, [(-0.034, -0.046), (-0.040, -0.066), (-0.054, -0.104), (-0.070, -0.144)], [0.027, 0.028, 0.030, 0.032], [0.036, 0.038, 0.042, 0.046], power=3.2)
@@ -464,9 +465,10 @@ def pkm():
     for a in (0, 72, 144, 216, 288):
         hider += [B(BLACK, -0.002, 0.0118, 0.778, 0.004, 0.0008, 0.032, roll=a, pivot=(0, 0, 0.79), plain=True)]
     # skeleton stock: rounded limbs round the big cut-out, steel butt plate
-    p += sweep(WD, [(-0.086, 0.012), (-0.220, 0.004), (-0.356, -0.004)], 0.032, 0.030, power=3.2)
-    p += sweep(WD, [(-0.086, -0.022), (-0.150, -0.034), (-0.356, -0.096)], 0.032, [0.030, 0.028, 0.028], power=3.2)
-    p += sweep(WD, [(-0.350, 0.010), (-0.352, -0.110)], 0.033, 0.036, power=3.6, ends="flat")
+    p += slab(WD, 0.033, [(-0.088, 0.028), (-0.150, 0.022), (-0.165, -0.020), (-0.135, -0.046), (-0.088, -0.036)], edge=0.008, r=0.010)
+    p += sweep(WD, [(-0.140, 0.008), (-0.240, 0.002), (-0.356, -0.006)], 0.032, [0.034, 0.030, 0.032], power=3.2)
+    p += sweep(WD, [(-0.130, -0.028), (-0.200, -0.052), (-0.356, -0.096)], 0.032, [0.034, 0.030, 0.032], power=3.2)
+    p += sweep(WD, [(-0.348, 0.010), (-0.352, -0.112)], 0.033, 0.040, power=3.6, ends="flat")
     p += slab(S, 0.034, [(-0.367, 0.012), (-0.374, 0.010), (-0.374, -0.110), (-0.367, -0.112)], edge=0.004, r=0.003)
     p += [body(S, [(-0.100, -0.006, 0.040, 0.054), (-0.088, -0.006, 0.040, 0.054)], power=5)]
 
@@ -486,29 +488,38 @@ def pkm():
         bipod += [bar(S, (sgn * 0.014, -0.050, 0.560), (sgn * 0.020, -0.058, 0.250), 0.010),
                   B(S, sgn * 0.020 - 0.006, -0.064, 0.240, 0.012, 0.004, 0.022, plain=True)]
     bipod += [body(S, [(0.552, -0.046, 0.038, 0.030), (0.568, -0.046, 0.038, 0.030)], power=3)]
-    # ammunition box hung across the gun under the receiver: a pressed-steel can with a lid and stiffening beads,
-    # the belt coming up out of its right-hand end into the tray
-    BX = -0.020                                                                                       # it sits a little to the right
+    # ammunition box: an olive pressed-steel can hung across the gun under the receiver, well out to the right, its
+    # lid held by a wire bail. The belt comes out of a mouth in the lid directly under the feed tray.
+    BX, BELT = -0.034, -0.047                                                                         # box centre, belt line
     can = lambda mat, secs, power: skin(mat, [(z, BX, cy, w, h) for z, cy, w, h in secs], power=power, seg=20)
-    box = [can(GUN_STEEL, [(0.083, -0.112, 0.168, 0.100), (0.087, -0.112, 0.175, 0.108), (0.175, -0.112, 0.175, 0.108), (0.179, -0.112, 0.168, 0.100)], 9),
-           can(S, [(0.083, -0.056, 0.177, 0.010), (0.179, -0.056, 0.177, 0.010)], 6),
-           B(GUN_STEEL, BX - 0.045, -0.111, 0.0826, 0.09, 0.022, 0.0003, yaw=180, plain=True, marks=[("front", "text:100 7.62", 0.5, 0.5, 0.011, None)]),
-           B(S, -0.004, -0.052, 0.110, 0.008, 0.004, 0.040, plain=True)]
-    for y in (-0.090, -0.135):
-        box += [can(S, [(0.086, y, 0.1765, 0.008), (0.176, y, 0.1765, 0.008)], 4)]
+    box = [can(AMMO_GREEN, [(0.049, -0.118, 0.168, 0.112), (0.053, -0.118, 0.175, 0.120), (0.141, -0.118, 0.175, 0.120), (0.145, -0.118, 0.168, 0.112)], 9),
+           can(AMMO_GREEN, [(0.048, -0.056, 0.178, 0.010), (0.146, -0.056, 0.178, 0.010)], 6),
+           B(AMMO_GREEN, BX - 0.045, -0.125, 0.0486, 0.09, 0.022, 0.0003, yaw=180, plain=True, marks=[("front", "text:100 7.62", 0.5, 0.5, 0.011, (30, 30, 26))]),
+           B(S, -0.004, -0.052, 0.090, 0.008, 0.004, 0.030, plain=True)]                                # hanger under the receiver
+    for y in (-0.092, -0.118, -0.144):                                                                # pressed beads round the can
+        box += [can(AMMO_GREEN, [(0.052, y, 0.1765, 0.006), (0.142, y, 0.1765, 0.006)], 4)]
+    # the mouth: a dark opening in the lid with a raised lip, and the flap that covers it standing open behind
+    box += [B(BLACK, BELT - 0.013, -0.0512, 0.054, 0.026, 0.0008, 0.084, plain=True),
+            B(AMMO_GREEN, BELT - 0.016, -0.052, 0.051, 0.003, 0.006, 0.090, plain=True), B(AMMO_GREEN, BELT + 0.013, -0.052, 0.051, 0.003, 0.006, 0.090, plain=True),
+            B(AMMO_GREEN, BELT - 0.016, -0.052, 0.138, 0.032, 0.006, 0.003, plain=True),
+            B(AMMO_GREEN, BELT + 0.016, -0.052, 0.052, 0.0016, 0.030, 0.088, roll=-20, pivot=(BELT + 0.016, -0.052, 0.1), plain=True)]
+    box += run(S, [(BX - 0.089, -0.075, 0.097), (BX - 0.093, -0.050, 0.097), (BX - 0.060, -0.044, 0.097)], 0.004)       # carrying strap loop
+    # the belt: rounds side by side in their links, nose forward, rising out of the mouth and over into the tray
     belt = []
-    for i in range(5):
-        y = -0.050 + i * 0.017
-        x = -0.046 + (0.008 if i == 4 else 0)
-        belt += cartridge(CASE_STEEL, 0.050, y, 0.0537, 0.0124, 0.0085, 0.022, x=x)
-        belt += [turned(GUN_STEEL, [(0.066, 0.0150), (0.080, 0.0150)], y=y, x=x, plain=True, open=True, seg=8)]
+    rows = [(BELT, -0.060), (BELT, -0.043), (BELT, -0.026), (BELT, -0.009), (BELT + 0.002, 0.008), (BELT + 0.010, 0.022)]
+    for i, (x, y) in enumerate(rows):
+        belt += cartridge(CASE_STEEL, 0.056, y, 0.0537, 0.0124, 0.0085, 0.022, x=x)
+        belt += [turned(GUN_STEEL, [(0.072, 0.0152), (0.092, 0.0152)], y=y, x=x, plain=True, open=True, seg=8)]
+        if i:
+            px, py = rows[i - 1]
+            belt += [B(GUN_STEEL, min(x, px) - 0.0045, py + 0.004, 0.076, abs(x - px) + 0.009, y - py - 0.008, 0.012, plain=True)]   # link tab
     return gun(p, [bone("muzzle", (0, 0, 0.765), hider), bone("cover", (0, 0.034, 0.200), cover), bone("bolt", (0, -0.020, 0.09), charge),
                    bone("trigger", (0, -0.050, 0.010), trigger), bone("selector", (HW, -0.030, -0.020), selector),
                    bone("bipod", (0, -0.050, 0.560), bipod), bone("mag", (0, -0.056, 0.130), box),
-                   dict(name="belt", pivot=(-0.046, -0.02, 0.07), cubes=belt)],
+                   dict(name="belt", pivot=(BELT, -0.02, 0.07), cubes=belt)],
                dict(muzzle=(0, 0, 0.820), thread=(0, 0, 0.765), eject=(0.026, 0.01, 0.085), sight=(0, 0.0785, -0.058), front=(0, 0.0785, 0.751),
-                    optic=(0, 0.066, 0.05), under=(0, -0.05, 0.40), grip=(0, -0.100, -0.056), hand=(0, -0.168, 0.130), mag=(0, -0.056, 0.130),
-                    charge=(-0.052, -0.020, 0.090)))
+                    optic=(0, 0.066, 0.05), under=(0, -0.05, 0.40), grip=(0, -0.100, -0.056), hand=(-0.034, -0.180, 0.097), mag=(-0.034, -0.076, 0.097),
+                    charge=(-0.052, -0.020, 0.090), cover=(0, 0.072, -0.030), belt=(-0.060, -0.010, 0.085)))
 
 
 # ---------------------------------------------------------------- M17
