@@ -20,7 +20,11 @@ sharp at any GUI scale and fits small windows.
 - **Field Laptop**: a 3D laptop held in both hands. Switch to it and the lid swings open; its display shows the
   clock, your grid and the link state. Right-click raises it to your eye and opens **Fire Control**: units down
   the left with their state, rounds and battery; a live map with grid, range rings, unit icons, recon contacts and
-  the line of fire; the fire mission on the right.
+  the line of fire; the fire mission on the right. The expanded command display scales to the window, with
+  **Overview**, **Targets**, **Weapons**, **ROE**, **Airspace** and **Logs** tabs below the map. Overview shows a
+  terrain inset, target trajectory, recon availability and selected-unit telemetry. The upper **ISR**, **BDA**,
+  **Comms** and **System** keys open their corresponding readouts. Camera viewing uses the existing **CAM**
+  control; the tablet does not display simulated EO/IR footage or claim unreported damage.
 - **Vehicle dashboard** (driver and crew): seat, speed and heading, engine state, fuel, battery, damage, and
   automatic mode or jamming where it applies.
 - **Gun sights**: compass tape and elevation scale for where the gun points, a marker that turns green when the
@@ -81,6 +85,9 @@ Ground Station, Orlan Catapult, Shahed Launch Rail) are placed full-size emplace
 3. Right-click the air with the laptop to open **Fire Control**:
    - left-click the map to pick a target, or type X / Z coordinates
    - right-drag pans the map, the scroll wheel zooms
+   - **MAP / HEIGHT** (or **H**) switches terrain/elevation; **GRID**, **RANGES** and **CONTACTS** toggle overlays
+   - map rail **U** centers the selected unit; **@** centers you; **X** clears the target
+   - **CLEAR TARGET** removes the designation; it does not cancel a weapon already in flight
    - the orange ring is maximum range, the red ring is minimum range
    - choose the number of rounds for HIMARS / M109 salvos, then press **LAUNCH**
 4. You must stay within 128 blocks of the launcher to command it.
