@@ -108,7 +108,7 @@ public final class GunModels {
             switch (type) {
                 case AK74M, SVD -> g.xRot = mode == GunType.Mode.SAFE ? 0f : mode == GunType.Mode.AUTO ? 0.16f : 0.30f;
                 case M4A1, PKM, M107, HK416, G36, SCARH, M249, M240, M110 -> g.xRot = mode == GunType.Mode.SAFE ? 0f : mode == GunType.Mode.SEMI ? -1.57f : -3.14f;
-                case M17, M18, M9 -> g.xRot = mode == GunType.Mode.SAFE ? -0.3f : 0f;
+                case M17, M18, M9, GLOCK17, GLOCK19, P99, HK_USP, FIVE_SEVEN, M1911A1, HI_POWER, CZ75, P226, P228 -> g.xRot = mode == GunType.Mode.SAFE ? -0.3f : 0f;
                 case M590 -> g.oz = mode == GunType.Mode.SAFE ? 0f : 0.008f;
             }
         });

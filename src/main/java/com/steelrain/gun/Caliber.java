@@ -15,7 +15,12 @@ public enum Caliber {
     /** RPG-7 rockets: thrown out at 115 m/s, then the motor takes them to their flying speed. */
     PG7V("PG-7V HEAT", "rocket_pg7v", 115, 0.00010, 70f, 0f, 1, 295, 3.5f, 14f),
     OG7V("OG-7V frag", "rocket_og7v", 115, 0.00010, 18f, 0f, 1, 250, 7.5f, 24f),
-    R76251("7.62x51", "ammo_76251", 838, 0.00105, 11.5f, 0.95f, 1);
+    R76251("7.62x51", "ammo_76251", 838, 0.00105, 11.5f, 0.95f, 1),
+    R76239("7.62x39", "ammo_76239", 715, 0.00160, 10.5f, 0.75f, 1),
+    R58("5.8x42", "ammo_58", 930, 0.00130, 8.0f, 0.55f, 1),
+    LAPUA338(".338 Lapua", "ammo_338", 900, 0.00060, 22f, 2.0f, 1),
+    P57("5.7x28", "ammo_57", 715, 0.00170, 4.5f, 0.45f, 1),
+    ACP45(".45 ACP", "ammo_45", 260, 0.00240, 7.5f, 0.07f, 1);
 
     /** Gravity in blocks per tick squared (9.81 m/s2). */
     public static final double GRAVITY = 9.81 / 400.0;
@@ -46,8 +51,10 @@ public enum Caliber {
     public float vehicleDamage() {
         return switch (this) {
             case B50 -> 26f;
-            case R762, R76251 -> 4f;
-            case R545, R556 -> 1.5f;
+            case LAPUA338 -> 9f;
+            case R762, R76251, R76239 -> 4f;
+            case R545, R556, R58 -> 1.5f;
+            case P57 -> 1f;
             case G12 -> 1f;
             case P9 -> 0.5f;
             default -> 0f;

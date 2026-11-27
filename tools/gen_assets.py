@@ -577,12 +577,15 @@ def tags():
 
 
 # ---------------------------------------------------------------- small arms
-GUN_ITEMS = ["ak74m", "m4a1", "svd", "pkm", "m17", "m590", "m107", "rpg7", "m18", "m9", "hk416", "g36", "scarh", "m249", "m240", "m110"]
-GUN_MAGS = ["ak74m", "m4a1", "svd", "pkm", "m17", "m107", "m18", "m9", "hk416", "g36", "scarh", "m249", "m240", "m110"]
+GUN_ITEMS = ["ak74m", "m4a1", "svd", "pkm", "m17", "m590", "m107", "rpg7", "m18", "m9", "hk416", "g36", "scarh", "m249", "m240", "m110",
+             "glock17", "glock19", "p99", "hk_usp", "five_seven", "m1911a1", "hi_power", "cz75", "p226", "p228"]
+GUN_MAGS = ["ak74m", "m4a1", "svd", "pkm", "m17", "m107", "m18", "m9", "hk416", "g36", "scarh", "m249", "m240", "m110",
+            "glock17", "glock19", "p99", "hk_usp", "five_seven", "m1911a1", "hi_power", "cz75", "p226", "p228"]
 GUN_PARTS = ["red_dot", "acog", "pso1", "suppressor", "pistol_suppressor", "foregrip", "scope_10x", "holo", "lpvo", "magnifier", "nv_scope",
              "thermal_scope", "flashlight", "laser", "angled_grip", "bipod"]
-ROUND_NAMES = {"ammo_545": "5.45x39", "ammo_556": "5.56x45", "ammo_762": "7.62x54R", "ammo_9mm": "9x19", "ammo_50": ".50 BMG", "ammo_76251": "7.62x51"}
-GUN_AMMO = ["ammo_545", "ammo_556", "ammo_762", "ammo_9mm", "ammo_12g", "ammo_50", "rocket_pg7v", "rocket_og7v", "ammo_76251"] + [r + k for r in ROUND_NAMES for k in ("_tracer", "_training")]
+ROUND_NAMES = {"ammo_545": "5.45x39", "ammo_556": "5.56x45", "ammo_762": "7.62x54R", "ammo_9mm": "9x19", "ammo_50": ".50 BMG", "ammo_76251": "7.62x51",
+               "ammo_76239": "7.62x39", "ammo_58": "5.8x42", "ammo_338": ".338 Lapua", "ammo_57": "5.7x28", "ammo_45": ".45 ACP"}
+GUN_AMMO = ["ammo_545", "ammo_556", "ammo_762", "ammo_9mm", "ammo_12g", "ammo_50", "rocket_pg7v", "rocket_og7v", "ammo_76251", "ammo_76239", "ammo_58", "ammo_338", "ammo_57", "ammo_45"] + [r + k for r in ROUND_NAMES for k in ("_tracer", "_training")]
 
 GUN_LANG = {
     "item.steelrain.ak74m": "AK-74M", "item.steelrain.m4a1": "M4A1", "item.steelrain.svd": "SVD", "item.steelrain.pkm": "PKM",
@@ -598,6 +601,13 @@ GUN_LANG = {
     "item.steelrain.m240_magazine": "M240 Belt Can (100)", "item.steelrain.m110_magazine": "M110 Magazine (20)",
     "item.steelrain.ammo_76251": "7.62x51 Round",
     "gui.steelrain.gun.reloading": "RELOADING",
+    "item.steelrain.glock17": "Glock 17", "item.steelrain.glock19": "Glock 19", "item.steelrain.p99": "Walther P99", "item.steelrain.hk_usp": "HK USP",
+    "item.steelrain.five_seven": "FN Five-seveN", "item.steelrain.m1911a1": "M1911A1", "item.steelrain.hi_power": "Browning Hi-Power", "item.steelrain.cz75": "CZ 75",
+    "item.steelrain.p226": "SIG P226", "item.steelrain.p228": "SIG P228",
+    **{f"item.steelrain.{g}_magazine": n + " Magazine" for g, n in {"glock17": "Glock 17 (17)", "glock19": "Glock 19 (15)", "p99": "P99 (15)", "hk_usp": "USP (15)",
+        "five_seven": "Five-seveN (20)", "m1911a1": "1911 (7)", "hi_power": "Hi-Power (13)", "cz75": "CZ 75 (16)", "p226": "P226 (15)", "p228": "P228 (13)"}.items()},
+    "item.steelrain.ammo_76239": "7.62x39 Round", "item.steelrain.ammo_58": "5.8x42 Round", "item.steelrain.ammo_338": ".338 Lapua Round",
+    "item.steelrain.ammo_57": "5.7x28 Round", "item.steelrain.ammo_45": ".45 ACP Round",
     "gui.steelrain.gun.jammed": "JAMMED - RELOAD",
     "message.steelrain.gun_jammed": "Weapon jammed: reload to clear it",
     **{f"item.steelrain.{r}_tracer": f"{n} Tracer Round" for r, n in ROUND_NAMES.items()},
@@ -745,6 +755,21 @@ def guns():
     shaped("rocket_pg7v", [" C ", "ITI", " P "], {"C": C, "I": I, "T": MC + "tnt", "P": P}, 2)
     shaped("rocket_og7v", [" N ", "ITI", " P "], {"N": N, "I": I, "T": MC + "tnt", "P": P}, 2)
     shaped("scope_10x", ["GIG", "IRI", " I "], {"R": R, "I": I, "G": G})
+    for _g in ("glock17", "glock19", "p99", "hk_usp", "five_seven", "cz75", "p226", "p228"):
+        shaped(_g, ["II", "KI"], {"K": K, "I": I})
+    shaped("m1911a1", ["II", "WI"], {"W": W, "I": I})
+    shaped("hi_power", ["II", "WI"], {"W": W, "I": I})
+    for _g in ("glock17", "p99", "hk_usp", "cz75", "p226"):
+        shaped(_g + "_magazine", ["N", "N", "K"], {"N": N, "K": K})
+    for _g in ("glock19", "p228", "m1911a1", "hi_power"):
+        shaped(_g + "_magazine", ["N", "N"], {"N": N})
+    shaped("five_seven_magazine", ["NN", "N ", "N "], {"N": N})
+    shaped("ammo_76239", ["I", "P", "C"], {"I": I, "P": P, "C": C}, 20)
+    shaped("ammo_58", ["I", "P", "N"], {"I": I, "P": P, "N": N}, 20)
+    shaped("ammo_338", ["I", "P", "I"], {"I": I, "P": P}, 10)
+    shaped("ammo_57", ["N", "P", "C"], {"N": N, "P": P, "C": C}, 20)
+    shaped("ammo_45", ["N", "P", "C"], {"N": N, "P": P, "C": C}, 16)
+
     E_, T_, Q_ = MC + "ender_eye", MC + "torch", MC + "quartz"
     shaped("holo", ["GRG", "III"], {"R": R, "I": I, "G": G})
     shaped("lpvo", ["GIG", "IRI", "I  "], {"R": R, "I": I, "G": G})

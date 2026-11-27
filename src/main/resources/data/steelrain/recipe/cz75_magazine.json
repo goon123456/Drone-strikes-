@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "N",
+    "N",
+    "K"
+  ],
+  "key": {
+    "N": {
+      "item": "minecraft:iron_nugget"
+    },
+    "K": {
+      "item": "minecraft:black_dye"
+    }
+  },
+  "result": {
+    "id": "steelrain:cz75_magazine",
+    "count": 1
+  }
+}

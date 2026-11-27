@@ -1,0 +1,37 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "steelrain:ammo_58"
+    },
+    {
+      "item": "steelrain:ammo_58"
+    },
+    {
+      "item": "steelrain:ammo_58"
+    },
+    {
+      "item": "steelrain:ammo_58"
+    },
+    {
+      "item": "steelrain:ammo_58"
+    },
+    {
+      "item": "steelrain:ammo_58"
+    },
+    {
+      "item": "steelrain:ammo_58"
+    },
+    {
+      "item": "steelrain:ammo_58"
+    },
+    {
+      "item": "minecraft:blue_dye"
+    }
+  ],
+  "result": {
+    "id": "steelrain:ammo_58_training",
+    "count": 8
+  }
+}

@@ -1,7 +1,7 @@
 # Handoff: small arms work (branch `claude/youthful-hamilton-vv974c`)
 
 For whoever picks this up next. Everything described here is committed and pushed; the working tree was clean at
-the time of writing. Current version: **0.51.0** (`dist/steelrain-1.21.1-0.51.0.jar`). No pull request is open.
+the time of writing. Current version: **0.52.0** (`dist/steelrain-1.21.1-0.52.0.jar`). No pull request is open.
 
 ## What was added in this stretch of work
 All of it is the small-arms system (README section "Small arms" is the user-facing description):
@@ -56,6 +56,25 @@ into `run/dev_script.txt` (one command per line: `wait N`, `cmd <command>`, `sho
 screenshots to `run/screenshots/`. **Delete that file again before building the jar for `dist/`.**
 Give a loaded gun with e.g. `/give @s steelrain:m4a1[steelrain:rounds=30,steelrain:chamber=true,steelrain:fire_mode=1,steelrain:parts=[7,13],steelrain:active=true]`
 (`parts` are `Attachment` ordinals; `load` is the round kind: 0 ball, 1 tracer, 2 training).
+
+## V5 reference vault: ~37 more guns + grenades (in progress, batched)
+The user supplied a V5 vault (`...uploads/...V5.zip`, extracted to scratch) asking for ALL ~37 new firearms plus
+throwable frag/smoke grenades and the M320 grenade launcher, textures TRIMMED (lower texel density), realistic
+stats. Being shipped in batches, each its own version:
+- **0.52.0 DONE — 10 pistols**: Glock17/19, P99, HK USP, Five-seveN, M1911A1, Hi-Power, CZ75, P226, P228.
+  Two shared builders in gen_guns.py: `_poly_pistol` (striker/polymer) and `_steel_pistol` (hammer/metal, grip
+  panels). New calibres added to `Caliber`: P57 (5.7x28), ACP45 (.45). `GunType.pistol()` is now a switch listing
+  all of them (used by holdsOpen/boltTravel/HUD); update it when adding more pistols.
+- **Still to do**: assault rifles (10: AK12, AKM, AUG, FAMAS, Tavor X95, F2000, Bren2, QBZ-191/95, L85A2 —
+  calibres R76239 7.62x39 and R58 5.8x42 already in `Caliber`), battle rifles (6: BM59, FAL, HK417, G3, M14,
+  SG542 — 7.62x51), marksman (5: G28, M39, Mk12, PSL, QBU-88), bolt snipers (5: AWM, M24, M40A5, SV98, TRG42 —
+  LAPUA338 in `Caliber`, need a bolt-action reload), grenades+M320 (new throw mechanic). Ammo models + ROUND_SPECS
+  for R76239/R58/LAPUA338/P57/ACP45 are already in gen_guns.py; ammo items auto-register in ModRegistry.
+- Pattern for each batch: build models in gen_guns.py (share builders), add MODELS entries (trim texel density),
+  add GunType rows, per-gun fire sound in gen_gun_sounds.py + gen_sounds.py EVENTS + ModRegistry.GUN_SOUNDS,
+  names/recipes/GUN_ITEMS/GUN_MAGS in gen_assets.py, then regenerate (gen_sounds.main(); g.guns(); g.lang()),
+  test in the dev client, ship. NOTE: `git checkout -- tools/sounds src/main/resources/assets/steelrain/sounds`
+  after gen_gun_sounds to drop re-encoded existing .ogg churn (new untracked sounds survive).
 
 ## 0.51.0: gun-system improvements (all four verified in game)
 - **Caliber vs armour**: `Caliber.vehicleDamage()` gives each round an armour-bite; `Bullets.hitBody` uses it for

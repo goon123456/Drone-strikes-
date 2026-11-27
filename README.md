@@ -317,6 +317,9 @@ bullets that fly, drop and go through cover.
   magnified picture: the 4x has a chevron with hold-over bars for 200 to 600 m worked out for the gun it is on,
   the PSO-1 its chevrons, 10-mil lead marks and the stadiametric range-finder (stand a man between the line and
   the curve and read his range).
+- **Sidearms**: ten more pistols beyond the M17/M18/M9 — **Glock 17** and **Glock 19**, **Walther P99**,
+  **HK USP**, **FN Five-seveN** (5.7x28), **M1911A1** (.45 ACP), **Browning Hi-Power**, **CZ 75**, **SIG P226**
+  and **SIG P228**. All take the pistol suppressor, a light or a laser.
 - **More sights**: the **Holographic Sight** (a lit ring and dot in a wide window), the **1-6x Variable Scope**
   (turn the power with the scroll wheel while aiming; hold-over marks below the dot), and the **3x Flip
   Magnifier**, which goes in its own slot behind a red dot or holographic sight and swings in or aside with

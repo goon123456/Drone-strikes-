@@ -291,6 +291,86 @@
       }
     ]
   },
+  "gun_glock17_fire": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_glock17_fire"
+      }
+    ]
+  },
+  "gun_glock19_fire": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_glock19_fire"
+      }
+    ]
+  },
+  "gun_p99_fire": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_p99_fire"
+      }
+    ]
+  },
+  "gun_hk_usp_fire": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_hk_usp_fire"
+      }
+    ]
+  },
+  "gun_five_seven_fire": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_five_seven_fire"
+      }
+    ]
+  },
+  "gun_m1911a1_fire": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_m1911a1_fire"
+      }
+    ]
+  },
+  "gun_hi_power_fire": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_hi_power_fire"
+      }
+    ]
+  },
+  "gun_cz75_fire": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_cz75_fire"
+      }
+    ]
+  },
+  "gun_p226_fire": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_p226_fire"
+      }
+    ]
+  },
+  "gun_p228_fire": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_p228_fire"
+      }
+    ]
+  },
   "gun_rifle_far": {
     "subtitle": "subtitles.steelrain.gun_far",
     "sounds": [

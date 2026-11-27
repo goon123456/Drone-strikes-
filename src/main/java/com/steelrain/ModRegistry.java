@@ -81,7 +81,8 @@ public final class ModRegistry {
     public static final Supplier<net.minecraft.sounds.SoundEvent> CABLE_SNAP = sound("cable_snap");
     /** Small-arms sounds, made by tools/gen_gun_sounds.py and looked up by name. */
     public static final String[] GUN_SOUNDS = {"gun_m107_fire", "gun_rpg7_fire", "gun_m18_fire", "gun_m9_fire", "gun_hk416_fire", "gun_g36_fire", "gun_scarh_fire", "gun_m249_fire",
-            "gun_m240_fire", "gun_m110_fire", "gun_rocket_in", "gun_ak74m_fire", "gun_m4a1_fire", "gun_svd_fire", "gun_pkm_fire", "gun_m17_fire", "gun_m590_fire",
+            "gun_m240_fire", "gun_m110_fire", "gun_glock17_fire", "gun_glock19_fire", "gun_p99_fire", "gun_hk_usp_fire", "gun_five_seven_fire",
+            "gun_m1911a1_fire", "gun_hi_power_fire", "gun_cz75_fire", "gun_p226_fire", "gun_p228_fire", "gun_rocket_in", "gun_ak74m_fire", "gun_m4a1_fire", "gun_svd_fire", "gun_pkm_fire", "gun_m17_fire", "gun_m590_fire",
             "gun_rifle_far", "gun_heavy_far", "gun_pistol_far", "gun_suppressed", "gun_pistol_suppressed",
             "gun_mag_out", "gun_mag_in", "gun_bolt", "gun_bolt_release", "gun_dry", "gun_selector", "gun_pump", "gun_shell_in", "gun_round_in",
             "gun_belt", "gun_cover", "bullet_crack", "bullet_whizz", "bullet_ricochet", "gun_casing"};

@@ -52,7 +52,18 @@ public enum GunType {
             EnumSet.of(Attachment.RED_DOT, Attachment.ACOG)),
     M110("m110", Caliber.R76251, 20, 300, new int[]{Mode.SAFE, Mode.SEMI}, Action.CLOSED_BOLT,
             1.40f, 0.36f, 1.0f, 300, 60, 72, range(100, 1000), 0.94, 4.9f,
-            EnumSet.of(Attachment.RED_DOT, Attachment.ACOG, Attachment.SCOPE10, Attachment.SUPPRESSOR));
+            EnumSet.of(Attachment.RED_DOT, Attachment.ACOG, Attachment.SCOPE10, Attachment.SUPPRESSOR)),
+    // ---- V5 pistols ----
+    GLOCK17("glock17", Caliber.P9, 17, 400, new int[]{Mode.SAFE, Mode.SEMI}, Action.CLOSED_BOLT, 1.30f, 0.55f, 6.0f, 140, 32, 40, new int[]{25}, 1.0, 0.63f, EnumSet.of(Attachment.PISTOL_SUPPRESSOR)),
+    GLOCK19("glock19", Caliber.P9, 15, 400, new int[]{Mode.SAFE, Mode.SEMI}, Action.CLOSED_BOLT, 1.45f, 0.60f, 6.5f, 135, 32, 40, new int[]{25}, 0.97, 0.60f, EnumSet.of(Attachment.PISTOL_SUPPRESSOR)),
+    P99("p99", Caliber.P9, 15, 400, new int[]{Mode.SAFE, Mode.SEMI}, Action.CLOSED_BOLT, 1.35f, 0.56f, 6.0f, 145, 34, 42, new int[]{25}, 1.0, 0.63f, EnumSet.of(Attachment.PISTOL_SUPPRESSOR)),
+    HK_USP("hk_usp", Caliber.P9, 15, 380, new int[]{Mode.SAFE, Mode.SEMI}, Action.CLOSED_BOLT, 1.30f, 0.55f, 5.8f, 150, 34, 42, new int[]{25}, 1.0, 0.75f, EnumSet.of(Attachment.PISTOL_SUPPRESSOR)),
+    FIVE_SEVEN("five_seven", Caliber.P57, 20, 430, new int[]{Mode.SAFE, Mode.SEMI}, Action.CLOSED_BOLT, 1.00f, 0.45f, 5.0f, 145, 32, 40, new int[]{50}, 1.0, 0.62f, EnumSet.of(Attachment.PISTOL_SUPPRESSOR)),
+    M1911A1("m1911a1", Caliber.ACP45, 7, 360, new int[]{Mode.SAFE, Mode.SEMI}, Action.CLOSED_BOLT, 1.70f, 0.65f, 6.0f, 150, 36, 44, new int[]{25}, 1.0, 1.1f, EnumSet.of(Attachment.PISTOL_SUPPRESSOR)),
+    HI_POWER("hi_power", Caliber.P9, 13, 400, new int[]{Mode.SAFE, Mode.SEMI}, Action.CLOSED_BOLT, 1.35f, 0.56f, 6.0f, 150, 36, 44, new int[]{25}, 1.0, 0.9f, EnumSet.of(Attachment.PISTOL_SUPPRESSOR)),
+    CZ75("cz75", Caliber.P9, 16, 400, new int[]{Mode.SAFE, Mode.SEMI}, Action.CLOSED_BOLT, 1.25f, 0.52f, 5.8f, 150, 36, 44, new int[]{25}, 1.0, 1.0f, EnumSet.of(Attachment.PISTOL_SUPPRESSOR)),
+    P226("p226", Caliber.P9, 15, 400, new int[]{Mode.SAFE, Mode.SEMI}, Action.CLOSED_BOLT, 1.30f, 0.55f, 5.8f, 148, 36, 44, new int[]{25}, 1.0, 0.96f, EnumSet.of(Attachment.PISTOL_SUPPRESSOR)),
+    P228("p228", Caliber.P9, 13, 420, new int[]{Mode.SAFE, Mode.SEMI}, Action.CLOSED_BOLT, 1.40f, 0.58f, 6.2f, 140, 34, 42, new int[]{25}, 0.98, 0.83f, EnumSet.of(Attachment.PISTOL_SUPPRESSOR));
 
     /** Fire selector positions. */
     public static final class Mode {
@@ -122,7 +133,12 @@ public enum GunType {
         };
     }
 
-    public boolean pistol() { return this == M17 || this == M18 || this == M9; }
+    public boolean pistol() {
+        return switch (this) {
+            case M17, M18, M9, GLOCK17, GLOCK19, P99, HK_USP, FIVE_SEVEN, M1911A1, HI_POWER, CZ75, P226, P228 -> true;
+            default -> false;
+        };
+    }
     /** Fed from a belt in a box hung on the gun, under a feed cover that has to be lifted. */
     public boolean beltFed() { return this == PKM || this == M249 || this == M240; }
     /** Which side the belt goes in: 1 for the firer's left, -1 for the right (the PKM). */
@@ -151,7 +167,7 @@ public enum GunType {
     public float boltAt() { return beltFed() ? 0.88f : 0.80f; }
     /** How far the bolt, slide or pump travels (m). */
     public float boltTravel() {
-        return switch (this) { case M17, M18, M9 -> 0.042f; case HK416, M110 -> 0.070f; case M249, M240 -> 0.100f; case M590 -> 0.090f; case M4A1 -> 0.070f; case PKM -> 0.110f; case M107 -> 0.120f; case RPG7 -> 0f; default -> 0.090f; };
+        return switch (this) { case M17, M18, M9, GLOCK17, GLOCK19, P99, HK_USP, FIVE_SEVEN, M1911A1, HI_POWER, CZ75, P226, P228 -> 0.042f; case HK416, M110 -> 0.070f; case M249, M240 -> 0.100f; case M590 -> 0.090f; case M4A1 -> 0.070f; case PKM -> 0.110f; case M107 -> 0.120f; case RPG7 -> 0f; default -> 0.090f; };
     }
 
     public static final GunType[] VALUES = values();

@@ -770,6 +770,146 @@ def rpg7():
 
 
 # ---------------------------------------------------------------- M9
+
+# ---------------------------------------------------------------- pistol families (V5)
+PISTOL_ROUNDS = {"9mm": (0.019, 0.0098, 0.0096, 0.010), "57": (0.029, 0.0079, 0.0060, 0.013), "45": (0.023, 0.0120, 0.0117, 0.009)}
+
+
+def _poly_pistol(name, mark, L=0.0, G=0.0, railed=True, rnd="9mm", frame=POLYMER, slidemat=GUN_BLACK, boxy=False):
+    """A polymer striker pistol: squared slide, moulded frame with a stippled grip and (usually) a dust-cover rail.
+    `L` lengthens the slide and barrel forward, `G` the grip downward. Glock, P99, USP, Five-seveN."""
+    S = GUN_STEEL
+    cl, cd, nk, bl = PISTOL_ROUNDS[rnd]
+    sh = 0.034 if boxy else 0.031                                                                      # slide height
+    p = [body(frame, [(-0.074, -0.020, 0.024, 0.014), (-0.060, -0.022, 0.0285, 0.020), (0.082 + L, -0.022, 0.0285, 0.020), (0.090 + L, -0.021, 0.026, 0.016)], power=5)]
+    p += sweep(frame, [(-0.034, -0.026), (-0.040, -0.050), (-0.050, -0.090 - G * 0.5), (-0.060 - G * 0.25, -0.124 - G)], [0.0295, 0.030, 0.031, 0.0315], [0.050, 0.050, 0.052, 0.054], power=3.6)
+    p += sweep(frame, [(-0.060, -0.022), (-0.078, -0.018), (-0.086, -0.016)], [0.024, 0.022, 0.018], [0.012, 0.010, 0.007], power=3, seg=10)
+    tg = 0.060 if boxy else 0.047                                                                      # trigger-guard front
+    p += sweep(frame, [(tg, -0.028), (tg - 0.001, -0.060), (0.038, -0.072), (0.004, -0.073), (-0.016, -0.062)], 0.014, 0.0055, power=4, seg=8, ends="flat")
+    if railed:
+        p += rail(frame, 0.048, 0.086 + L, -0.031, w=0.020, up=-1)
+    for sx in (1, -1):
+        p += [B(frame, sx * 0.0152 - 0.0003, -0.118 - G, -0.068, 0.0006, 0.074 + G, 0.030, pitch=-14, pivot=(0, -0.08, -0.05), plain=True,
+                marks=[("left" if sx > 0 else "right", "checker", 0.5, 0.5, 0.030, 0.074)])]
+    p += [B(S, 0.0143, -0.022, 0.010, 0.0016, 0.005, 0.022, plain=True), label(frame, mark, 0.01435, -0.022, 0.056, 0.020, 0.0036)]
+    p += [tube(S, 0.060, 0.1005 + L, cd * 1.45, seg=10), bore(0.1005 + L, cd * 0.92), tube(S, 0.060, 0.0995 + L, 0.008, y=-0.0135)]
+
+    slide = [body(slidemat, [(-0.104, 0.002, 0.024, 0.026), (-0.100, 0.0035, 0.026, sh), (0.090 + L, 0.0035, 0.026, sh), (0.099 + L, 0.002, 0.024, 0.026)], power=7 if boxy else 6)]
+    for sx in (1, -1):
+        for z, ln in ((-0.094, 0.028), (0.056 + L, 0.022)):
+            slide += [B(slidemat, sx * 0.0128 - 0.0003, -0.008, z, 0.0006, 0.022, ln, plain=True,
+                        marks=[("left" if sx > 0 else "right", "grooves", 0.5, 0.5, ln, 0.022)])]
+    slide += [B(BLACK, -0.0134, 0.004, 0.002, 0.0142, sh * 0.5, 0.034, plain=True), B(GUN_BARE, -0.0128, 0.006, 0.004, 0.012, 0.012, 0.030, plain=True),
+              B(S, -0.0016, 0.013 + sh, 0.084 + L, 0.0032, 0.007, 0.006, plain=True, marks=[("rear", "dot", 0.5, 0.4, 0.002, (230, 230, 230))]),
+              B(S, -0.009, 0.013 + sh, -0.100, 0.018, 0.0025, 0.008, plain=True),
+              B(S, -0.009, 0.013 + sh, -0.100, 0.0065, 0.007, 0.008, plain=True, marks=[("rear", "dot", 0.5, 0.4, 0.002, (230, 230, 230))]),
+              B(S, 0.0025, 0.013 + sh, -0.100, 0.0065, 0.007, 0.008, plain=True, marks=[("rear", "dot", 0.5, 0.4, 0.002, (230, 230, 230))]),
+              label(slidemat, mark, 0.01305, 0.006, 0.006, 0.040, 0.0032)]
+    trigger = sweep(S, [(0.016, -0.032), (0.017, -0.046), (0.020, -0.056), (0.017, -0.064)], 0.007, 0.006, power=3, seg=8)
+    selector = [B(S, 0.0143, -0.019, -0.062, 0.0035, 0.005, 0.024, plain=True)]
+    mag = sweep(GUN_STEEL, [(-0.037, -0.016), (-0.049, -0.066), (-0.061 - G * 0.25, -0.120 - G)], 0.021, 0.040, power=6, ends="flat")
+    mag += sweep(frame, [(-0.061 - G * 0.25, -0.121 - G), (-0.064 - G * 0.25, -0.134 - G)], 0.030, 0.054, power=4, ends="flat")
+    mag += cartridge(CASE_BRASS, -0.052, -0.013, cl, cd, nk, bl)
+    return gun(p, [bone("bolt", (0, 0.0, 0.0), slide), bone("trigger", (0, -0.030, 0.016), trigger), bone("selector", (0, -0.0165, -0.040), selector),
+                   bone("mag", (0, -0.070, -0.050), mag)],
+               dict(muzzle=(0, 0, 0.1005 + L), thread=(0, 0, 0.1005 + L), eject=(-0.014, 0.012, 0.02), sight=(0, 0.013 + sh, -0.100), front=(0, 0.013 + sh, 0.087 + L),
+                    optic=(0, 0.013 + sh, -0.060), under=(0, -0.034, 0.07), grip=(0, -0.078 - G, -0.047), hand=(0.012, -0.088, -0.040), mag=(0, -0.070, -0.050),
+                    charge=(0.0, 0.016, -0.085)))
+
+
+def _steel_pistol(name, mark, L=0.0, rnd="9mm", panels=WOOD, framemat=GUN_STEEL, slidemat=_mat("gun_slide", (56, 60, 64), "gunmetal", wear=(120, 124, 128)), squared=False):
+    """A metal-framed pistol with an exposed hammer and separate grip panels: 1911, Hi-Power, CZ75, P226, P228.
+    `L` moves the muzzle; `squared` gives a SIG/CZ blockier slide, else the rounded 1911/Browning profile."""
+    S, K = GUN_STEEL, GUN_BLACK
+    cl, cd, nk, bl = PISTOL_ROUNDS[rnd]
+    sh = 0.030
+    # frame: dust cover, grip with panels, beavertail tang, curved trigger guard
+    p = [body(framemat, [(-0.070, -0.019, 0.024, 0.012), (-0.056, -0.021, 0.028, 0.019), (0.084 + L, -0.021, 0.028, 0.019), (0.092 + L, -0.020, 0.024, 0.014)], power=5)]
+    p += sweep(framemat, [(-0.036, -0.026), (-0.044, -0.052), (-0.052, -0.092), (-0.058, -0.126)], [0.029, 0.030, 0.031, 0.031], [0.050, 0.050, 0.052, 0.054], power=3.4)
+    p += sweep(framemat, [(-0.056, -0.019), (-0.076, -0.015), (-0.090, -0.017)], [0.022, 0.020, 0.015], [0.012, 0.010, 0.007], power=3, seg=10)
+    p += sweep(framemat, [(0.046, -0.027), (0.050, -0.050), (0.042, -0.064), (0.012, -0.070), (-0.012, -0.060)], 0.013, 0.005, power=4, seg=8, ends="flat")
+    for sx in (1, -1):                                                                                  # separate grip panels, chequered
+        p += [B(panels, sx * 0.0156 - 0.0005, -0.124, -0.072, 0.001, 0.080, 0.034, pitch=-12, pivot=(0, -0.08, -0.05), plain=True,
+                marks=[("left" if sx > 0 else "right", "checker", 0.5, 0.5, 0.034, 0.080)])]
+    p += [B(S, 0.0150, -0.022, 0.008, 0.0016, 0.005, 0.026, plain=True), label(framemat, mark, 0.0148, -0.022, 0.050, 0.018, 0.0034)]
+    p += [tube(S, 0.056, 0.100 + L, cd * 1.45, seg=10), bore(0.100 + L, cd * 0.92)]
+    # slide: rounded (1911) or squared (SIG), with its ejection port, sights and the exposed hammer behind
+    prof = [(-0.100, 0.002, 0.024, 0.026), (-0.096, 0.004, 0.026, sh), (0.090 + L, 0.004, 0.026, sh), (0.100 + L, 0.002, 0.024, 0.024)]
+    slide = [body(slidemat, prof, power=7 if squared else 3.6)]
+    for sx in (1, -1):
+        slide += [B(slidemat, sx * 0.0128 - 0.0003, -0.008, -0.090, 0.0006, 0.022, 0.030, plain=True,
+                    marks=[("left" if sx > 0 else "right", "grooves", 0.5, 0.5, 0.030, 0.022)])]
+    slide += [B(BLACK, -0.0134, 0.006, 0.004, 0.0146, sh * 0.5, 0.034, plain=True), B(GUN_BARE, -0.0128, 0.008, 0.006, 0.012, 0.011, 0.030, plain=True),
+              B(S, -0.0016, 0.012 + sh, 0.086 + L, 0.0032, 0.006, 0.006, plain=True),
+              B(S, -0.008, 0.012 + sh, -0.098, 0.016, 0.0025, 0.008, plain=True), B(S, -0.008, 0.012 + sh, -0.098, 0.005, 0.007, 0.008, plain=True), B(S, 0.003, 0.012 + sh, -0.098, 0.005, 0.007, 0.008, plain=True),
+              label(slidemat, mark, 0.01305, 0.006, 0.004, 0.040, 0.0030)]
+    hammer = [slab(S, 0.007, [(-0.110, 0.012), (-0.104, 0.012), (-0.100, 0.028), (-0.108, 0.030), (-0.114, 0.022)], edge=0.0015, r=0.003)[0]]
+    trigger = sweep(S, [(0.016, -0.030), (0.017, -0.044), (0.020, -0.054), (0.017, -0.062)], 0.007, 0.006, power=3, seg=8)
+    selector = [B(S, 0.0150, -0.018, -0.058, 0.0035, 0.006, 0.022, plain=True)]
+    mag = sweep(GUN_STEEL, [(-0.037, -0.016), (-0.049, -0.068), (-0.058, -0.122)], 0.021, 0.040, power=6, ends="flat")
+    mag += sweep(GUN_STEEL, [(-0.058, -0.123), (-0.060, -0.134)], 0.030, 0.054, power=4, ends="flat")
+    mag += cartridge(CASE_BRASS, -0.052, -0.013, cl, cd, nk, bl)
+    return gun(p + hammer, [bone("bolt", (0, 0.0, 0.0), slide), bone("trigger", (0, -0.028, 0.016), trigger), bone("selector", (0, -0.0155, -0.040), selector),
+                            bone("mag", (0, -0.070, -0.050), mag)],
+               dict(muzzle=(0, 0, 0.100 + L), thread=(0, 0, 0.100 + L), eject=(-0.014, 0.014, 0.02), sight=(0, 0.012 + sh, -0.098), front=(0, 0.012 + sh, 0.089 + L),
+                    optic=(0, 0.012 + sh, -0.060), under=(0, -0.030, 0.06), grip=(0, -0.080, -0.047), hand=(0.012, -0.090, -0.042), mag=(0, -0.070, -0.050),
+                    charge=(0.0, 0.016, -0.085)))
+
+
+def glock17():
+    """Glock 17, 9x19: squared polymer-framed striker pistol, low sights, 17-round magazine."""
+    return _poly_pistol("Glock 17", "G17", railed=True)
+
+
+def glock19():
+    """Glock 19, 9x19: the compact Glock, shorter slide and grip, 15 rounds."""
+    return _poly_pistol("Glock 19", "G19", L=-0.014, G=-0.012, railed=True)
+
+
+def p99():
+    """Walther P99, 9x19: sculpted polymer grip, angular slide, 15 rounds."""
+    return _poly_pistol("Walther P99", "P99", frame=_mat("p99_frame", (40, 42, 46), "polymer"))
+
+
+def hk_usp():
+    """HK USP, 9x19: boxy slide, oversized squared trigger guard, moulded frame, 15 rounds."""
+    return _poly_pistol("HK USP", "USP", L=0.004, railed=True, boxy=True, frame=_mat("usp_frame", (34, 36, 38), "polymer"))
+
+
+def five_seven():
+    """FN Five-seveN, 5.7x28: long angular polymer slide and broad textured grip, 20 rounds."""
+    return _poly_pistol("Five-seveN", "5.7", L=0.014, G=0.010, rnd="57", frame=_mat("fn_frame", (44, 42, 40), "polymer"))
+
+
+def m1911a1():
+    """M1911A1, .45 ACP: slim steel slide, straight-sided wood grips, 7 rounds."""
+    return _steel_pistol("M1911A1", "1911", rnd="45", panels=WOOD, framemat=_mat("blued", (46, 48, 52), "gunmetal", wear=(92, 96, 100)),
+                         slidemat=_mat("blued_s", (40, 42, 46), "gunmetal", wear=(96, 100, 104)))
+
+
+def hi_power():
+    """Browning Hi-Power, 9x19: rounded steel upper, slender frame, wood grips, 13 rounds."""
+    return _steel_pistol("Hi-Power", "HP35", panels=WOOD, framemat=_mat("blued2", (48, 50, 54), "gunmetal", wear=(96, 100, 104)),
+                         slidemat=_mat("blued2s", (42, 44, 48), "gunmetal", wear=(100, 104, 108)))
+
+
+def cz75():
+    """CZ 75, 9x19: slender slide riding inside the frame rails, black panels, 16 rounds."""
+    return _steel_pistol("CZ 75", "CZ75", panels=GUN_BLACK, squared=True)
+
+
+def p226():
+    """SIG P226, 9x19: squared alloy slide, curved grip, black panels, 15 rounds."""
+    return _steel_pistol("SIG P226", "P226", panels=_mat("sig_grip", (32, 34, 36), "polymer"), squared=True,
+                         framemat=_mat("alloy", (58, 62, 66), "gunmetal", wear=(110, 114, 118)))
+
+
+def p228():
+    """SIG P228, 9x19: the compact P226, shorter slide, 13 rounds."""
+    return _steel_pistol("SIG P228", "P228", L=-0.012, panels=_mat("sig_grip2", (32, 34, 36), "polymer"), squared=True,
+                         framemat=_mat("alloy2", (58, 62, 66), "gunmetal", wear=(110, 114, 118)))
+
+
 def m9():
     """Beretta M9, 9x19: the open-topped slide with the barrel showing along it, rounded frame, ring hammer, slide
     safety and chequered grip panels. 217 mm long, 15 rounds."""
@@ -1401,7 +1541,10 @@ def foregrip():
 TIP_RED, TIP_GREEN, TIP_BLUE = _mat("tip_red", (214, 60, 40), "polymer"), _mat("tip_green", (70, 170, 80), "polymer"), _mat("tip_blue", (60, 110, 210), "polymer")
 ROUND_SPECS = {"ammo_545": (CASE_STEEL, 0.0396, 0.010, 0.0062, 0.017, 3, TIP_GREEN), "ammo_556": (CASE_BRASS, 0.0447, 0.0095, 0.0063, 0.012, 3, TIP_RED),
                "ammo_762": (CASE_STEEL, 0.0537, 0.0124, 0.0085, 0.022, 3, TIP_GREEN), "ammo_9mm": (CASE_BRASS, 0.019, 0.0098, 0.0096, 0.010, 3, TIP_RED),
-               "ammo_50": (CASE_BRASS, 0.099, 0.0204, 0.0142, 0.036, 2, TIP_RED), "ammo_76251": (CASE_BRASS, 0.0512, 0.0119, 0.0087, 0.020, 3, TIP_RED)}
+               "ammo_50": (CASE_BRASS, 0.099, 0.0204, 0.0142, 0.036, 2, TIP_RED), "ammo_76251": (CASE_BRASS, 0.0512, 0.0119, 0.0087, 0.020, 3, TIP_RED),
+               "ammo_76239": (CASE_STEEL, 0.0388, 0.0113, 0.0079, 0.019, 3, TIP_GREEN), "ammo_58": (CASE_STEEL, 0.0421, 0.0100, 0.0060, 0.016, 3, TIP_GREEN),
+               "ammo_338": (CASE_BRASS, 0.0693, 0.0147, 0.0086, 0.040, 2, TIP_RED), "ammo_57": (CASE_BRASS, 0.0289, 0.0079, 0.0060, 0.013, 3, TIP_RED),
+               "ammo_45": (CASE_BRASS, 0.0230, 0.0120, 0.0117, 0.009, 3, TIP_RED)}
 
 
 def _rounds(case, case_len, case_dia, neck, bullet_len, n=3, tip=BULLET):
@@ -1418,6 +1561,11 @@ def ammo_9mm(): return _rounds(CASE_BRASS, 0.019, 0.0098, 0.0096, 0.010)
 
 
 def ammo_76251(): return _rounds(CASE_BRASS, 0.0512, 0.0119, 0.0087, 0.020)
+def ammo_76239(): return _rounds(CASE_STEEL, 0.0388, 0.0113, 0.0079, 0.019)
+def ammo_58(): return _rounds(CASE_STEEL, 0.0421, 0.0100, 0.0060, 0.016)
+def ammo_338(): return _rounds(CASE_BRASS, 0.0693, 0.0147, 0.0086, 0.040, n=2)
+def ammo_57(): return _rounds(CASE_BRASS, 0.0289, 0.0079, 0.0060, 0.013)
+def ammo_45(): return _rounds(CASE_BRASS, 0.0230, 0.0120, 0.0117, 0.009)
 def ammo_50(): return _rounds(CASE_BRASS, 0.099, 0.0204, 0.0142, 0.036, n=2)
 
 
@@ -1431,8 +1579,11 @@ def ammo_12g():
 #          model               builder          texels per metre
 MODELS = {"ak74m": (ak74m, 1600), "m4a1": (m4a1, 1600), "svd": (svd, 1300), "pkm": (pkm, 1300), "m17": (m17, 3200), "m590": (m590, 1400), "m107": (m107, 1100), "rpg7": (rpg7, 1200),
           "rocket_pg7v": (rocket_pg7v, 1500), "rocket_og7v": (rocket_og7v, 1500), "scope_10x": (scope_10x, 2000), "ammo_50": (ammo_50, 2600),
-          "m18": (m18, 3200), "m9": (m9, 3200), "hk416": (hk416, 1500), "g36": (g36, 1500), "scarh": (scarh, 1500), "m249": (m249, 1200),
-          "m240": (m240, 1100), "m110": (m110, 1300), "ammo_76251": (ammo_76251, 3500),
+          "m18": (m18, 3200), "m9": (m9, 3200),
+          "glock17": (glock17, 2600), "glock19": (glock19, 2600), "p99": (p99, 2600), "hk_usp": (hk_usp, 2600), "five_seven": (five_seven, 2600),
+          "m1911a1": (m1911a1, 2600), "hi_power": (hi_power, 2600), "cz75": (cz75, 2600), "p226": (p226, 2600), "p228": (p228, 2600), "hk416": (hk416, 1500), "g36": (g36, 1500), "scarh": (scarh, 1500), "m249": (m249, 1200),
+          "m240": (m240, 1100), "m110": (m110, 1300), "ammo_76251": (ammo_76251, 3500), "ammo_76239": (ammo_76239, 3800), "ammo_58": (ammo_58, 4000), "ammo_338": (ammo_338, 2800),
+          "ammo_57": (ammo_57, 5000), "ammo_45": (ammo_45, 4000),
           "holo": (holo, 2600), "lpvo": (lpvo, 2000), "magnifier": (magnifier, 2600), "nv_scope": (nv_scope, 1800), "thermal_scope": (thermal_scope, 1800),
           "flashlight": (flashlight, 2600), "laser": (laser, 3000), "angled_grip": (angled_grip, 2400), "bipod": (bipod, 2000),
           "red_dot": (red_dot, 3000), "acog": (acog, 2400), "pso1": (pso1, 2000), "suppressor": (suppressor, 2400),
