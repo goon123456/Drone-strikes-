@@ -228,7 +228,7 @@ public final class GunClient {
     }
 
     // ------------------------------------------------------------------ reload and other actions in the hands
-    static final int ANIM_NONE = 0, ANIM_RELOAD = 1, ANIM_RELOAD_EMPTY = 2, ANIM_SHELL = 3, ANIM_PUMP = 4;
+    static final int ANIM_NONE = 0, ANIM_RELOAD = 1, ANIM_RELOAD_EMPTY = 2, ANIM_SHELL = 3, ANIM_PUMP = 4, ANIM_BOLT = 5;
     static int anim;
     static long animAt, animMs;
     static long dryAt, selectorAt;
@@ -299,8 +299,9 @@ public final class GunClient {
             }
             case GunLogic.EV_BURST -> GunFx.rocketEnded(p.entityId());
             case GunLogic.EV_PUMP -> {
-                if (mine) { anim = ANIM_PUMP; animAt = now; animMs = 450; }
-                cue(p.entityId(), 2, "gun_pump");
+                boolean rifleBolt = p.arg() == 1;                       // a turn-bolt rifle cycling, not a pump shotgun
+                if (mine) { anim = rifleBolt ? ANIM_BOLT : ANIM_PUMP; animAt = now; animMs = rifleBolt ? 500 : 450; }
+                cue(p.entityId(), 2, rifleBolt ? "gun_bolt" : "gun_pump");
             }
             case GunLogic.EV_DRY -> {
                 if (mine) dryAt = now;

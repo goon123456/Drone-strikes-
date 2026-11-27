@@ -297,6 +297,24 @@ def item_icons():
     d.line([(5, 13), (10, 13)], fill=c((70, 74, 78)))
     icons["drone_grenade"] = outlined(img)
 
+    img, d = canvas()   # fragmentation grenade: a cross-hatched olive body with a spoon and ring
+    d.ellipse([4, 5, 11, 13], fill=c((74, 86, 54)))
+    for yy in (7, 9, 11):
+        d.line([(5, yy), (10, yy)], fill=c((48, 56, 34)))
+    for xx in (6, 8, 10):
+        d.line([(xx, 6), (xx, 12)], fill=c((48, 56, 34)))
+    d.rectangle([6, 3, 9, 5], fill=c((120, 124, 128)))          # fuse body
+    d.line([(9, 4), (12, 3)], fill=c((150, 154, 158)))          # spoon
+    d.ellipse([11, 2, 14, 5], outline=c((180, 184, 188)))       # pull ring
+    icons["frag_grenade"] = outlined(img)
+
+    img, d = canvas()   # smoke grenade: a tall grey cylinder with a green band and top ports
+    d.rectangle([5, 4, 10, 13], fill=c((78, 82, 86)))
+    d.rectangle([5, 8, 10, 10], fill=c((90, 130, 80)))         # colour band
+    d.rectangle([5, 2, 10, 4], fill=c((120, 124, 128)))        # top cap
+    d.point([(6, 3), (8, 3), (9, 3)], fill=c((50, 52, 56)))    # emission ports
+    icons["smoke_grenade"] = outlined(img)
+
     img, d = canvas()   # Orlan-10 from above
     g = (156, 160, 166)
     d.rectangle([7, 3, 8, 11], fill=c(g))
@@ -577,15 +595,20 @@ def tags():
 
 
 # ---------------------------------------------------------------- small arms
+RIFLES_V5 = ["akm", "ak12", "aug", "tavor", "qbz95", "l85", "f2000", "famas", "bren2", "qbz191",
+             "m14", "bm59", "fal", "g3", "hk417", "sg542",
+             "psl", "g28", "m39emr", "mk12", "qbu88",
+             "awm", "m24", "m40", "sv98", "trg42"]
+GL_ROUNDS = ["gl_he", "gl_smoke"]
 GUN_ITEMS = ["ak74m", "m4a1", "svd", "pkm", "m17", "m590", "m107", "rpg7", "m18", "m9", "hk416", "g36", "scarh", "m249", "m240", "m110",
-             "glock17", "glock19", "p99", "hk_usp", "five_seven", "m1911a1", "hi_power", "cz75", "p226", "p228"]
+             "glock17", "glock19", "p99", "hk_usp", "five_seven", "m1911a1", "hi_power", "cz75", "p226", "p228"] + RIFLES_V5 + ["m320"]
 GUN_MAGS = ["ak74m", "m4a1", "svd", "pkm", "m17", "m107", "m18", "m9", "hk416", "g36", "scarh", "m249", "m240", "m110",
-            "glock17", "glock19", "p99", "hk_usp", "five_seven", "m1911a1", "hi_power", "cz75", "p226", "p228"]
+            "glock17", "glock19", "p99", "hk_usp", "five_seven", "m1911a1", "hi_power", "cz75", "p226", "p228"] + RIFLES_V5
 GUN_PARTS = ["red_dot", "acog", "pso1", "suppressor", "pistol_suppressor", "foregrip", "scope_10x", "holo", "lpvo", "magnifier", "nv_scope",
              "thermal_scope", "flashlight", "laser", "angled_grip", "bipod"]
 ROUND_NAMES = {"ammo_545": "5.45x39", "ammo_556": "5.56x45", "ammo_762": "7.62x54R", "ammo_9mm": "9x19", "ammo_50": ".50 BMG", "ammo_76251": "7.62x51",
                "ammo_76239": "7.62x39", "ammo_58": "5.8x42", "ammo_338": ".338 Lapua", "ammo_57": "5.7x28", "ammo_45": ".45 ACP"}
-GUN_AMMO = ["ammo_545", "ammo_556", "ammo_762", "ammo_9mm", "ammo_12g", "ammo_50", "rocket_pg7v", "rocket_og7v", "ammo_76251", "ammo_76239", "ammo_58", "ammo_338", "ammo_57", "ammo_45"] + [r + k for r in ROUND_NAMES for k in ("_tracer", "_training")]
+GUN_AMMO = ["ammo_545", "ammo_556", "ammo_762", "ammo_9mm", "ammo_12g", "ammo_50", "rocket_pg7v", "rocket_og7v", "ammo_76251", "ammo_76239", "ammo_58", "ammo_338", "ammo_57", "ammo_45", "gl_he", "gl_smoke"] + [r + k for r in ROUND_NAMES for k in ("_tracer", "_training")]
 
 GUN_LANG = {
     "item.steelrain.ak74m": "AK-74M", "item.steelrain.m4a1": "M4A1", "item.steelrain.svd": "SVD", "item.steelrain.pkm": "PKM",
@@ -608,6 +631,22 @@ GUN_LANG = {
         "five_seven": "Five-seveN (20)", "m1911a1": "1911 (7)", "hi_power": "Hi-Power (13)", "cz75": "CZ 75 (16)", "p226": "P226 (15)", "p228": "P228 (13)"}.items()},
     "item.steelrain.ammo_76239": "7.62x39 Round", "item.steelrain.ammo_58": "5.8x42 Round", "item.steelrain.ammo_338": ".338 Lapua Round",
     "item.steelrain.ammo_57": "5.7x28 Round", "item.steelrain.ammo_45": ".45 ACP Round",
+    "item.steelrain.akm": "AKM", "item.steelrain.ak12": "AK-12", "item.steelrain.aug": "Steyr AUG A1", "item.steelrain.tavor": "IWI Tavor X95",
+    "item.steelrain.qbz95": "QBZ-95", "item.steelrain.l85": "L85A2", "item.steelrain.f2000": "FN F2000", "item.steelrain.famas": "FAMAS F1",
+    "item.steelrain.bren2": "CZ BREN 2", "item.steelrain.qbz191": "QBZ-191",
+    "item.steelrain.m14": "M14", "item.steelrain.bm59": "Beretta BM59", "item.steelrain.fal": "FN FAL", "item.steelrain.g3": "HK G3",
+    "item.steelrain.hk417": "HK417", "item.steelrain.sg542": "SIG SG 542",
+    "item.steelrain.psl": "PSL", "item.steelrain.g28": "HK G28", "item.steelrain.m39emr": "M39 EMR", "item.steelrain.mk12": "Mk 12 SPR",
+    "item.steelrain.qbu88": "QBU-88",
+    "item.steelrain.awm": "AI AWM", "item.steelrain.m24": "M24 SWS", "item.steelrain.m40": "M40A5", "item.steelrain.sv98": "SV-98", "item.steelrain.trg42": "Sako TRG-42",
+    "item.steelrain.m320": "M320 Grenade Launcher", "item.steelrain.gl_he": "40mm HE Grenade", "item.steelrain.gl_smoke": "40mm Smoke Grenade",
+    "item.steelrain.frag_grenade": "Fragmentation Grenade", "item.steelrain.smoke_grenade": "Smoke Grenade",
+    "entity.steelrain.hand_grenade": "Grenade",
+    **{f"item.steelrain.{g}_magazine": n + " Magazine" for g, n in {"akm": "AKM (30)", "ak12": "AK-12 (30)", "aug": "AUG (30)", "tavor": "Tavor (30)",
+        "qbz95": "QBZ-95 (30)", "l85": "L85 (30)", "f2000": "F2000 (30)", "famas": "FAMAS (25)", "bren2": "BREN 2 (30)", "qbz191": "QBZ-191 (30)",
+        "m14": "M14 (20)", "bm59": "BM59 (20)", "fal": "FAL (20)", "g3": "G3 (20)", "hk417": "HK417 (20)", "sg542": "SG 542 (20)",
+        "psl": "PSL (10)", "g28": "G28 (20)", "m39emr": "M39 EMR (20)", "mk12": "Mk 12 (20)", "qbu88": "QBU-88 (10)",
+        "awm": "AWM (5)", "m24": "M24 (5)", "m40": "M40 (5)", "sv98": "SV-98 (10)", "trg42": "TRG-42 (5)"}.items()},
     "gui.steelrain.gun.jammed": "JAMMED - RELOAD",
     "message.steelrain.gun_jammed": "Weapon jammed: reload to clear it",
     **{f"item.steelrain.{r}_tracer": f"{n} Tracer Round" for r, n in ROUND_NAMES.items()},
@@ -769,6 +808,29 @@ def guns():
     shaped("ammo_338", ["I", "P", "I"], {"I": I, "P": P}, 10)
     shaped("ammo_57", ["N", "P", "C"], {"N": N, "P": P, "C": C}, 20)
     shaped("ammo_45", ["N", "P", "C"], {"N": N, "P": P, "C": C}, 16)
+    # V5 assault rifles: wood-furniture AKs use planks, the modern/bullpup ones use polymer (K) + a sight bridge
+    shaped("akm", ["III", "WBI", " W "], {"W": W, "I": I, "B": B})
+    shaped("ak12", ["III", "KBI", " K "], {"K": K, "I": I, "B": B})
+    for _g in ("aug", "tavor", "qbz95", "l85", "f2000", "famas", "bren2", "qbz191"):
+        shaped(_g, ["IBI", "KIK", " K "], {"K": K, "I": I, "B": B})
+    for _g in ("m14", "bm59", "fal"):                                   # wood-furniture battle rifles
+        shaped(_g, ["III", "WBI", "WW "], {"W": W, "I": I, "B": B})
+    for _g in ("g3", "hk417", "sg542"):                                 # polymer/steel battle rifles
+        shaped(_g, ["III", "KBI", " K "], {"K": K, "I": I, "B": B})
+    shaped("psl", ["III", "WBI", " W "], {"W": W, "I": I, "B": B})       # marksman rifles (a scope lens R in the receiver)
+    shaped("m39emr", ["III", "KBI", "WW "], {"K": K, "I": I, "B": B, "W": W})
+    for _g in ("g28", "mk12", "qbu88"):
+        shaped(_g, ["IRI", "KBI", " K "], {"K": K, "I": I, "B": B, "R": R})
+    for _g in ("awm", "m24", "m40", "sv98", "trg42"):                   # bolt-action snipers (a heavy barrel: two ingots + scope lens)
+        shaped(_g, ["IRI", "IBI", "WK "], {"K": K, "I": I, "B": B, "R": R, "W": W})
+    for _g in RIFLES_V5:
+        shaped(_g + "_magazine", ["NK", "N ", "N "], {"N": N, "K": K})
+    # M320 grenade launcher and its 40mm rounds; hand grenades
+    shaped("m320", ["II", "KB"], {"K": K, "I": I, "B": B})
+    shaped("gl_he", [" I ", "ITI", " P "], {"I": I, "T": MC + "tnt", "P": P}, 2)
+    shaped("gl_smoke", [" N ", "ICI", " P "], {"N": N, "I": I, "C": C, "P": P}, 2)
+    shaped("frag_grenade", [" I ", "IPI", " I "], {"I": I, "P": P}, 2)
+    shaped("smoke_grenade", [" N ", "NPN", " N "], {"N": N, "P": P}, 2)
 
     E_, T_, Q_ = MC + "ender_eye", MC + "torch", MC + "quartz"
     shaped("holo", ["GRG", "III"], {"R": R, "I": I, "G": G})

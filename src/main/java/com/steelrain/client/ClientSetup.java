@@ -62,6 +62,7 @@ public final class ClientSetup {
         e.registerEntityRenderer(ModRegistry.SMOKE.get(), net.minecraft.client.renderer.entity.NoopRenderer::new);
         e.registerEntityRenderer(ModRegistry.HELLFIRE.get(), c -> new EntityModelRenderer<>(c, Models.HELLFIRE, 0.2f, 1f));
         e.registerEntityRenderer(ModRegistry.GRENADE.get(), c -> new EntityModelRenderer<>(c, Models.GRENADE, 0.12f, 1f));
+        e.registerEntityRenderer(ModRegistry.HAND_GRENADE.get(), c -> new net.minecraft.client.renderer.entity.ThrownItemRenderer<>(c));
         e.registerEntityRenderer(ModRegistry.INTERCEPTOR.get(), c -> new EntityModelRenderer<>(c, Models.PANTSIR_MISSILE, 0.2f, 1f));
         e.registerEntityRenderer(ModRegistry.PATRIOT_INTERCEPTOR.get(), c -> new EntityModelRenderer<>(c, Models.PATRIOT_MISSILE, 0.3f, 1f));
         for (AircraftType type : AircraftType.values()) {

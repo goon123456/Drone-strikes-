@@ -135,6 +135,14 @@ public final class Bullets {
             return;
         }
         Caliber c = b.caliber;
+        if (c.smoke()) {                                                        // a smoke round lays a screen where it lands
+            com.steelrain.entity.SmokeCloudEntity cloud = new com.steelrain.entity.SmokeCloudEntity(com.steelrain.ModRegistry.SMOKE.get(), level);
+            cloud.setPos(at.x, at.y, at.z);
+            level.addFreshEntity(cloud);
+            level.sendParticles(ParticleTypes.LARGE_SMOKE, at.x, at.y, at.z, 30, 0.5, 0.3, 0.5, 0.02);
+            com.steelrain.util.Sfx.explosion(level, at, 1);
+            return;
+        }
         float scale = Config.GUN_DAMAGE.get().floatValue();
         DamageSource source = level.damageSources().explosion(b.shooter, b.shooter);
         if (struck != null) struck.hurt(source, c.damage * scale);

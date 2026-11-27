@@ -48,6 +48,8 @@ public final class GunLogic {
         /** Barrel heat 0..1 and whether it has cooked off into a stoppage. Only the belt guns build it up. */
         float heat;
         boolean jammed;
+        /** For a bolt-action rifle: the game time the bolt throw finishes and the next round chambers (0 = not cycling). */
+        long cycle;
     }
 
     /** Heat one shot adds to a sustained-fire gun's barrel; about ninety rounds flat-out before it cooks off. */
@@ -193,7 +195,18 @@ public final class GunLogic {
             if (st.reload >= 0) event(player, EV_CANCEL, 0);
             st.type = gun.type; st.slot = slot; st.reload = -1; st.latched = st.trigger; st.shots = 0;
             st.nextShot = now + 7;
-            st.heat = 0; st.jammed = false;                   // heat and a stoppage belong to the gun just put away
+            st.heat = 0; st.jammed = false; st.cycle = 0;     // heat, a stoppage and a half-cycled bolt belong to the gun just put away
+        }
+        // a bolt-action rifle finishes its throw and chambers the next round a moment after each shot
+        if (st.cycle > 0 && st.reload < 0 && now >= st.cycle) {
+            st.cycle = 0;
+            boolean creative = player.getAbilities().instabuild;
+            int r = GunItem.rounds(stack);
+            if (creative || r > 0) {
+                if (!creative && r > 0) stack.set(ModRegistry.ROUNDS.get(), r - 1);
+                stack.set(ModRegistry.CHAMBER.get(), true);
+                event(player, EV_PUMP, 1);                    // the bolt is thrown home (arg 1 marks a rifle bolt, not a pump)
+            }
         }
         // the barrel cools whenever it is not being fired this tick
         if (gun.type.beltFed() && st.heat > 0 && now - st.lastShot > 1) {
@@ -254,6 +267,9 @@ public final class GunLogic {
         Caliber cal = GunItem.caliber(stack);
         if (type.firesFromFeed()) {
             if (!creative || type.action == GunType.Action.SINGLE) stack.set(ModRegistry.ROUNDS.get(), rounds - 1);
+        } else if (type.action == GunType.Action.BOLT) {
+            stack.set(ModRegistry.CHAMBER.get(), false);                         // the chamber is empty until the bolt is cycled
+            st.cycle = level.getGameTime() + type.boltCycleTicks();
         } else if (!creative) {
             if (rounds > 0) stack.set(ModRegistry.ROUNDS.get(), rounds - 1);     // the action feeds the next round
             else stack.set(ModRegistry.CHAMBER.get(), false);
@@ -286,7 +302,7 @@ public final class GunLogic {
                     new Payloads.GunShot(player.getId(), type.ordinal(), flags, eye, vel));
             Bullets.fire(level, player, eye, vel, cal, damage);
         }
-        if (cal.rocket()) backblast(level, player, eye);
+        if (cal.rocket() && type == GunType.RPG7) backblast(level, player, eye);     // only the big rocket motor throws a backblast
         st.shots++;
         st.lastShot = level.getGameTime();
         level.gameEvent(player, net.minecraft.world.level.gameevent.GameEvent.PROJECTILE_SHOOT, eye);
@@ -464,7 +480,7 @@ public final class GunLogic {
         if (st.reload >= st.reloadTotal) {
             st.reload = -1;
             st.latched = st.trigger;
-            if (type.action == GunType.Action.CLOSED_BOLT && !GunItem.chambered(stack) && GunItem.rounds(stack) > 0) {
+            if ((type.action == GunType.Action.CLOSED_BOLT || type.action == GunType.Action.BOLT) && !GunItem.chambered(stack) && GunItem.rounds(stack) > 0) {
                 stack.set(ModRegistry.ROUNDS.get(), GunItem.rounds(stack) - 1);
                 stack.set(ModRegistry.CHAMBER.get(), true);
             }

@@ -371,6 +371,222 @@
       }
     ]
   },
+  "gun_akm_fire": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_akm_fire"
+      }
+    ]
+  },
+  "gun_ak12_fire": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_ak12_fire"
+      }
+    ]
+  },
+  "gun_aug_fire": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_aug_fire"
+      }
+    ]
+  },
+  "gun_tavor_fire": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_tavor_fire"
+      }
+    ]
+  },
+  "gun_qbz95_fire": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_qbz95_fire"
+      }
+    ]
+  },
+  "gun_l85_fire": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_l85_fire"
+      }
+    ]
+  },
+  "gun_f2000_fire": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_f2000_fire"
+      }
+    ]
+  },
+  "gun_famas_fire": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_famas_fire"
+      }
+    ]
+  },
+  "gun_bren2_fire": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_bren2_fire"
+      }
+    ]
+  },
+  "gun_qbz191_fire": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_qbz191_fire"
+      }
+    ]
+  },
+  "gun_m14_fire": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_m14_fire"
+      }
+    ]
+  },
+  "gun_bm59_fire": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_bm59_fire"
+      }
+    ]
+  },
+  "gun_fal_fire": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_fal_fire"
+      }
+    ]
+  },
+  "gun_g3_fire": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_g3_fire"
+      }
+    ]
+  },
+  "gun_hk417_fire": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_hk417_fire"
+      }
+    ]
+  },
+  "gun_sg542_fire": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_sg542_fire"
+      }
+    ]
+  },
+  "gun_psl_fire": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_psl_fire"
+      }
+    ]
+  },
+  "gun_g28_fire": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_g28_fire"
+      }
+    ]
+  },
+  "gun_m39emr_fire": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_m39emr_fire"
+      }
+    ]
+  },
+  "gun_mk12_fire": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_mk12_fire"
+      }
+    ]
+  },
+  "gun_qbu88_fire": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_qbu88_fire"
+      }
+    ]
+  },
+  "gun_awm_fire": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_awm_fire"
+      }
+    ]
+  },
+  "gun_m24_fire": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_m24_fire"
+      }
+    ]
+  },
+  "gun_m40_fire": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_m40_fire"
+      }
+    ]
+  },
+  "gun_sv98_fire": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_sv98_fire"
+      }
+    ]
+  },
+  "gun_trg42_fire": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_trg42_fire"
+      }
+    ]
+  },
+  "gun_m320_fire": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_m320_fire"
+      }
+    ]
+  },
   "gun_rifle_far": {
     "subtitle": "subtitles.steelrain.gun_far",
     "sounds": [

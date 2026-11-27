@@ -80,7 +80,7 @@ public final class GunHand {
         }
         float p = GunClient.animProgress();
         int anim = GunClient.anim;
-        boolean reloading = p >= 0 && anim != GunClient.ANIM_PUMP;
+        boolean reloading = p >= 0 && anim != GunClient.ANIM_PUMP && anim != GunClient.ANIM_BOLT;
         reloadEnv += ((reloading ? 1f : 0f) - reloadEnv) * (1 - (float) Math.exp(-dt / 85.0));
         Vector3f rest = new Vector3f(model.point("hand"));
         if (under != null) rest = new Vector3f(model.point("under")).add(GunModels.part(under).point("hand"));
@@ -148,6 +148,11 @@ public final class GunHand {
             left.set(new Vector3f(model.point("mag")).add(bp.magX, bp.magY - 0.035f, bp.magZ + 0.02f));
         } else if (p >= 0 && anim == GunClient.ANIM_PUMP) {
             bp.bolt = Math.max(bp.bolt, Mth.sin((float) Math.PI * p));
+        } else if (p >= 0 && anim == GunClient.ANIM_BOLT) {
+            // a turn-bolt rifle: the bolt body and its handle are drawn back and pushed home together
+            float s = Mth.sin((float) Math.PI * p);
+            bp.bolt = Math.max(bp.bolt, s);
+            bp.charge = Math.max(bp.charge, s);
         }
         if (type.action == GunType.Action.PUMP && !(p >= 0 && anim == GunClient.ANIM_SHELL)) left.add(0, 0, -type.boltTravel() * bp.bolt);
 

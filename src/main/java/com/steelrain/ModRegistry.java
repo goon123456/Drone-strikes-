@@ -83,6 +83,10 @@ public final class ModRegistry {
     public static final String[] GUN_SOUNDS = {"gun_m107_fire", "gun_rpg7_fire", "gun_m18_fire", "gun_m9_fire", "gun_hk416_fire", "gun_g36_fire", "gun_scarh_fire", "gun_m249_fire",
             "gun_m240_fire", "gun_m110_fire", "gun_glock17_fire", "gun_glock19_fire", "gun_p99_fire", "gun_hk_usp_fire", "gun_five_seven_fire",
             "gun_m1911a1_fire", "gun_hi_power_fire", "gun_cz75_fire", "gun_p226_fire", "gun_p228_fire", "gun_rocket_in", "gun_ak74m_fire", "gun_m4a1_fire", "gun_svd_fire", "gun_pkm_fire", "gun_m17_fire", "gun_m590_fire",
+            "gun_akm_fire", "gun_ak12_fire", "gun_aug_fire", "gun_tavor_fire", "gun_qbz95_fire", "gun_l85_fire", "gun_f2000_fire", "gun_famas_fire", "gun_bren2_fire", "gun_qbz191_fire",
+            "gun_m14_fire", "gun_bm59_fire", "gun_fal_fire", "gun_g3_fire", "gun_hk417_fire", "gun_sg542_fire",
+            "gun_psl_fire", "gun_g28_fire", "gun_m39emr_fire", "gun_mk12_fire", "gun_qbu88_fire",
+            "gun_awm_fire", "gun_m24_fire", "gun_m40_fire", "gun_sv98_fire", "gun_trg42_fire", "gun_m320_fire",
             "gun_rifle_far", "gun_heavy_far", "gun_pistol_far", "gun_suppressed", "gun_pistol_suppressed",
             "gun_mag_out", "gun_mag_in", "gun_bolt", "gun_bolt_release", "gun_dry", "gun_selector", "gun_pump", "gun_shell_in", "gun_round_in",
             "gun_belt", "gun_cover", "bullet_crack", "bullet_whizz", "bullet_ricochet", "gun_casing"};
@@ -197,6 +201,10 @@ public final class ModRegistry {
             () -> new com.steelrain.item.JammerBackpackItem(new Item.Properties().stacksTo(1)));
     public static final DeferredItem<Item> ANTI_DRONE_GUN = ITEMS.register("anti_drone_gun",
             () -> new com.steelrain.item.AntiDroneGunItem(new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<Item> FRAG_GRENADE = ITEMS.register("frag_grenade",
+            () -> new com.steelrain.item.GrenadeItem(new Item.Properties().stacksTo(16), false));
+    public static final DeferredItem<Item> SMOKE_GRENADE = ITEMS.register("smoke_grenade",
+            () -> new com.steelrain.item.GrenadeItem(new Item.Properties().stacksTo(16), true));
 
     // ---- small arms: guns, their magazines, loose rounds and fittings ----
     public static final Map<com.steelrain.gun.GunType, DeferredItem<Item>> GUNS = new EnumMap<>(com.steelrain.gun.GunType.class);
@@ -341,6 +349,9 @@ public final class ModRegistry {
         }
     }
 
+    public static final DeferredHolder<EntityType<?>, EntityType<com.steelrain.entity.GrenadeEntity>> HAND_GRENADE = ENTITIES.register("hand_grenade",
+            () -> EntityType.Builder.<com.steelrain.entity.GrenadeEntity>of(com.steelrain.entity.GrenadeEntity::new, MobCategory.MISC)
+                    .sized(0.25f, 0.25f).clientTrackingRange(8).updateInterval(5).noSave().build("hand_grenade"));
     public static final DeferredHolder<EntityType<?>, EntityType<com.steelrain.entity.CannonShellEntity>> CANNON_SHELL = ENTITIES.register("cannon_shell",
             () -> EntityType.Builder.<com.steelrain.entity.CannonShellEntity>of(com.steelrain.entity.CannonShellEntity::new, MobCategory.MISC)
                     .sized(0.15f, 0.15f).clientTrackingRange(16).updateInterval(5).noSave().build("cannon_shell"));

@@ -20,7 +20,10 @@ public enum Caliber {
     R58("5.8x42", "ammo_58", 930, 0.00130, 8.0f, 0.55f, 1),
     LAPUA338(".338 Lapua", "ammo_338", 900, 0.00060, 22f, 2.0f, 1),
     P57("5.7x28", "ammo_57", 715, 0.00170, 4.5f, 0.45f, 1),
-    ACP45(".45 ACP", "ammo_45", 260, 0.00240, 7.5f, 0.07f, 1);
+    ACP45(".45 ACP", "ammo_45", 260, 0.00240, 7.5f, 0.07f, 1),
+    /** 40x46mm low-velocity grenades for the M320: a high-explosive round and a smoke round. They arm after a few metres. */
+    GL_HE("40mm HE", "gl_he", 76, 0.00030, 8f, 0f, 1, 76, 2.8f, 9f),
+    GL_SMOKE("40mm smoke", "gl_smoke", 76, 0.00030, 0f, 0f, 1, 76, 0f, 0f);
 
     /** Gravity in blocks per tick squared (9.81 m/s2). */
     public static final double GRAVITY = 9.81 / 400.0;
@@ -65,6 +68,9 @@ public enum Caliber {
     public double speed() { return metresPerSecond / 20.0; }
 
     public boolean rocket() { return cruise > 0; }
+
+    /** A smoke-only warhead: it lays a screen where it lands instead of bursting. */
+    public boolean smoke() { return this == GL_SMOKE; }
 
     /** How many of these stack. */
     public int stack() { return rocket() ? 4 : 64; }

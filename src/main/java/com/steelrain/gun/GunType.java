@@ -63,7 +63,66 @@ public enum GunType {
     HI_POWER("hi_power", Caliber.P9, 13, 400, new int[]{Mode.SAFE, Mode.SEMI}, Action.CLOSED_BOLT, 1.35f, 0.56f, 6.0f, 150, 36, 44, new int[]{25}, 1.0, 0.9f, EnumSet.of(Attachment.PISTOL_SUPPRESSOR)),
     CZ75("cz75", Caliber.P9, 16, 400, new int[]{Mode.SAFE, Mode.SEMI}, Action.CLOSED_BOLT, 1.25f, 0.52f, 5.8f, 150, 36, 44, new int[]{25}, 1.0, 1.0f, EnumSet.of(Attachment.PISTOL_SUPPRESSOR)),
     P226("p226", Caliber.P9, 15, 400, new int[]{Mode.SAFE, Mode.SEMI}, Action.CLOSED_BOLT, 1.30f, 0.55f, 5.8f, 148, 36, 44, new int[]{25}, 1.0, 0.96f, EnumSet.of(Attachment.PISTOL_SUPPRESSOR)),
-    P228("p228", Caliber.P9, 13, 420, new int[]{Mode.SAFE, Mode.SEMI}, Action.CLOSED_BOLT, 1.40f, 0.58f, 6.2f, 140, 34, 42, new int[]{25}, 0.98, 0.83f, EnumSet.of(Attachment.PISTOL_SUPPRESSOR));
+    P228("p228", Caliber.P9, 13, 420, new int[]{Mode.SAFE, Mode.SEMI}, Action.CLOSED_BOLT, 1.40f, 0.58f, 6.2f, 140, 34, 42, new int[]{25}, 0.98, 0.83f, EnumSet.of(Attachment.PISTOL_SUPPRESSOR)),
+    // ---- V5 assault rifles ----
+    AKM("akm", Caliber.R76239, 30, 600, new int[]{Mode.SAFE, Mode.AUTO, Mode.SEMI}, Action.CLOSED_BOLT, 0.72f, 0.36f, 3.6f, 240, 52, 68, range(100, 1000), 1.0, 3.6f,
+            EnumSet.of(Attachment.RED_DOT, Attachment.PSO1, Attachment.SUPPRESSOR)),
+    AK12("ak12", Caliber.R545, 30, 650, new int[]{Mode.SAFE, Mode.AUTO, Mode.SEMI}, Action.CLOSED_BOLT, 0.58f, 0.28f, 2.8f, 220, 48, 64, range(100, 1000), 1.0, 3.5f,
+            EnumSet.of(Attachment.RED_DOT, Attachment.ACOG, Attachment.SCOPE10, Attachment.SUPPRESSOR, Attachment.FOREGRIP)),
+    AUG("aug", Caliber.R556, 30, 680, new int[]{Mode.SAFE, Mode.SEMI, Mode.AUTO}, Action.CLOSED_BOLT, 0.52f, 0.26f, 2.4f, 210, 46, 60, range(100, 600), 1.0, 3.6f,
+            EnumSet.of(Attachment.RED_DOT, Attachment.SUPPRESSOR, Attachment.FOREGRIP)),
+    TAVOR("tavor", Caliber.R556, 30, 750, new int[]{Mode.SAFE, Mode.SEMI, Mode.AUTO}, Action.CLOSED_BOLT, 0.50f, 0.25f, 2.2f, 205, 44, 58, range(100, 600), 1.0, 3.3f,
+            EnumSet.of(Attachment.RED_DOT, Attachment.ACOG, Attachment.SCOPE10, Attachment.SUPPRESSOR, Attachment.FOREGRIP)),
+    QBZ95("qbz95", Caliber.R58, 30, 650, new int[]{Mode.SAFE, Mode.SEMI, Mode.AUTO}, Action.CLOSED_BOLT, 0.52f, 0.26f, 2.6f, 210, 46, 60, range(100, 600), 1.0, 3.4f,
+            EnumSet.of(Attachment.RED_DOT, Attachment.SUPPRESSOR, Attachment.FOREGRIP)),
+    L85("l85", Caliber.R556, 30, 700, new int[]{Mode.SAFE, Mode.SEMI, Mode.AUTO}, Action.CLOSED_BOLT, 0.50f, 0.25f, 2.1f, 215, 46, 60, range(100, 600), 1.0, 3.8f,
+            EnumSet.of(Attachment.RED_DOT, Attachment.ACOG, Attachment.SCOPE10, Attachment.SUPPRESSOR, Attachment.FOREGRIP)),
+    F2000("f2000", Caliber.R556, 30, 850, new int[]{Mode.SAFE, Mode.SEMI, Mode.AUTO}, Action.CLOSED_BOLT, 0.48f, 0.24f, 2.4f, 205, 44, 58, range(100, 600), 1.0, 3.6f,
+            EnumSet.of(Attachment.RED_DOT, Attachment.SUPPRESSOR, Attachment.FOREGRIP)),
+    FAMAS("famas", Caliber.R556, 25, 1000, new int[]{Mode.SAFE, Mode.SEMI, Mode.AUTO}, Action.CLOSED_BOLT, 0.50f, 0.28f, 2.6f, 210, 46, 60, range(100, 600), 1.0, 3.6f,
+            EnumSet.of(Attachment.RED_DOT, Attachment.SUPPRESSOR, Attachment.FOREGRIP)),
+    BREN2("bren2", Caliber.R556, 30, 780, new int[]{Mode.SAFE, Mode.SEMI, Mode.AUTO}, Action.CLOSED_BOLT, 0.52f, 0.25f, 2.0f, 205, 44, 56, range(100, 600), 1.0, 3.3f,
+            EnumSet.of(Attachment.RED_DOT, Attachment.ACOG, Attachment.SCOPE10, Attachment.SUPPRESSOR, Attachment.FOREGRIP)),
+    QBZ191("qbz191", Caliber.R58, 30, 750, new int[]{Mode.SAFE, Mode.SEMI, Mode.AUTO}, Action.CLOSED_BOLT, 0.52f, 0.26f, 2.2f, 210, 46, 58, range(100, 600), 1.0, 3.5f,
+            EnumSet.of(Attachment.RED_DOT, Attachment.ACOG, Attachment.SCOPE10, Attachment.SUPPRESSOR, Attachment.FOREGRIP)),
+    // ---- V5 battle rifles (7.62x51) ----
+    M14("m14", Caliber.R76251, 20, 725, new int[]{Mode.SAFE, Mode.SEMI}, Action.CLOSED_BOLT, 1.05f, 0.44f, 1.8f, 270, 54, 68, range(100, 800), 0.96, 5.1f,
+            EnumSet.of(Attachment.ACOG, Attachment.SCOPE10, Attachment.PSO1, Attachment.SUPPRESSOR)),
+    BM59("bm59", Caliber.R76251, 20, 750, new int[]{Mode.SAFE, Mode.SEMI}, Action.CLOSED_BOLT, 1.00f, 0.44f, 1.9f, 270, 54, 68, range(100, 800), 0.96, 4.9f,
+            EnumSet.of(Attachment.ACOG, Attachment.SCOPE10, Attachment.PSO1, Attachment.SUPPRESSOR)),
+    FAL("fal", Caliber.R76251, 20, 680, new int[]{Mode.SAFE, Mode.SEMI, Mode.AUTO}, Action.CLOSED_BOLT, 1.10f, 0.48f, 2.0f, 265, 52, 66, range(100, 800), 0.95, 5.0f,
+            EnumSet.of(Attachment.ACOG, Attachment.SCOPE10, Attachment.SUPPRESSOR)),
+    G3("g3", Caliber.R76251, 20, 600, new int[]{Mode.SAFE, Mode.SEMI, Mode.AUTO}, Action.CLOSED_BOLT, 1.08f, 0.46f, 2.0f, 265, 52, 66, range(100, 800), 0.95, 5.0f,
+            EnumSet.of(Attachment.ACOG, Attachment.SCOPE10, Attachment.SUPPRESSOR)),
+    HK417("hk417", Caliber.R76251, 20, 700, new int[]{Mode.SAFE, Mode.SEMI, Mode.AUTO}, Action.CLOSED_BOLT, 1.00f, 0.42f, 1.5f, 260, 50, 62, range(100, 900), 0.95, 4.2f,
+            EnumSet.of(Attachment.RED_DOT, Attachment.ACOG, Attachment.SCOPE10, Attachment.SUPPRESSOR, Attachment.FOREGRIP)),
+    SG542("sg542", Caliber.R76251, 20, 720, new int[]{Mode.SAFE, Mode.SEMI, Mode.AUTO}, Action.CLOSED_BOLT, 1.02f, 0.44f, 1.7f, 260, 50, 62, range(100, 800), 0.95, 4.1f,
+            EnumSet.of(Attachment.RED_DOT, Attachment.ACOG, Attachment.SCOPE10, Attachment.SUPPRESSOR, Attachment.FOREGRIP)),
+    // ---- V5 marksman rifles ----
+    PSL("psl", Caliber.R762, 10, 240, new int[]{Mode.SAFE, Mode.SEMI}, Action.CLOSED_BOLT, 1.55f, 0.40f, 1.3f, 320, 54, 68, range(100, 1200), 1.0, 4.6f,
+            EnumSet.of(Attachment.PSO1, Attachment.SCOPE10, Attachment.SUPPRESSOR)),
+    G28("g28", Caliber.R76251, 20, 300, new int[]{Mode.SAFE, Mode.SEMI}, Action.CLOSED_BOLT, 1.20f, 0.34f, 0.9f, 300, 52, 64, range(100, 1000), 0.95, 5.8f,
+            EnumSet.of(Attachment.ACOG, Attachment.SCOPE10, Attachment.SUPPRESSOR)),
+    M39EMR("m39emr", Caliber.R76251, 20, 300, new int[]{Mode.SAFE, Mode.SEMI}, Action.CLOSED_BOLT, 1.25f, 0.36f, 1.0f, 300, 54, 66, range(100, 1000), 0.96, 5.5f,
+            EnumSet.of(Attachment.ACOG, Attachment.SCOPE10, Attachment.PSO1, Attachment.SUPPRESSOR)),
+    MK12("mk12", Caliber.R556, 20, 300, new int[]{Mode.SAFE, Mode.SEMI}, Action.CLOSED_BOLT, 0.80f, 0.30f, 0.9f, 280, 48, 60, range(100, 800), 1.0, 4.4f,
+            EnumSet.of(Attachment.ACOG, Attachment.SCOPE10, Attachment.SUPPRESSOR)),
+    QBU88("qbu88", Caliber.R58, 10, 260, new int[]{Mode.SAFE, Mode.SEMI}, Action.CLOSED_BOLT, 1.10f, 0.34f, 1.1f, 290, 50, 62, range(100, 800), 1.0, 4.1f,
+            EnumSet.of(Attachment.ACOG, Attachment.SCOPE10, Attachment.SUPPRESSOR)),
+    // ---- V5 bolt-action snipers ----
+    AWM("awm", Caliber.LAPUA338, 5, 50, new int[]{Mode.SAFE, Mode.SEMI}, Action.BOLT, 2.40f, 0.60f, 0.5f, 360, 56, 70, range(100, 1500), 1.0, 6.8f,
+            EnumSet.of(Attachment.SCOPE10, Attachment.ACOG, Attachment.SUPPRESSOR)),
+    M24("m24", Caliber.R76251, 5, 50, new int[]{Mode.SAFE, Mode.SEMI}, Action.BOLT, 1.80f, 0.50f, 0.6f, 340, 54, 68, range(100, 1000), 0.95, 5.5f,
+            EnumSet.of(Attachment.SCOPE10, Attachment.ACOG, Attachment.SUPPRESSOR)),
+    M40("m40", Caliber.R76251, 5, 50, new int[]{Mode.SAFE, Mode.SEMI}, Action.BOLT, 1.80f, 0.50f, 0.6f, 340, 54, 68, range(100, 1000), 0.95, 5.5f,
+            EnumSet.of(Attachment.SCOPE10, Attachment.ACOG, Attachment.SUPPRESSOR)),
+    SV98("sv98", Caliber.R762, 10, 52, new int[]{Mode.SAFE, Mode.SEMI}, Action.BOLT, 1.70f, 0.48f, 0.7f, 330, 54, 68, range(100, 1200), 1.0, 5.8f,
+            EnumSet.of(Attachment.PSO1, Attachment.SCOPE10, Attachment.SUPPRESSOR)),
+    TRG42("trg42", Caliber.LAPUA338, 5, 50, new int[]{Mode.SAFE, Mode.SEMI}, Action.BOLT, 2.30f, 0.58f, 0.5f, 360, 56, 70, range(100, 1500), 1.0, 6.4f,
+            EnumSet.of(Attachment.SCOPE10, Attachment.ACOG, Attachment.SUPPRESSOR)),
+    // ---- V5 grenade launcher ----
+    M320("m320", Caliber.GL_HE, 1, 60, new int[]{Mode.SAFE, Mode.SEMI}, Action.SINGLE, 1.60f, 0.70f, 10.0f, 260, 48, 48, range(25, 150), 1.0, 1.5f,
+            EnumSet.noneOf(Attachment.class));
 
     /** Fire selector positions. */
     public static final class Mode {
@@ -80,8 +139,13 @@ public enum GunType {
         /** A tube magazine loaded one shell at a time, worked by hand after every shot. */
         PUMP,
         /** One round pushed in at the muzzle and fired from where it sits: the rocket launcher. */
-        SINGLE
+        SINGLE,
+        /** A turn-bolt rifle: the bolt is thrown by hand after every shot before the next round will chamber. */
+        BOLT
     }
+
+    /** How long the bolt throw takes on a bolt-action rifle, in ticks (20 = 1 s). */
+    public int boltCycleTicks() { return 14; }
 
     public final String id;
     public final Caliber caliber;
@@ -145,21 +209,31 @@ public enum GunType {
     public int feedSide() { return this == PKM ? -1 : 1; }
     public boolean bipod() { return beltFed() || this == M107; }
     /** After an empty reload the bolt is drawn back by hand (others drop it with a catch). */
-    public boolean handRacked() { return this == AK74M || this == SVD || this == SCARH || this == G36 || beltFed(); }
+    public boolean handRacked() { return this == AK74M || this == AKM || this == AK12 || this == FAMAS || this == SVD || this == SCARH || this == G36 || beltFed()
+            || this == M14 || this == BM59 || this == FAL || this == G3 || this == PSL || this == M39EMR; }
     /** The bolt or slide stays back when the last round has gone. */
-    public boolean holdsOpen() { return pistol() || this == M4A1 || this == HK416 || this == M110 || this == SCARH || this == G36 || this == M107; }
+    public boolean holdsOpen() { return pistol() || this == M4A1 || this == HK416 || this == M110 || this == SCARH || this == G36 || this == M107
+            || this == AUG || this == TAVOR || this == QBZ95 || this == L85 || this == F2000 || this == BREN2 || this == QBZ191
+            || this == M14 || this == BM59 || this == FAL || this == HK417 || this == SG542
+            || this == G28 || this == M39EMR || this == MK12 || this == QBU88; }
     /** The magazine is rocked in on a front lug, as on the Kalashnikov. */
-    public boolean rocksMagazine() { return this == AK74M || this == SVD; }
+    public boolean rocksMagazine() { return this == AK74M || this == AKM || this == AK12 || this == SVD
+            || this == M14 || this == BM59 || this == FAL || this == G3 || this == PSL || this == M39EMR; }
     /** Fires straight from what feeds it, with no chamber to keep a round in. */
     public boolean firesFromFeed() { return action == Action.OPEN_BOLT || action == Action.SINGLE; }
     /** The kinds of round this gun can be loaded with, the first being its usual one. */
-    public Caliber[] loads() { return this == RPG7 ? new Caliber[]{Caliber.PG7V, Caliber.OG7V} : new Caliber[]{caliber}; }
+    public Caliber[] loads() {
+        if (this == RPG7) return new Caliber[]{Caliber.PG7V, Caliber.OG7V};
+        if (this == M320) return new Caliber[]{Caliber.GL_HE, Caliber.GL_SMOKE};
+        return new Caliber[]{caliber};
+    }
     /** Feeds from a detachable magazine or belt box (the pump gun is loaded shell by shell). */
     public boolean magazineFed() { return action != Action.PUMP && action != Action.SINGLE; }
     /** Which rounds of a magazine are tracers: every n-th (machine gun belts), or none. */
     public int tracerEvery() { return beltFed() ? 5 : 0; }
     /** The last few rounds of a rifle magazine are tracers, to warn that it is nearly empty. */
-    public int tracerLast() { return this == AK74M || this == M4A1 || this == HK416 || this == G36 || this == SCARH ? 3 : 0; }
+    public int tracerLast() { return switch (this) { case AK74M, AKM, AK12, M4A1, HK416, G36, SCARH, AUG, TAVOR, QBZ95, L85, F2000, FAMAS, BREN2, QBZ191, M14, BM59, FAL, G3, HK417, SG542 -> 3; default -> 0; }; }
+    // marksman/sniper rifles fire no tracers (they do not want to give away the shooter)
     /** When in a reload the old magazine comes out and the new one goes in, as fractions of the whole. */
     public float magOutAt() { return beltFed() ? 0.30f : 0.22f; }
     public float magInAt(boolean empty) { return beltFed() ? 0.62f : empty ? 0.56f : 0.70f; }
