@@ -9,24 +9,24 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 
 /**
- * Steel Rain's look: a rugged military tablet. Dark slate panels with thin edges, olive header bars, amber for
- * things to act on, green for ready, red for trouble, cyan for aircraft and recon. Everything is drawn from plain
- * rectangles, so no textures are needed and it stays sharp at any GUI scale.
+ * Shared instruments for Steel Rain's command screens and in-world optics. Charcoal glass, silver labels,
+ * green readiness, cyan sensor information and amber/red warnings. Panels occupy the edges of the view;
+ * aiming and camera imagery stay visible in the centre.
  */
 public final class Ui {
     // palette
-    public static final int BG = 0xF0121719, PANEL = 0xFF182025, PANEL_2 = 0xFF1F292F, PANEL_3 = 0xFF283540,
-            EDGE = 0xFF3A4A54, EDGE_LIGHT = 0xFF56697A, OLIVE = 0xFF59663A, OLIVE_LIGHT = 0xFF7C8B4E,
-            AMBER = 0xFFF2B33D, AMBER_DARK = 0xFF8A6418, GREEN = 0xFF7CD67C, RED = 0xFFE5534B, CYAN = 0xFF4FC3F7,
-            TEXT = 0xFFE6EDF0, DIM = 0xFF8A9AA3, FAINT = 0xFF56656E, BLACK = 0xFF000000;
-    /** Translucent backing for things drawn over the world. */
-    public static final int HUD_BG = 0x9A0E1316, HUD_EDGE = 0x80A8BCC8;
+    public static final int BG = 0xFA050A0B, PANEL = 0xFF0B1213, PANEL_2 = 0xFF121E1B, PANEL_3 = 0xFF1B3027,
+            EDGE = 0xFF30423D, EDGE_LIGHT = 0xFF587466, OLIVE = 0xFF1B3027, OLIVE_LIGHT = 0xFF587466,
+            AMBER = 0xFFF5C451, AMBER_DARK = 0xFF8A6418, GREEN = 0xFF8DF29A, RED = 0xFFFF5F52, CYAN = 0xFF6FE0F0,
+            TEXT = 0xFFDBE5DF, DIM = 0xFF8BABA0, FAINT = 0xFF526B60, BLACK = 0xFF000000;
+    /** Backing keeps readouts legible against snow, sky and dark terrain. */
+    public static final int HUD_BG = 0xDA050B0D, HUD_EDGE = 0xB0587466;
 
     /** A raised panel: dark fill, thin edge, a faint highlight along the top. */
     public static void panel(GuiGraphics g, int x, int y, int w, int h) {
         g.fill(x, y, x + w, y + h, EDGE);
-        g.fill(x + 1, y + 1, x + w - 1, y + h - 1, PANEL);
-        g.fill(x + 1, y + 1, x + w - 1, y + 2, 0x18FFFFFF);
+        g.fillGradient(x + 1, y + 1, x + w - 1, y + h - 1, 0xFF14201C, PANEL);
+        g.fill(x + 2, y + 1, x + w - 2, y + 2, EDGE_LIGHT);
     }
 
     /** A sunken well (map frames, input boxes, gauges). */
@@ -35,13 +35,65 @@ public final class Ui {
         g.fill(x, y, x + w, y + h, 0xFF0F1417);
     }
 
-    /** A section header: olive bar with a bright tab at the left, title in capitals, optional text on the right. */
+    /** A compact container header. Its height stays twelve pixels to preserve slot layouts. */
     public static void header(GuiGraphics g, Font font, int x, int y, int w, Component title, Component right) {
-        g.fill(x, y, x + w, y + 11, OLIVE);
-        g.fill(x, y, x + 3, y + 11, AMBER);
-        g.fill(x, y + 11, x + w, y + 12, 0xFF2E3520);
-        g.drawString(font, upper(title), x + 6, y + 2, TEXT, false);
-        if (right != null) g.drawString(font, right, x + w - 4 - font.width(right), y + 2, 0xFFDCE3C8, false);
+        g.fillGradient(x, y, x + w, y + 12, 0xFF1A2C23, PANEL);
+        g.fill(x, y, x + 2, y + 10, GREEN);
+        g.fill(x, y + 11, x + w, y + 12, EDGE);
+        String tag = right == null ? "" : font.plainSubstrByWidth(right.getString(), Math.max(0, w / 3));
+        String name = font.plainSubstrByWidth(upper(title).getString(), Math.max(0, w - 12 - (tag.isEmpty() ? 0 : font.width(tag) + 8)));
+        g.drawString(font, name, x + 6, y + 2, TEXT, false);
+        if (!tag.isEmpty()) g.drawString(font, tag, x + w - 4 - font.width(tag), y + 2, GREEN, false);
+    }
+
+    /** HUD card with a fifteen-pixel title band. Body content starts at y + 20. */
+    public static void instrument(GuiGraphics g, Font font, int x, int y, int w, int h, String title, String right) {
+        if (w < 12 || h < 16) return;
+        g.fill(x, y, x + w, y + h, HUD_BG);
+        g.fillGradient(x + 1, y + 1, x + w - 1, y + 15, 0xEB1A2B24, 0xD00B1411);
+        g.fill(x + 1, y + 15, x + w - 1, y + 16, EDGE);
+        brackets(g, x, y, w, h, 5, HUD_EDGE);
+        g.fill(x + 5, y + 5, x + 7, y + 10, GREEN);
+        String tag = font.plainSubstrByWidth(right == null ? "" : right, Math.max(0, w / 3));
+        int tagWidth = tag.isEmpty() ? 0 : font.width(tag) + 8;
+        String name = font.plainSubstrByWidth(title.toUpperCase(java.util.Locale.ROOT), Math.max(0, w - 18 - tagWidth));
+        g.drawString(font, name, x + 11, y + 4, TEXT, false);
+        if (!tag.isEmpty()) g.drawString(font, tag, x + w - 7 - font.width(tag), y + 4, GREEN, false);
+    }
+
+    /** Bounded label/value pair; long translated names cannot overwrite neighbouring instruments. */
+    public static void readout(GuiGraphics g, Font font, int x, int y, int w, String label, String value, int colour) {
+        if (w <= 0) return;
+        String v = font.plainSubstrByWidth(value, Math.max(0, w * 2 / 3));
+        String l = font.plainSubstrByWidth(label.toUpperCase(java.util.Locale.ROOT), Math.max(0, w - font.width(v) - 8));
+        g.drawString(font, l, x, y, DIM, false);
+        g.drawString(font, v, x + w - font.width(v), y, colour, false);
+    }
+
+    /** Compact labels follow the actual binding and retain any configured modifier. */
+    public static String keyName(net.minecraft.client.KeyMapping mapping) {
+        String translated = mapping.getTranslatedKeyMessage().getString().toUpperCase(java.util.Locale.ROOT);
+        if (mapping.getKeyModifier() == net.neoforged.neoforge.client.settings.KeyModifier.NONE
+                && mapping.getKey().getType() == com.mojang.blaze3d.platform.InputConstants.Type.MOUSE) {
+            return switch (mapping.getKey().getValue()) {
+                case 0 -> "LMB"; case 1 -> "RMB"; case 2 -> "MMB"; default -> translated;
+            };
+        }
+        return translated;
+    }
+
+    /** A real key binding displayed as a keycap and a short action. Returns the occupied width. */
+    public static int keyHint(GuiGraphics g, Font font, int x, int y, String key, String action) {
+        int available = Math.max(0, g.guiWidth() - x - 6);
+        if (available < 12) return 0;
+        String k = font.plainSubstrByWidth(key.toUpperCase(java.util.Locale.ROOT), Math.min(64, available - 6));
+        int kw = Math.max(10, font.width(k) + 6);
+        g.fill(x, y - 1, x + kw, y + 10, EDGE);
+        g.fill(x + 1, y, x + kw - 1, y + 9, PANEL);
+        g.drawString(font, k, x + 3, y + 1, GREEN, false);
+        String a = font.plainSubstrByWidth(action, Math.max(0, available - kw - 5));
+        g.drawString(font, a, x + kw + 5, y + 1, DIM, false);
+        return kw + 5 + font.width(a);
     }
 
     public static Component upper(Component c) { return Component.literal(c.getString().toUpperCase(java.util.Locale.ROOT)); }
@@ -56,6 +108,8 @@ public final class Ui {
 
     /** A segmented gauge filled to a fraction, colour by level unless one is given. */
     public static void gauge(GuiGraphics g, int x, int y, int w, int h, double frac, int colour, int segments) {
+        if (w <= 0 || h <= 0) return;
+        segments = Mth.clamp(segments, 1, w);
         frac = Mth.clamp(frac, 0, 1);
         g.fill(x, y, x + w, y + h, 0xFF0B0F11);
         int filled = (int) Math.round(frac * segments);
@@ -80,8 +134,7 @@ public final class Ui {
 
     /** "LABEL   value" on one line, label dim and value bright. */
     public static void field(GuiGraphics g, Font font, int x, int y, int w, Component label, Component value, int colour) {
-        g.drawString(font, upper(label), x, y, DIM, false);
-        g.drawString(font, value, x + w - font.width(value), y, colour, false);
+        readout(g, font, x, y, w, label.getString(), value.getString(), colour);
     }
 
     /** Draws a 7x7 icon from a row pattern ('#' set). */
@@ -263,14 +316,14 @@ public final class Ui {
             Font font = Minecraft.getInstance().font;
             int x = getX(), y = getY(), w = width, h = height;
             boolean hot = active && isHoveredOrFocused();
-            int fill = !active ? 0xFF1A2126 : primary ? (hot ? 0xFFFFC85A : AMBER) : hot ? PANEL_3 : PANEL_2;
-            int edge = !active ? 0xFF2A353C : primary ? AMBER_DARK : hot ? AMBER : EDGE_LIGHT;
+            int edge = !active ? EDGE : hot || primary ? GREEN : EDGE_LIGHT;
             g.fill(x, y, x + w, y + h, edge);
-            g.fill(x + 1, y + 1, x + w - 1, y + h - 1, fill);
-            if (primary && active) g.fill(x + 1, y + 1, x + w - 1, y + 2, 0x50FFFFFF);
-            int colour = !active ? FAINT : primary ? 0xFF1A1205 : TEXT;
-            Component text = upper(getMessage());
-            g.drawString(font, text, x + (w - font.width(text)) / 2, y + (h - 8) / 2, colour, false);
+            g.fillGradient(x + 1, y + 1, x + w - 1, y + h - 1,
+                    !active ? PANEL : hot || primary ? PANEL_3 : PANEL_2, PANEL);
+            if (active && (hot || primary)) g.fill(x + 2, y + h - 2, x + w - 2, y + h - 1, GREEN);
+            String text = font.plainSubstrByWidth(upper(getMessage()).getString(), Math.max(0, w - 8));
+            g.drawString(font, text, x + (w - font.width(text)) / 2, y + (h - 8) / 2,
+                    !active ? FAINT : primary || hot ? GREEN : TEXT, false);
         }
 
         @Override

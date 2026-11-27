@@ -48,6 +48,9 @@ public final class FpvClient {
 
     public static boolean piloting() { return droneId >= 0; }
 
+    /** Only an attached, live camera owns the sensor overlay. */
+    static boolean viewing() { return (attached && drone() != null) || feed() != null; }
+
     static void start(int id, int battery) {
         droneId = id;
         maxBattery = Math.max(1, battery);
@@ -205,21 +208,21 @@ public final class FpvClient {
         CableClient.clear();
     }
 
+    /** Fine corner marks and an open reticle leave the centre of the video unobstructed. */
     private static void frame(GuiGraphics g, int w, int h, int colour) {
-        int m = 12, len = 18;
-        g.fill(m, m, m + len, m + 1, colour); g.fill(m, m, m + 1, m + len, colour);
-        g.fill(w - m - len, m, w - m, m + 1, colour); g.fill(w - m - 1, m, w - m, m + len, colour);
-        g.fill(m, h - m - 1, m + len, h - m, colour); g.fill(m, h - m - len, m + 1, h - m, colour);
-        g.fill(w - m - len, h - m - 1, w - m, h - m, colour); g.fill(w - m - 1, h - m - len, w - m, h - m, colour);
+        Ui.brackets(g, 4, 4, w - 8, h - 8, 14, Ui.fade(colour, 0.65f));
         int cx = w / 2, cy = h / 2;
-        g.fill(cx - 12, cy, cx - 4, cy + 1, colour); g.fill(cx + 5, cy, cx + 13, cy + 1, colour);
-        g.fill(cx, cy - 12, cx + 1, cy - 4, colour); g.fill(cx, cy + 5, cx + 1, cy + 13, colour);
+        g.fill(cx - 13, cy, cx - 5, cy + 1, colour);
+        g.fill(cx + 6, cy, cx + 14, cy + 1, colour);
+        g.fill(cx, cy - 13, cx + 1, cy - 5, colour);
+        g.fill(cx, cy + 6, cx + 1, cy + 14, colour);
+        g.fill(cx, cy, cx + 1, cy + 1, Ui.TEXT);
     }
 
     /** Video noise that thickens as the link gets worse. */
     private static void noise(GuiGraphics g, int w, int h, int jamPercent) {
         if (jamPercent <= 2) return;
-        float j = jamPercent / 100f;
+        float j = Mth.clamp(jamPercent / 100f, 0, 1);
         g.fill(0, 0, w, h, ((int) (j * 110) << 24) | 0x808080);
         int n = (int) (j * j * 500) + (int) (j * 60);
         for (int i = 0; i < n; i++) {
@@ -228,7 +231,7 @@ public final class FpvClient {
             int alpha = 60 + STATIC.nextInt((int) (j * 190) + 1);
             g.fill(x, y, Math.min(w, x + len), y + 1 + STATIC.nextInt(2), (alpha << 24) | (shade << 16) | (shade << 8) | shade);
         }
-        if (j > 0.6f) { // rolling tear bars
+        if (j > 0.6f) {
             for (int i = 0; i < 3; i++) {
                 int y = STATIC.nextInt(h);
                 g.fill(0, y, w, y + 3 + STATIC.nextInt(10), 0xC0101010);
@@ -236,75 +239,127 @@ public final class FpvClient {
         }
     }
 
-    private static void right(GuiGraphics g, Font font, Component text, int w, int y, int colour) {
-        g.drawString(font, text, w - 18 - font.width(text), y, colour, true);
-    }
-
-    private static final Ui.Fader FEED_INFO = new Ui.Fader();
-
-    /**
-     * The goggles view as bare text: what you are flying and a recording dot top left, altitude, speed and range top
-     * right, battery and link bottom left. Warnings take over the centre only while the link is being jammed.
-     */
+    /** Framed sensor telemetry uses only the active camera entity and synchronized drone data. */
     static void renderHud(GuiGraphics g, DeltaTracker delta) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || mc.options.hideGui) return;
+        if (mc.player == null || mc.options.hideGui || mc.screen != null) return;
+        AircraftEntity aircraft = feed();
+        FpvDroneEntity d = drone();
+        if (aircraft == null && (d == null || !attached)) return;
+        Entity camera = aircraft != null ? aircraft : d;
         Font font = mc.font;
         int w = g.guiWidth(), h = g.guiHeight();
-        boolean blink = Ui.blink();
+        int panelWidth = Math.min(164, Math.max(100, (w - 48) / 2));
+        int right = w - 8 - panelWidth;
+        int jam = aircraft != null ? aircraft.jamPercent() : d.jamPercent();
+        int reticle = aircraft != null ? Ui.CYAN : Ui.GREEN;
+        noise(g, w, h, jam);
+        frame(g, w, h, reticle);
 
-        AircraftEntity aircraft = feed();
+        String mode = aircraft != null ? "REMOTE GIMBAL" : d.mavic() ? "MAVIC / MANUAL" : d.fiber() ? "FPV / FIBRE" : "FPV / RADIO";
+        String name = aircraft != null
+                ? Component.translatable(AircraftType.values()[Mth.clamp(feedType, 0, AircraftType.values().length - 1)].translationKey()).getString()
+                : d.getName().getString();
+        sensorHeader(g, font, w, mode, name, camera, jam);
+
+        double heading = (mc.player.getYRot() + 180.0) % 360;
+        if (heading < 0) heading += 360;
+        // At small GUI sizes the heading stays in the flight panel instead of overlapping corner panels.
+        int tapeWidth = Math.min(220, w - panelWidth * 2 - 48);
+        if (tapeWidth >= 120) Ui.compass(g, font, w / 2, 51, tapeWidth, heading, reticle);
+
+        Ui.instrument(g, font, 8, 50, panelWidth, 48, aircraft != null ? "GIMBAL" : "PILOT INPUT", aircraft != null ? "LOOK" : "MANUAL");
         if (aircraft != null) {
-            AircraftType type = AircraftType.values()[Mth.clamp(feedType, 0, AircraftType.values().length - 1)];
-            noise(g, w, h, aircraft.jamPercent());
-            frame(g, w, h, 0x907CD67C);
-            Ui.text(g, font, Ui.upper(Component.translatable(type.translationKey())).getString(), 22, 22, Ui.HUD_TEXT, 0.9f);
-            Ui.text(g, font, "● LIVE", 22, 32, blink ? Ui.RED : 0xFFB04040, 1);
-            float a = FEED_INFO.update(feedType);
-            Ui.text(g, font, Component.translatable("hud.steelrain.position", Mth.floor(aircraft.getX()), Mth.floor(aircraft.getZ())).getString(), 22, h - 30, Ui.HUD_DIM, Math.max(a, 0.6f));
-            flight(g, font, w, (int) Math.round(aircraft.getY()), -1, -1);
-            jammedWarning(g, font, w, h, aircraft.jamPercent());
-            return;
+            Ui.readout(g, font, 15, 70, panelWidth - 14, "PAN", String.format(java.util.Locale.ROOT, "%05.1f DEG", heading), Ui.TEXT);
+            Ui.readout(g, font, 15, 83, panelWidth - 14, "TILT", String.format(java.util.Locale.ROOT, "%+.1f DEG", -mc.player.getXRot()), Ui.TEXT);
+        } else {
+            String move = key(mc.options.keyUp) + "/" + key(mc.options.keyDown) + "  " + key(mc.options.keyLeft) + "/" + key(mc.options.keyRight);
+            Ui.readout(g, font, 15, 70, panelWidth - 14, "MOVE", move, Ui.TEXT);
+            Ui.readout(g, font, 15, 83, panelWidth - 14, "UP/DN", key(mc.options.keyJump) + "/" + key(mc.options.keyShift), Ui.TEXT);
         }
 
-        FpvDroneEntity d = drone();
-        if (d == null || !attached) return;
-        noise(g, w, h, d.jamPercent());
-        frame(g, w, h, 0x907CD67C);
-        Ui.text(g, font, d.mavic() ? "MAVIC" : d.fiber() ? "FPV  FIBRE" : "FPV", 22, 22, Ui.HUD_TEXT, 0.9f);
-        Ui.text(g, font, "● REC", 22, 32, blink ? Ui.RED : 0xFFB04040, 1);
+        double actualSpeed = aircraft != null
+                ? Math.sqrt(Mth.square(camera.getX() - camera.xo) + Mth.square(camera.getY() - camera.yo) + Mth.square(camera.getZ() - camera.zo)) * 20
+                : speed;
+        flight(g, font, right, 50, panelWidth, camera, actualSpeed, heading);
+        if (aircraft != null) feedLink(g, font, 8, h - 121, panelWidth, jam);
+        else dronePower(g, font, 8, h - (d.mavic() ? 135 : 121), panelWidth, d, jam);
+        controls(g, font, right, h - 93, panelWidth, d, aircraft != null);
+    }
 
+    private static String key(net.minecraft.client.KeyMapping mapping) {
+        return Ui.keyName(mapping);
+    }
+
+    private static void sensorHeader(GuiGraphics g, Font font, int w, String mode, String name, Entity camera, int jam) {
+        String title = jam > 30 ? Component.translatable("hud.steelrain.jammed").getString() + " / " + jam + "%" : mode;
+        Ui.instrument(g, font, 8, 8, w - 16, 34, title, "LIVE");
+        int status = jam > 60 ? Ui.RED : jam > 30 ? Ui.AMBER : Ui.GREEN;
+        g.fill(w - 49, 14, w - 45, 18, status);
+        if (jam > 30) g.fill(8, 8, 10, 42, Ui.blink() ? status : Ui.fade(status, 0.5f));
+        String grid = "GRID " + Mth.floor(camera.getX()) + " " + Mth.floor(camera.getZ());
+        int gridWidth = Math.min(font.width(grid), Math.max(0, (w - 40) / 2));
+        String gridText = font.plainSubstrByWidth(grid, gridWidth);
+        int gx = w - 15 - font.width(gridText);
+        g.drawString(font, font.plainSubstrByWidth(name.toUpperCase(java.util.Locale.ROOT), Math.max(0, gx - 24)), 15, 28, Ui.TEXT, false);
+        g.drawString(font, gridText, gx, 28, Ui.DIM, false);
+    }
+
+    /** World Y is shown explicitly; no above-ground altitude is inferred from unavailable terrain. */
+    private static void flight(GuiGraphics g, Font font, int x, int y, int width, Entity camera, double spd, double heading) {
+        Ui.instrument(g, font, x, y, width, 76, "FLIGHT", "TELEMETRY");
+        int iy = y + 20, iw = width - 14;
+        Ui.readout(g, font, x + 7, iy, iw, "ALT Y", Math.round(camera.getY()) + " m", Ui.TEXT);
+        Ui.readout(g, font, x + 7, iy + 10, iw, "SPD", String.format(java.util.Locale.ROOT, "%.1f m/s", spd), Ui.TEXT);
+        Ui.readout(g, font, x + 7, iy + 20, iw, "V/S", String.format(java.util.Locale.ROOT, "%+.1f m/s", (camera.getY() - camera.yo) * 20), Ui.DIM);
+        Ui.readout(g, font, x + 7, iy + 30, iw, "HDG", String.format(java.util.Locale.ROOT, "%03d DEG", Math.round(heading) % 360), Ui.TEXT);
+        Ui.readout(g, font, x + 7, iy + 40, iw, "ZOOM", String.format(java.util.Locale.ROOT, "%.1fx", zoom), zoom > 1.01f ? Ui.CYAN : Ui.DIM);
+    }
+
+    private static void dronePower(GuiGraphics g, Font font, int x, int y, int width, FpvDroneEntity d, int jam) {
+        boolean blink = Ui.blink();
         double battery = Mth.clamp(d.battery() / (double) maxBattery, 0, 1);
-        int y = h - 30;
-        Ui.text(g, font, "BAT  " + Math.round(battery * 100) + "%", 22, y, battery < 0.2 ? (blink ? Ui.RED : 0xFFB04040) : battery < 0.5 ? Ui.AMBER : Ui.HUD_TEXT, 0.9f);
-        y -= 10;
+        int powerColour = battery < 0.2 ? Ui.RED : Ui.level(battery);
+        Ui.instrument(g, font, x, y, width, d.mavic() ? 100 : 86, "POWER / LINK", d.fiber() ? "FIBRE" : "RADIO");
+        Ui.readout(g, font, x + 7, y + 20, width - 14, "BATTERY", Math.round(battery * 100) + "%", battery < 0.2 && !blink ? Ui.AMBER : powerColour);
+        Ui.gauge(g, x + 7, y + 33, width - 14, 4, battery, powerColour, 20);
         if (d.fiber()) {
             int left = Math.max(0, d.cableLeft());
-            Ui.text(g, font, "CABLE  " + left + " m", 22, y, left < 30 ? (blink ? Ui.RED : 0xFFB04040) : Ui.HUD_TEXT, 0.9f);
+            Ui.readout(g, font, x + 7, y + 45, width - 14, "CABLE", left + " m", left < 30 ? Ui.RED : Ui.CYAN);
+            g.drawString(font, "OPTICAL DATALINK", x + 7, y + 58, Ui.DIM, false);
         } else {
-            Ui.text(g, font, "SIG  " + d.signal() + "%", 22, y, d.signal() < 25 ? (blink ? Ui.RED : 0xFFB04040) : d.signal() < 50 ? Ui.AMBER : Ui.HUD_TEXT, 0.9f);
+            int signal = Mth.clamp(d.signal(), 0, 100);
+            int signalColour = signal < 25 ? Ui.RED : signal < 50 ? Ui.AMBER : Ui.GREEN;
+            Ui.readout(g, font, x + 7, y + 45, width - 14, "SIGNAL", signal + "%", signalColour);
+            Ui.gauge(g, x + 7, y + 58, width - 14, 4, signal / 100.0, signalColour, 20);
         }
-        if (d.mavic()) {
-            y -= 10;
-            Ui.text(g, font, Component.translatable(d.hasGrenade() ? "hud.steelrain.grenade_ready" : "hud.steelrain.grenade_none").getString(), 22, y,
-                    d.hasGrenade() ? Ui.AMBER : Ui.HUD_DIM, d.hasGrenade() ? 0.9f : 0.5f);
-        }
-        flight(g, font, w, (int) Math.round(d.getY()), speed, d.distance());
-        jammedWarning(g, font, w, h, d.jamPercent());
+        Ui.readout(g, font, x + 7, y + 71, width - 14, "BODY", d.distance() + " m", Ui.TEXT);
+        if (d.mavic()) Ui.readout(g, font, x + 7, y + 85, width - 14, "GRENADE", d.hasGrenade() ? "READY" : "EMPTY", d.hasGrenade() ? Ui.AMBER : Ui.DIM);
     }
 
-    /** Altitude, speed, distance home and zoom (when zoomed), top right. */
-    private static void flight(GuiGraphics g, Font font, int w, int altitude, double spd, int dist) {
-        int right = w - 22, y = 22;
-        Ui.textRight(g, font, "ALT  " + altitude + " m", right, y, Ui.HUD_TEXT, 0.9f); y += 10;
-        if (spd >= 0) { Ui.textRight(g, font, String.format("SPD  %.0f m/s", spd), right, y, Ui.HUD_TEXT, 0.9f); y += 10; }
-        if (dist >= 0) { Ui.textRight(g, font, "HOME  " + dist + " m", right, y, Ui.HUD_DIM, 0.9f); y += 10; }
-        if (zoom > 1.01f) Ui.textRight(g, font, String.format("%.1fx", zoom), right, y, Ui.AMBER, 0.9f);
+    private static void feedLink(GuiGraphics g, Font font, int x, int y, int width, int jam) {
+        int colour = jam > 60 ? Ui.RED : jam > 30 ? Ui.AMBER : Ui.GREEN;
+        Ui.instrument(g, font, x, y, width, 86, "SENSOR LINK", "REMOTE");
+        Ui.readout(g, font, x + 7, y + 20, width - 14, "STATE", jam > 60 ? "HEAVY JAM" : jam > 30 ? "DEGRADED" : "ONLINE", colour);
+        Ui.readout(g, font, x + 7, y + 35, width - 14, "JAM", Mth.clamp(jam, 0, 100) + "%", colour);
+        // This gauge is interference, not an invented radio strength estimate.
+        Ui.gauge(g, x + 7, y + 48, width - 14, 4, Mth.clamp(jam / 100.0, 0, 1), colour, 20);
+        g.drawString(font, "LIVE CAMERA FEED", x + 7, y + 62, Ui.DIM, false);
+        g.drawString(font, "GIMBAL / FREE LOOK", x + 7, y + 73, Ui.DIM, false);
     }
 
-    private static void jammedWarning(GuiGraphics g, Font font, int w, int h, int jam) {
-        if (jam <= 30) return;
-        Ui.textCentre(g, font, Component.translatable("hud.steelrain.jammed").getString(), w / 2, h / 2 - 40, Ui.RED, Ui.blink() ? 1 : 0.55f);
+    private static void controls(GuiGraphics g, Font font, int x, int y, int width, FpvDroneEntity d, boolean remote) {
+        Minecraft mc = Minecraft.getInstance();
+        Ui.instrument(g, font, x, y, width, 58, "CONTROLS", remote ? "CAM" : "FPV");
+        keyRow(g, font, x + 7, y + 19, width - 14, key(ClientSetup.EXIT_DRONE), remote ? "EXIT FEED" : "EXIT DRONE");
+        keyRow(g, font, x + 7, y + 31, width - 14, "WHEEL", "ZOOM");
+        if (remote) keyRow(g, font, x + 7, y + 43, width - 14, "MOUSE", "GIMBAL");
+        else keyRow(g, font, x + 7, y + 43, width - 14, key(mc.options.keyAttack), d.mavic() ? "DROP" : "DETONATE");
+    }
+
+    private static void keyRow(GuiGraphics g, Font font, int x, int y, int width, String key, String action) {
+        String boundedKey = font.plainSubstrByWidth(key, Math.max(12, width - font.width(action) - 16));
+        Ui.keyHint(g, font, x, y, boundedKey, action);
     }
 
     private FpvClient() {}

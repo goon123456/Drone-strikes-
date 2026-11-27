@@ -13,28 +13,31 @@ and tube artillery, and defend your base with air defence and jammers.
 The idea was inspired by the *Iron Drone* mod. All code, models and textures here are original.
 
 ## Interface
-Every screen and HUD shares one look, a rugged military tablet: dark panels, olive headers, amber for things to
-act on, green for ready, red for trouble, cyan for aircraft and recon. All of it is drawn in code, so it stays
-sharp at any GUI scale and fits small windows.
+Steel Rain's screens share a command-instrument style: charcoal panels, silver labels, green readiness,
+cyan sensor information, and amber/red warnings. Instruments stay at the edges of the driving and camera views;
+menus and container slots keep their normal Minecraft controls.
 
-- **Field Laptop**: a 3D laptop held in both hands. Switch to it and the lid swings open; its display shows the
-  clock, your grid and the link state. Right-click raises it to your eye and opens **Fire Control**: units down
-  the left with their state, rounds and battery; a live map with grid, range rings, unit icons, recon contacts and
-  the line of fire; the fire mission on the right. The expanded command display scales to the window, with
-  **Overview**, **Targets**, **Weapons**, **ROE**, **Airspace** and **Logs** tabs below the map. Overview shows a
-  terrain inset, target trajectory, recon availability and selected-unit telemetry. The upper **ISR**, **BDA**,
-  **Comms** and **System** keys open their corresponding readouts. Camera viewing uses the existing **CAM**
-  control; the tablet does not display simulated EO/IR footage or claim unreported damage.
-- **Vehicle dashboard** (driver and crew): seat, speed and heading, engine state, fuel, battery, damage, and
-  automatic mode or jamming where it applies.
-- **Gun sights**: compass tape and elevation scale for where the gun points, a marker that turns green when the
-  gun is laid where you look. Artillery adds charge, shell, breech state with a loading bar, and a range table;
-  air defence adds radar state, target box, lead diamond, rounds, belts and missiles.
-- **FPV and camera feeds**: battery and signal or cable meters, altitude, speed, distance home, zoom, REC / LIVE
-  tag and a jamming warning.
-- **Notices**: Steel Rain's status messages (linked, refuelled, out of range, busy...) appear as short coloured
-  notices under the crosshair instead of plain text.
-- **Launch sites** open a loading panel in the same style, with an energy gauge where they need power.
+- **Field Laptop**: the expanded, window-scaled Fire Control display has linked units, a wide tactical map,
+  mission controls, and **Overview**, **Targets**, **Weapons**, **ROE**, **Airspace** and **Logs** tabs. The
+  upper **ISR**, **BDA**, **Comms** and **System** keys open their readouts. Overview includes a terrain inset,
+  target trajectory, recon availability and selected-unit telemetry. The list is empty until equipment is linked.
+  **CAM** opens the existing aircraft camera view. The held laptop's small screen shows the real saved link
+  count, clock, holder's grid, elevation and weather.
+- **Driving dashboard**: persistent mobility and systems cards show speed, heading, seat, engine state, and
+  segmented fuel, battery and hull gauges. Low resources and damage get explicit warnings. Jammers and air
+  defence show their actual EW switch or automatic mode state. Key hints follow remapped bindings.
+- **Gun sights**: framed heading and weapon readouts, barrel alignment, elevation and ammunition status. Artillery
+  adds shell, charge, breech/loading progress and a range table; air defence adds radar search/track/lock,
+  target range, ammunition and the existing lead cue. The centre remains available for aiming.
+- **FPV and aircraft camera views**: sensor-style framing, heading, flight telemetry, zoom, battery and radio
+  link or remaining fibre cable where available. Mavic shows grenade state. Jamming retains its visual noise
+  and a signal warning. Camera labels describe viewing rather than claiming to record video.
+- **Launch-site loading**: separate ammunition, readiness, energy and inventory sections with tooltips and
+  the normal item-transfer controls. Empty stores and missing power are distinguished from ready equipment.
+- **Vehicle storage**: the mod's own cargo console presents the same 27-slot storage with distinct cargo,
+  player inventory and quick-access sections. Ordinary vanilla chests keep their normal screen.
+- **Notices**: brief, bounded system cards show linked, loaded, out-of-range and other mod messages without
+  covering the central reticle. The in-world instruments hide while a menu is open.
 
 ## Vehicles
 All twelve vehicles are Steel Rain's own: HIMARS, M109, 120 mm mortar, Tomahawk and Iskander launchers, ZU-23-2,

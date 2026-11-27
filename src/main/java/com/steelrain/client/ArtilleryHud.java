@@ -11,22 +11,19 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 
 import javax.annotation.Nullable;
+import java.util.Locale;
 
-/**
- * Gun sights as bare text over the world, kept to what the gunner needs at a glance: a compass tape, the barrel's
- * elevation by the crosshair, a marker for the barrels catching up with the eye, and the ammunition in the bottom
- * right corner. Details fade out a few seconds after they last changed.
- */
+/** Instrument-style gun sights, with persistent ammunition state and a clear centre for aiming. */
 public final class ArtilleryHud {
     static void render(GuiGraphics g, DeltaTracker delta) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || mc.options.hideGui) return;
+        if (mc.player == null || mc.options.hideGui || mc.screen != null) return;
         float pt = delta.getGameTimeDeltaPartialTick(false);
         if (mc.player.getVehicle() instanceof SrGun sr && sr.isGunner(mc.player)) artillery(g, sr, mc);
         if (mc.player.getVehicle() instanceof SrAirDefence ad && ad.isGunner(mc.player)) airDefence(g, ad, mc, pt);
     }
 
-    /** Screen position of a direction from the eye, or null when it is behind or far off to the side. */
+    /** Screen position of a direction from the eye, or null when it falls outside the viewport. */
     @Nullable
     private static int[] onScreen(GuiGraphics g, Minecraft mc, Vec3 dir) {
         var player = mc.player;
@@ -34,19 +31,25 @@ public final class ArtilleryHud {
         double dyaw = Mth.wrapDegrees(yaw - player.getYRot()), dpitch = pitch + player.getXRot();
         if (Math.abs(dyaw) > 75 || Math.abs(dpitch) > 75) return null;
         double scale = g.guiHeight() / 2.0 / Math.tan(Math.toRadians(mc.options.fov().get() / 2.0));
-        return new int[]{(int) (g.guiWidth() / 2.0 + Math.tan(Math.toRadians(dyaw)) * scale), (int) (g.guiHeight() / 2.0 - Math.tan(Math.toRadians(dpitch)) * scale)};
+        int x = (int) (g.guiWidth() / 2.0 + Math.tan(Math.toRadians(dyaw)) * scale);
+        int y = (int) (g.guiHeight() / 2.0 - Math.tan(Math.toRadians(dpitch)) * scale);
+        return x < 0 || y < 0 || x >= g.guiWidth() || y >= g.guiHeight() ? null : new int[]{x, y};
     }
 
-    /** Range table shown, toggled with its key. */
+    /** Range table shown, toggled with its configured key. */
     static boolean table;
 
-    private static final Ui.Fader GUN = new Ui.Fader(), AIR = new Ui.Fader();
-
-    private static int compassWidth(int w) { return Mth.clamp(w / 3, 120, 200); }
-
     private static double bearingOf(Vec3 d) { return (Math.toDegrees(Math.atan2(d.x, -d.z)) + 360) % 360; }
-
     private static double elevationOf(Vec3 d) { return Math.toDegrees(Math.asin(Mth.clamp(d.y, -1, 1))); }
+    private static String key(net.minecraft.client.KeyMapping mapping) { return Ui.keyName(mapping); }
+
+    /** Side cards leave a corridor around the reticle, including at the smallest normal GUI size. */
+    private static int cardWidth(int w) { return Mth.clamp((w - 80) / 2, 108, 188); }
+
+    private static void sightHeader(GuiGraphics g, Font font, int w, String name, String role, double bearing) {
+        Ui.instrument(g, font, 8, 8, w - 16, 55, name, role);
+        Ui.compassBare(g, font, w / 2, 28, Math.min(w - 48, 240), bearing, 1);
+    }
 
     /** A cross where the barrels point now: green once on the crosshair, amber while still moving. */
     private static void barrelMarker(GuiGraphics g, Minecraft mc, Vec3 dir) {
@@ -60,135 +63,178 @@ public final class ArtilleryHud {
 
     // ------------------------------------------------------------------ artillery
 
-    /**
-     * Bare readouts only. Always: the compass with the barrel's bearing at the top, and beside the crosshair the
-     * barrel's elevation and where a shell would land on level ground. Bottom right: the breech state always, the
-     * shell and charge for a few seconds after they change. The range table only while toggled on.
-     */
     private static void artillery(GuiGraphics g, SrGun gun, Minecraft mc) {
         Font font = mc.font;
-        int w = g.guiWidth(), h = g.guiHeight();
+        int w = g.guiWidth(), h = g.guiHeight(), cw = cardWidth(w), bottom = h - 52, y = bottom - 90;
         Vec3 barrel = gun.gunDirection();
         double bearing = bearingOf(barrel), elevation = elevationOf(barrel);
-        Ui.compassBare(g, font, w / 2, 8, compassWidth(w), bearing, 0.9f);
+        sightHeader(g, font, w, Ui.upper(gun.getName()).getString(), "ARTILLERY", bearing);
 
         double[] charges = gun.charges();
         int charge = Mth.clamp(gun.charge(), 0, charges.length - 1);
         double v = charges[charge];
         double range = elevation > 0 ? v * v * Math.sin(Math.toRadians(2 * elevation)) / com.steelrain.entity.MissileEntity.GRAVITY : 0;
-        int cx = w / 2 + 14, cy = h / 2 - 9;
-        Ui.text(g, font, String.format("EL %.1f", elevation), cx, cy, Ui.HUD_TEXT, 0.9f);
-        Ui.text(g, font, range > 1 ? String.format("%,d m", Math.round(range)) : "-- m", cx, cy + 10, Ui.HUD_DIM, 0.9f);
+        if (table) {
+            rangeTable(g, font, gun, charges, charge, cw, bottom);
+        } else {
+            Ui.instrument(g, font, 8, y, cw, 90, "FIRE SOLUTION", "");
+            Ui.readout(g, font, 16, y + 22, cw - 16, "ELEV", String.format(Locale.ROOT, "%.1f DEG", elevation), Ui.TEXT);
+            Ui.readout(g, font, 16, y + 36, cw - 16, "LEVEL RNG", range > 1 ? Math.round(range) + " m" : "--", Ui.CYAN);
+            Ui.readout(g, font, 16, y + 50, cw - 16, "MUZZLE", Math.round(v * 20) + " m/s", Ui.DIM);
+            g.fill(16, y + 64, cw, y + 65, Ui.EDGE);
+            g.enableScissor(16, y + 70, cw, y + 85);
+            int used = Ui.keyHint(g, font, 16, y + 72, key(ClientSetup.SHELL_TYPE), "SHELL");
+            if (used + font.width(key(ClientSetup.RANGE_TABLE)) + 48 <= cw - 16)
+                Ui.keyHint(g, font, 20 + used, y + 72, key(ClientSetup.RANGE_TABLE), "TABLE");
+            g.disableScissor();
+        }
 
-        // breech, shell and charge, bottom right
+        int x = w - cw - 8;
+        Ui.instrument(g, font, x, y, cw, 90, "BREECH", "");
         var shells = gun.shells();
-        String shell = shells.get(Math.min(gun.selectedShell(), shells.size() - 1)).getDescription().getString();
-        int state = gun.loaded() >= 0 ? 1 : gun.loading() > 0 ? 2 : 0;
-        float a = GUN.update(java.util.List.of(charge, gun.selectedShell(), state));
-        int right = w - 10, y = h - 14;
-        if (state == 1) Ui.textRight(g, font, Component.translatable("hud.steelrain.breech_loaded").getString(), right, y, Ui.GREEN, 1);
-        else if (state == 2) Ui.bigRight(g, font, String.format("%.1fs", gun.loading() / 20.0), right, y - 4, Ui.AMBER, 1);
-        else Ui.textRight(g, font, Component.translatable("hud.steelrain.breech_empty").getString(), right, y, Ui.RED, 0.85f);
-        y -= state == 2 ? 14 : 11;
-        Ui.textRight(g, font, shell, right, y, Ui.HUD_TEXT, Math.max(a, 0.5f));
-        y -= 10;
-        Ui.textRight(g, font, "CHARGE " + (charge + 1) + "/" + charges.length, right, y, Ui.HUD_DIM, Math.max(a, 0.5f));
-
-        if (table) rangeTable(g, font, gun, charges, charge, h);
+        int selected = Mth.clamp(gun.selectedShell(), 0, shells.size() - 1);
+        int loaded = gun.loaded() < 0 ? -1 : Mth.clamp(gun.loaded(), 0, shells.size() - 1);
+        String shell = shells.get(loaded >= 0 ? loaded : selected).getDescription().getString();
+        g.drawString(font, font.plainSubstrByWidth(shell, cw - 16), x + 8, y + 22, Ui.TEXT, false);
+        String state = loaded >= 0 ? Component.translatable("hud.steelrain.breech_loaded").getString()
+                : gun.loading() > 0 ? String.format(Locale.ROOT, "LOADING %.1f s", gun.loading() / 20.0)
+                : Component.translatable("hud.steelrain.breech_empty").getString();
+        int stateColour = loaded >= 0 ? Ui.GREEN : gun.loading() > 0 ? Ui.AMBER : Ui.RED;
+        g.drawString(font, font.plainSubstrByWidth(state.toUpperCase(Locale.ROOT), cw - 16), x + 8, y + 36, stateColour, false);
+        Ui.readout(g, font, x + 8, y + 50, cw - 16, "CHARGE", (charge + 1) + " / " + charges.length, Ui.AMBER);
+        double reload = loaded >= 0 ? 1 : gun.loading() > 0 ? 1 - gun.loading() / (double) Math.max(1, gun.reloadTotal()) : 0;
+        Ui.gauge(g, x + 8, y + 64, cw - 16, 4, reload, stateColour, 20);
+        g.drawString(font, font.plainSubstrByWidth("SCROLL: CHARGE", cw - 16), x + 8, y + 76, Ui.DIM, false);
+        controlHints(g, font, mc, w, h, false, true, false);
         barrelMarker(g, mc, barrel);
     }
 
-    /** Elevation for each charge at each range on level ground, as bare columns at the left edge. */
-    private static void rangeTable(GuiGraphics g, Font font, SrGun gun, double[] charges, int charge, int h) {
-        int step = gun.rangeStep(), rows = Mth.clamp((h - 120) / 9, 4, 14);
-        int x = 10, y = Math.max(40, h / 2 - (rows * 9 + 12) / 2);
-        Ui.text(g, font, Ui.upper(Component.translatable("hud.steelrain.range_table")).getString(), x, y, Ui.HUD_DIM, 0.9f);
-        y += 12;
-        Ui.text(g, font, "m", x, y, Ui.HUD_DIM, 0.7f);
-        for (int c = 0; c < charges.length; c++) Ui.text(g, font, "C" + (c + 1), x + 32 + c * 30, y, c == charge ? Ui.AMBER : Ui.HUD_DIM, c == charge ? 1 : 0.7f);
-        y += 10;
-        for (int r = 0; r < rows; r++, y += 9) {
-            int range = step * (r + 1);
-            Ui.text(g, font, Integer.toString(range), x, y, Ui.HUD_DIM, 0.8f);
-            for (int c = 0; c < charges.length; c++) {
-                double e = SrGun.elevationFor(charges[c], range, 0, gun.minElevation(), gun.maxElevation());
-                Ui.text(g, font, Double.isNaN(e) ? "-" : String.format("%.1f", e), x + 32 + c * 30, y,
-                        c == charge ? Ui.HUD_TEXT : Ui.HUD_DIM, Double.isNaN(e) ? 0.3f : c == charge ? 0.95f : 0.6f);
+    /** Level-ground firing table; the current propellant column stays highlighted. */
+    private static void rangeTable(GuiGraphics g, Font font, SrGun gun, double[] charges, int charge, int cw, int bottom) {
+        int rows = Mth.clamp((bottom - 85 - 48) / 11, 3, 14), height = 48 + rows * 11;
+        int x = 8, y = bottom - height, firstColumn = 0;
+        int columns = Math.min(charges.length, Math.max(1, (cw - 42) / 25));
+        if (charge >= columns) firstColumn = charge - columns + 1;
+        int colWidth = (cw - 40) / columns;
+        Ui.instrument(g, font, x, y, cw, height, "RANGE TABLE", "");
+        g.drawString(font, "m", x + 8, y + 22, Ui.DIM, false);
+        int selectedX = x + 36 + (charge - firstColumn) * colWidth;
+        g.fill(selectedX - 2, y + 19, selectedX + colWidth - 3, y + 33 + rows * 11, 0x402C5D47);
+        for (int c = 0; c < columns; c++) {
+            int idx = firstColumn + c;
+            g.drawString(font, "C" + (idx + 1), x + 36 + c * colWidth, y + 22, idx == charge ? Ui.GREEN : Ui.DIM, false);
+        }
+        for (int row = 0; row < rows; row++) {
+            int range = gun.rangeStep() * (row + 1), rowY = y + 35 + row * 11;
+            if ((row & 1) == 0) g.fill(x + 4, rowY - 1, x + cw - 4, rowY + 9, 0x13000000);
+            g.drawString(font, Integer.toString(range), x + 8, rowY, Ui.DIM, false);
+            for (int c = 0; c < columns; c++) {
+                int idx = firstColumn + c;
+                double e = SrGun.elevationFor(charges[idx], range, 0, gun.minElevation(), gun.maxElevation());
+                String value = Double.isNaN(e) ? "--" : String.format(Locale.ROOT, "%.1f", e);
+                g.drawString(font, font.plainSubstrByWidth(value, colWidth - 2), x + 36 + c * colWidth, rowY,
+                        Double.isNaN(e) ? Ui.FAINT : idx == charge ? Ui.TEXT : Ui.DIM, false);
             }
         }
+        String footer = key(ClientSetup.RANGE_TABLE) + ": CLOSE / LEVEL GROUND";
+        g.drawString(font, font.plainSubstrByWidth(footer, cw - 16), x + 8, y + height - 11, Ui.FAINT, false);
     }
 
     // ------------------------------------------------------------------ air defence
 
-    /**
-     * Compass at the top, elevation by the crosshair, the radar's contact under the compass, rounds bottom right.
-     * The box round the tracked target and the diamond on the lead stay as they were.
-     */
     private static void airDefence(GuiGraphics g, SrAirDefence ad, Minecraft mc, float pt) {
         Font font = mc.font;
-        int w = g.guiWidth(), h = g.guiHeight();
+        int w = g.guiWidth(), h = g.guiHeight(), cw = cardWidth(w), y = h - 142;
         Vec3 guns = ad.gunDirection();
-        Ui.compassBare(g, font, w / 2, 8, compassWidth(w), bearingOf(guns), 0.9f);
-        Ui.text(g, font, String.format("EL %.0f", elevationOf(guns)), w / 2 + 14, h / 2 - 4, Ui.HUD_TEXT, 0.75f);
+        sightHeader(g, font, w, Ui.upper(ad.getName()).getString(), "AIR DEFENCE", bearingOf(guns));
         var target = ad.target();
+        String track = target == null ? "NO TRACK" : ad.locked() ? "LOCKED" : "TRACKING";
+        int trackColour = target == null ? Ui.DIM : ad.locked() ? Ui.RED : Ui.AMBER;
 
-        // radar, under the compass
-        if (ad.hasRadar()) {
-            String radar;
-            int rc;
-            if (target != null) {
-                radar = Component.translatable(ad.locked() ? "hud.steelrain.radar_lock_short" : "hud.steelrain.radar_track_short").getString()
-                        + "  " + (int) target.distanceTo(ad) + " m  " + target.getName().getString();
-                rc = ad.locked() ? Ui.RED : Ui.AMBER;
-            } else {
-                radar = Component.translatable("hud.steelrain.radar_search_short").getString();
-                rc = Ui.HUD_DIM;
-            }
-            Ui.textCentre(g, font, radar, w / 2, 40, rc, target != null ? 1 : 0.5f);
+        Ui.instrument(g, font, 8, y, cw, 90, ad.hasRadar() ? "RADAR / TRACK" : "GUN LAYING", "");
+        g.drawString(font, font.plainSubstrByWidth(ad.hasRadar() ? track : "OPTICAL SIGHT", cw - 16), 16, y + 22,
+                ad.hasRadar() ? trackColour : Ui.DIM, false);
+        if (target != null && ad.hasRadar()) {
+            g.drawString(font, font.plainSubstrByWidth(target.getName().getString(), cw - 16), 16, y + 36, Ui.TEXT, false);
+            Ui.readout(g, font, 16, y + 50, cw - 16, "RANGE", (int) target.distanceTo(ad) + " m", trackColour);
+        } else {
+            Ui.readout(g, font, 16, y + 36, cw - 16, "ELEV", String.format(Locale.ROOT, "%.1f DEG", elevationOf(guns)), Ui.TEXT);
+            Ui.readout(g, font, 16, y + 50, cw - 16, "RANGE", (int) Math.max(ad.gunRange(), ad.missileRange()) + " m", Ui.DIM);
         }
+        Ui.readout(g, font, 16, y + 65, cw - 16, "MODE", ad.auto() ? "AUTO" : "MANUAL", ad.auto() ? Ui.GREEN : Ui.TEXT);
+        g.drawString(font, font.plainSubstrByWidth(key(ClientSetup.AUTO_MODE) + ": AUTO MODE", cw - 16), 16, y + 78, Ui.DIM, false);
 
-        // rounds, belts, missiles, auto: bottom right
-        float a = AIR.update(java.util.List.of(ad.beltAp(), ad.stock(0), ad.stock(1), ad.stock(2), ad.auto()));
-        int right = w - 10, y = h - 14;
+        int x = w - cw - 8;
+        Ui.instrument(g, font, x, y, cw, 90, "AMMUNITION", "");
+        int row = y + 22;
         if (ad.hasGuns()) {
+            g.pose().pushPose();
+            g.pose().translate(x + 8, row, 0);
+            g.pose().scale(1.7f, 1.7f, 1);
+            g.drawString(font, Integer.toString(ad.rounds()), 0, 0, ad.rounds() > 0 ? Ui.TEXT : Ui.RED, false);
+            g.pose().popPose();
             String belt = ad.beltAp() ? "AP" : "HE";
-            Ui.textRight(g, font, belt, right, y, ad.beltAp() ? Ui.CYAN : Ui.AMBER, 1);
-            Ui.bigRight(g, font, Integer.toString(ad.rounds()), right - font.width(belt) - 4, y - 4, ad.rounds() > 0 ? Ui.HUD_TEXT : Ui.RED, 1);
-            y -= 14;
-            Ui.textRight(g, font, Component.translatable("hud.steelrain.belts", ad.stock(0), ad.stock(1)).getString(), right, y, Ui.HUD_DIM, a);
-            y -= 10;
+            g.drawString(font, belt, x + cw - 8 - font.width(belt), row + 4, ad.beltAp() ? Ui.CYAN : Ui.AMBER, false);
+            row += 21;
+            Ui.readout(g, font, x + 8, row, cw - 16, "HE / AP", ad.stock(0) + " / " + ad.stock(1), Ui.DIM);
+            row += 14;
         }
         if (ad.missileRange() > 0) {
-            Ui.textRight(g, font, Component.translatable("hud.steelrain.missiles_short", ad.stock(2)).getString(), right, y,
-                    ad.stock(2) > 0 ? Ui.HUD_TEXT : Ui.RED, ad.stock(2) > 0 ? Math.max(a, 0.6f) : 1);
-            y -= 10;
+            Ui.readout(g, font, x + 8, row, cw - 16, "MISSILES", Integer.toString(ad.stock(2)), ad.stock(2) > 0 ? Ui.CYAN : Ui.RED);
+            row += 14;
         }
-        if (ad.auto()) Ui.textRight(g, font, Component.translatable("hud.steelrain.auto_chip_on").getString(), right, y, Ui.GREEN, 1);
-
+        if (ad.hasGuns()) {
+            Ui.gauge(g, x + 8, y + 65, cw - 16, 4, ad.rounds() / (double) Math.max(1, ad.beltSize()), ad.rounds() > 0 ? Ui.GREEN : Ui.RED, 20);
+            g.drawString(font, font.plainSubstrByWidth(key(ClientSetup.SHELL_TYPE) + ": BELT TYPE", cw - 16), x + 8, y + 78, Ui.DIM, false);
+        } else {
+            Ui.readout(g, font, x + 8, row, cw - 16, "ENVELOPE", (int) ad.missileRange() + " m", Ui.DIM);
+            g.drawString(font, font.plainSubstrByWidth("RADAR-GUIDED SYSTEM", cw - 16), x + 8, y + 78, Ui.FAINT, false);
+        }
+        controlHints(g, font, mc, w, h, ad.hasRadar(), ad.hasGuns(), ad.missileRange() > 0);
         barrelMarker(g, mc, guns);
-        if (target != null && ad.hasRadar()) {
-            Vec3 eye = mc.player.getEyePosition(pt);
-            Vec3 tp = new Vec3(Mth.lerp(pt, target.xo, target.getX()), Mth.lerp(pt, target.yo, target.getY()) + target.getBbHeight() / 2,
-                    Mth.lerp(pt, target.zo, target.getZ()));
-            int[] box = onScreen(g, mc, tp.subtract(eye).normalize());
-            int c = ad.locked() ? Ui.RED : Ui.AMBER;
-            if (box != null) {
-                Ui.brackets(g, box[0] - 10, box[1] - 10, 21, 21, 5, c);
-                if (ad.locked() && Ui.blink()) Ui.brackets(g, box[0] - 13, box[1] - 13, 27, 27, 3, c);
-            }
-            if (ad.hasGuns()) {
-                int[] d = onScreen(g, mc, ad.leadOn(target, true));
-                if (d != null) {
-                    for (int i = 0; i <= 5; i++) {
-                        g.fill(d[0] - 5 + i, d[1] - i, d[0] - 4 + i, d[1] - i + 1, Ui.GREEN); g.fill(d[0] + 5 - i, d[1] - i, d[0] + 6 - i, d[1] - i + 1, Ui.GREEN);
-                        g.fill(d[0] - 5 + i, d[1] + i, d[0] - 4 + i, d[1] + i + 1, Ui.GREEN); g.fill(d[0] + 5 - i, d[1] + i, d[0] + 6 - i, d[1] + i + 1, Ui.GREEN);
-                    }
-                    if (box != null) {   // a faint line from the target to where to aim
-                        int steps = Math.max(Math.abs(d[0] - box[0]), Math.abs(d[1] - box[1]));
-                        for (int i = 0; i < steps; i += 3) {
-                            int lx = box[0] + (d[0] - box[0]) * i / Math.max(1, steps), ly = box[1] + (d[1] - box[1]) * i / Math.max(1, steps);
-                            g.fill(lx, ly, lx + 1, ly + 1, 0x807CD67C);
-                        }
+        if (target != null && ad.hasRadar()) drawTrackedTarget(g, mc, ad, target, pt);
+    }
+
+    private static void controlHints(GuiGraphics g, Font font, Minecraft mc, int w, int h, boolean radar, boolean guns, boolean missiles) {
+        int x = 8, y = h - 48;
+        if (guns) x += Ui.keyHint(g, font, x, y, key(mc.options.keyAttack), "FIRE") + 8;
+        if (!radar && !missiles) {
+            String tableKey = key(ClientSetup.RANGE_TABLE);
+            if (x + font.width(tableKey) + font.width("TABLE") + 16 < w - 8)
+                x += Ui.keyHint(g, font, x, y, tableKey, "TABLE") + 8;
+        }
+        if (radar) {
+            String radarKey = key(mc.options.keyPickItem);
+            if (x + font.width(radarKey) + font.width("LOCK") + 16 < w - 8)
+                x += Ui.keyHint(g, font, x, y, radarKey, "LOCK") + 8;
+        }
+        if (missiles && x + font.width(key(mc.options.keyUse)) + font.width("MISSILE") + 16 < w - 8)
+            Ui.keyHint(g, font, x, y, key(mc.options.keyUse), "MISSILE");
+    }
+
+    /** Radar target projection and lead retain the original sight's calculation. */
+    private static void drawTrackedTarget(GuiGraphics g, Minecraft mc, SrAirDefence ad, net.minecraft.world.entity.Entity target, float pt) {
+        Vec3 eye = mc.player.getEyePosition(pt);
+        Vec3 tp = new Vec3(Mth.lerp(pt, target.xo, target.getX()), Mth.lerp(pt, target.yo, target.getY()) + target.getBbHeight() / 2,
+                Mth.lerp(pt, target.zo, target.getZ()));
+        int[] box = onScreen(g, mc, tp.subtract(eye).normalize());
+        int c = ad.locked() ? Ui.RED : Ui.AMBER;
+        if (box != null) {
+            Ui.brackets(g, box[0] - 10, box[1] - 10, 21, 21, 5, c);
+            if (ad.locked() && Ui.blink()) Ui.brackets(g, box[0] - 13, box[1] - 13, 27, 27, 3, c);
+        }
+        if (ad.hasGuns()) {
+            int[] d = onScreen(g, mc, ad.leadOn(target, true));
+            if (d != null) {
+                for (int i = 0; i <= 5; i++) {
+                    g.fill(d[0] - 5 + i, d[1] - i, d[0] - 4 + i, d[1] - i + 1, Ui.GREEN); g.fill(d[0] + 5 - i, d[1] - i, d[0] + 6 - i, d[1] - i + 1, Ui.GREEN);
+                    g.fill(d[0] - 5 + i, d[1] + i, d[0] - 4 + i, d[1] + i + 1, Ui.GREEN); g.fill(d[0] + 5 - i, d[1] + i, d[0] + 6 - i, d[1] + i + 1, Ui.GREEN);
+                }
+                if (box != null) {
+                    int steps = Math.max(Math.abs(d[0] - box[0]), Math.abs(d[1] - box[1]));
+                    for (int i = 0; i < steps; i += 3) {
+                        int lx = box[0] + (d[0] - box[0]) * i / Math.max(1, steps), ly = box[1] + (d[1] - box[1]) * i / Math.max(1, steps);
+                        g.fill(lx, ly, lx + 1, ly + 1, 0x807CD67C);
                     }
                 }
             }
