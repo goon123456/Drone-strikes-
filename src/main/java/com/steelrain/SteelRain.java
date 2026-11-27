@@ -21,6 +21,7 @@ public class SteelRain {
     public SteelRain(IEventBus modBus, ModContainer container) {
         ModRegistry.register(modBus);
         container.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
+        if (net.neoforged.fml.loading.FMLEnvironment.dist.isClient()) container.registerConfig(ModConfig.Type.CLIENT, com.steelrain.client.ClientConfig.SPEC);
         modBus.addListener(RegisterPayloadHandlersEvent.class, Payloads::register);
         modBus.addListener(net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent.class, SteelRain::capabilities);
         NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.EntityInteract.class, SteelRain::fitDome);

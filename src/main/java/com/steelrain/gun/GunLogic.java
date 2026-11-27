@@ -28,7 +28,7 @@ import java.util.UUID;
  * fingers are doing; what the gun does about it is decided here.
  */
 public final class GunLogic {
-    public static final int ACT_RELOAD = 0, ACT_MODE = 1, ACT_ZERO = 2, ACT_FIT = 3, ACT_REMOVE = 4;
+    public static final int ACT_RELOAD = 0, ACT_MODE = 1, ACT_ZERO = 2, ACT_FIT = 3, ACT_REMOVE = 4, ACT_SIDE = 5;
     /** What everyone nearby is told about, so they can animate and hear it. */
     public static final int EV_RELOAD = 0, EV_RELOAD_EMPTY = 1, EV_SHELL = 2, EV_PUMP = 3, EV_DRY = 4, EV_SELECTOR = 5, EV_CANCEL = 6, EV_ROCKET = 7, EV_BURST = 8;
 
@@ -40,6 +40,7 @@ public final class GunLogic {
         int reload = -1, reloadTotal;
         boolean reloadEmpty, magOut, magIn;
         int pendingLoad;
+        @javax.annotation.Nullable net.minecraft.core.BlockPos lit;
         int shots;
         long lastShot;
     }
@@ -51,7 +52,42 @@ public final class GunLogic {
         return e != null ? e : SoundEvents.UI_BUTTON_CLICK.value();
     }
 
-    public static void forget(ServerPlayer player) { STATES.remove(player.getUUID()); }
+    public static void forget(ServerPlayer player) {
+        State st = STATES.remove(player.getUUID());
+        if (st != null) douse(player.serverLevel(), st);
+    }
+
+    /** Takes away the patch of light a weapon light was throwing. */
+    private static void douse(ServerLevel level, State st) {
+        if (st.lit != null && level.isLoaded(st.lit) && level.getBlockState(st.lit).is(net.minecraft.world.level.block.Blocks.LIGHT)) {
+            level.setBlock(st.lit, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2 | 16);
+        }
+        st.lit = null;
+    }
+
+    /**
+     * A weapon light: the game has no moving lights, so the spot the beam falls on is lit with an invisible light
+     * block, moved as the gun moves and removed when the light goes off or the gun is put away.
+     */
+    private static void shine(ServerPlayer player, ItemStack stack, State st) {
+        ServerLevel level = player.serverLevel();
+        boolean on = stack.getItem() instanceof GunItem && GunItem.part(stack, Attachment.Slot.SIDE) == Attachment.FLASHLIGHT
+                && stack.getOrDefault(ModRegistry.ACTIVE.get(), false);
+        if (!on) { if (st.lit != null) douse(level, st); return; }
+        if (player.tickCount % 2 != 0) return;
+        Vec3 eye = player.getEyePosition(), to = eye.add(player.getLookAngle().scale(14));
+        var hit = level.clip(new net.minecraft.world.level.ClipContext(eye, to, net.minecraft.world.level.ClipContext.Block.COLLIDER,
+                net.minecraft.world.level.ClipContext.Fluid.NONE, player));
+        Vec3 spot = hit.getType() == net.minecraft.world.phys.HitResult.Type.MISS ? to : hit.getLocation().subtract(player.getLookAngle().scale(0.6));
+        net.minecraft.core.BlockPos pos = net.minecraft.core.BlockPos.containing(spot);
+        if (pos.equals(st.lit)) return;
+        douse(level, st);
+        if (level.getBlockState(pos).isAir()) {
+            level.setBlock(pos, net.minecraft.world.level.block.Blocks.LIGHT.defaultBlockState()
+                    .setValue(net.minecraft.world.level.block.LightBlock.LEVEL, 14), 2 | 16);
+            st.lit = pos;
+        }
+    }
 
     public static void input(ServerPlayer player, boolean trigger, boolean aiming) {
         State st = STATES.computeIfAbsent(player.getUUID(), u -> new State());
@@ -77,6 +113,11 @@ public final class GunLogic {
                 int next = Mth.clamp(now + (arg > 0 ? 1 : -1), 0, zeros.length - 1);
                 if (next != now) stack.set(ModRegistry.ZERO.get(), next);
             }
+            case ACT_SIDE -> {
+                if (GunItem.part(stack, Attachment.Slot.SIDE) == null) return;
+                stack.set(ModRegistry.ACTIVE.get(), !stack.getOrDefault(ModRegistry.ACTIVE.get(), false));
+                event(player, EV_SELECTOR, GunItem.mode(stack));
+            }
             case ACT_FIT -> fit(player, stack, gun.type, arg);
             case ACT_REMOVE -> remove(player, stack, arg);
             default -> { }
@@ -88,7 +129,7 @@ public final class GunLogic {
     private static void fit(ServerPlayer player, ItemStack stack, GunType type, int ordinal) {
         if (ordinal < 0 || ordinal >= Attachment.VALUES.length) return;
         Attachment a = Attachment.VALUES[ordinal];
-        if (!type.fits.contains(a)) return;
+        if (!type.accepts(a)) return;
         Item item = ModRegistry.ATTACHMENTS.get(a).get();
         Inventory inv = player.getInventory();
         int slot = -1;
@@ -130,10 +171,11 @@ public final class GunLogic {
     public static void tick(ServerPlayer player) {
         ItemStack stack = player.getMainHandItem();
         if (!(stack.getItem() instanceof GunItem gun) || player.isSpectator() || !player.isAlive()) {
-            if (STATES.containsKey(player.getUUID())) STATES.remove(player.getUUID());
+            if (STATES.containsKey(player.getUUID())) forget(player);
             return;
         }
         State st = STATES.computeIfAbsent(player.getUUID(), u -> new State());
+        shine(player, stack, st);
         long now = player.serverLevel().getGameTime();
         int slot = player.getInventory().selected;
         if (st.type != gun.type || st.slot != slot) {                       // just drawn: it takes a moment to bring up
@@ -178,20 +220,22 @@ public final class GunLogic {
             if (rounds > 0) stack.set(ModRegistry.ROUNDS.get(), rounds - 1);     // the action feeds the next round
             else stack.set(ModRegistry.CHAMBER.get(), false);
         }
-        boolean tracer = type.tracerEvery() > 0 ? before % type.tracerEvery() == 0 : before <= type.tracerLast();
+        int kind = type.loads().length > 1 ? 0 : stack.getOrDefault(ModRegistry.LOAD.get(), 0);
+        boolean tracer = kind == GunItem.KIND_TRACER || (type.tracerEvery() > 0 ? before % type.tracerEvery() == 0 : before <= type.tracerLast());
         boolean suppressed = GunItem.suppressed(stack);
 
         // where the barrel points: the line of sight, raised for the range the sights are set to, plus the gun's
         // own scatter and the firer's unsteadiness
         double lift = Math.toDegrees(cal.elevation(GunItem.zeroRange(stack), type.velocityFactor));
         double sigma = type.moa * 0.000291 / 2;
-        if (!st.aiming) sigma += Math.toRadians(type.pistol() ? 1.1 : 1.6);
+        boolean laser = GunItem.part(stack, Attachment.Slot.SIDE) == Attachment.LASER && stack.getOrDefault(ModRegistry.ACTIVE.get(), false);
+        if (!st.aiming) sigma += Math.toRadians(type.pistol() ? 1.1 : 1.6) * (laser ? 0.6 : 1.0);
         Vec3 moved = player.getKnownMovement();
         sigma += Math.min(0.05, Math.hypot(moved.x, moved.z) * 0.12);
         if (!player.onGround() && !player.isPassenger()) sigma += Math.toRadians(2.5);
         Vec3 eye = player.getEyePosition();
         double speed = cal.speed() * type.velocityFactor;
-        float damage = type == GunType.SVD || type == GunType.M110 ? 1.1f : 1f;
+        float damage = kind == GunItem.KIND_TRAINING ? 0f : type == GunType.SVD || type == GunType.M110 ? 1.1f : 1f;
         for (int i = 0; i < cal.pellets; i++) {
             double spread = cal.pellets > 1 ? sigma + Math.toRadians(1.1) : sigma;
             float pitch = player.getXRot() - (float) lift + (float) Math.toDegrees(level.random.nextGaussian() * spread);
@@ -356,7 +400,11 @@ public final class GunLogic {
             int left = GunItem.rounds(stack);
             if (left >= 0) {
                 stack.set(ModRegistry.ROUNDS.get(), -1);
-                if (!creative) give(player, ((MagazineItem) ModRegistry.MAGAZINES.get(type).get()).filled(left));
+                if (!creative) {
+                    ItemStack old = ((MagazineItem) ModRegistry.MAGAZINES.get(type).get()).filled(left);
+                    old.set(ModRegistry.LOAD.get(), stack.getOrDefault(ModRegistry.LOAD.get(), 0));
+                    give(player, old);
+                }
             }
         }
         if (!st.magIn && st.reload >= inAt) {
@@ -368,6 +416,7 @@ public final class GunLogic {
                 if (best < 0) { st.reload = -1; event(player, EV_CANCEL, 0); return; }
                 ItemStack mag = player.getInventory().getItem(best);
                 stack.set(ModRegistry.ROUNDS.get(), MagazineItem.rounds(mag));
+                stack.set(ModRegistry.LOAD.get(), mag.getOrDefault(ModRegistry.LOAD.get(), 0));
                 mag.shrink(1);
             }
         }

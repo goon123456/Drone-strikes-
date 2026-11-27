@@ -108,6 +108,20 @@ public enum GunType {
     /** Ticks between shots. */
     public double interval() { return 1200.0 / rpm; }
 
+    /** Whether a fitting goes on this gun: what it is listed with, and what shares a mount with those. */
+    public boolean accepts(Attachment a) {
+        if (fits.contains(a)) return true;
+        return switch (a) {
+            case HOLO, MAGNIFIER -> fits.contains(Attachment.RED_DOT);
+            case LPVO -> fits.contains(Attachment.ACOG) || this == AK74M;
+            case NV_SCOPE, THERMAL -> fits.contains(Attachment.ACOG) || fits.contains(Attachment.PSO1) || fits.contains(Attachment.SCOPE10);
+            case ANGLED_GRIP -> fits.contains(Attachment.FOREGRIP);
+            case BIPOD -> fits.contains(Attachment.FOREGRIP) || this == SVD || this == M110;
+            case FLASHLIGHT, LASER -> fits.contains(Attachment.RED_DOT) || pistol() || this == M590 || this == M110;
+            default -> false;
+        };
+    }
+
     public boolean pistol() { return this == M17 || this == M18 || this == M9; }
     /** Fed from a belt in a box hung on the gun, under a feed cover that has to be lifted. */
     public boolean beltFed() { return this == PKM || this == M249 || this == M240; }

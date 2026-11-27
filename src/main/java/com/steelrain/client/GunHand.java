@@ -164,7 +164,8 @@ public final class GunHand {
 
         // walking makes it bob, less so on aim
         float walk = player.walkDist + (player.walkDist - player.walkDistO) * pt;
-        float stride = Mth.clamp((float) player.getDeltaMovement().horizontalDistance() * 6f, 0, 1) * (1 - 0.85f * a);
+        boolean calm = ClientConfig.calm();
+        float stride = calm ? 0 : Mth.clamp((float) player.getDeltaMovement().horizontalDistance() * 6f, 0, 1) * (1 - 0.85f * a);
         at.add(Mth.sin(walk * (float) Math.PI) * 0.006f * stride, -Math.abs(Mth.cos(walk * (float) Math.PI)) * 0.007f * stride, 0);
         // it trails a little behind the view as the firer turns
         float vy = player.getViewYRot(pt), vx = player.getViewXRot(pt);
@@ -198,7 +199,7 @@ public final class GunHand {
         else if (pistol) { pitch -= 24f * env; roll += 22f * env; at.add(-0.04f * env, 0.02f * env, 0.05f * env); }
         else { pitch -= 14f * env; roll += 32f * env; yaw += 6f * env; at.add(-0.02f * env, 0.03f * env, 0); }
         // every reload starts with a small dip as the hand comes off, and ends by settling a touch past rest
-        if (p >= 0 && reloading) {
+        if (p >= 0 && reloading && !calm) {
             at.add(0, -0.014f * Mth.sin((float) Math.PI * Mth.clamp(p / 0.12f, 0, 1)) + 0.007f * Mth.sin((float) Math.PI * Mth.clamp((p - 0.90f) / 0.10f, 0, 1)), 0);
             roll += 2.5f * Mth.sin((float) Math.PI * Mth.clamp((p - 0.90f) / 0.10f, 0, 1));
         }
@@ -233,7 +234,7 @@ public final class GunHand {
         }
 
         // muzzle flash, for a frame or two after the shot
-        if (sinceShot < 48 && !GunItem.suppressed(stack) && GunClient.lastShot > 0) {
+        if (sinceShot < 48 && !GunItem.suppressed(stack) && GunClient.lastShot > 0 && !calm) {
             Vector3f mz = GunModels.muzzle(stack, type);
             pose.pushPose();
             pose.translate(mz.x, mz.y, mz.z);
@@ -241,9 +242,10 @@ public final class GunHand {
             pose.popPose();
         }
         // the red dot: a point of light in the middle of the lens
-        if (optic == Attachment.RED_DOT && a > 0.35f) {
+        if ((optic == Attachment.RED_DOT || optic == Attachment.HOLO) && a > 0.35f) {
             Vector3f lens = new Vector3f(GunModels.mount(model, optic)).add(GunModels.part(optic).point("lens"));
-            dot(pose, buffers, lens.x, lens.y, lens.z - 0.004f, 0.0011f, a);
+            dot(pose, buffers, lens.x, lens.y, lens.z - 0.004f, optic == Attachment.HOLO ? 0.0007f : 0.0011f, a);
+            if (optic == Attachment.HOLO) ring(pose, buffers, lens.x, lens.y, lens.z - 0.004f, 0.0075f, a);
         }
         pose.popPose();
     }
@@ -259,6 +261,29 @@ public final class GunHand {
             vc.addVertex(m, x - s, y + s, z).setColor(255, 40, 30, aa);
             vc.addVertex(m, x + s, y + s, z).setColor(255, 40, 30, aa);
             vc.addVertex(m, x + s, y - s, z).setColor(255, 40, 30, aa);
+        }
+    }
+
+    /** The holographic sight's ring, with its four ticks. */
+    private static void ring(PoseStack pose, MultiBufferSource buffers, float x, float y, float z, float r, float alpha) {
+        VertexConsumer vc = buffers.getBuffer(RenderType.lightning());
+        Matrix4f m = pose.last().pose();
+        int al = (int) (220 * Mth.clamp(alpha, 0, 1));
+        float t = r * 0.09f;
+        for (int i = 0; i < 24; i++) {
+            float a0 = (float) (i * Math.PI / 12), a1 = (float) ((i + 1) * Math.PI / 12);
+            vc.addVertex(m, x + Mth.cos(a0) * (r - t), y + Mth.sin(a0) * (r - t), z).setColor(255, 40, 30, al);
+            vc.addVertex(m, x + Mth.cos(a0) * (r + t), y + Mth.sin(a0) * (r + t), z).setColor(255, 40, 30, al);
+            vc.addVertex(m, x + Mth.cos(a1) * (r + t), y + Mth.sin(a1) * (r + t), z).setColor(255, 40, 30, al);
+            vc.addVertex(m, x + Mth.cos(a1) * (r - t), y + Mth.sin(a1) * (r - t), z).setColor(255, 40, 30, al);
+        }
+        for (int i = 0; i < 4; i++) {
+            float c = Mth.cos((float) (i * Math.PI / 2)), s = Mth.sin((float) (i * Math.PI / 2));
+            float x0 = x + c * r, y0 = y + s * r, x1 = x + c * r * 1.35f, y1 = y + s * r * 1.35f;
+            vc.addVertex(m, x0 - s * t, y0 + c * t, z).setColor(255, 40, 30, al);
+            vc.addVertex(m, x1 - s * t, y1 + c * t, z).setColor(255, 40, 30, al);
+            vc.addVertex(m, x1 + s * t, y1 - c * t, z).setColor(255, 40, 30, al);
+            vc.addVertex(m, x0 + s * t, y0 - c * t, z).setColor(255, 40, 30, al);
         }
     }
 

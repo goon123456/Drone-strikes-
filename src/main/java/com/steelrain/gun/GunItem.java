@@ -23,6 +23,9 @@ import java.util.List;
  */
 public class GunItem extends Item {
     public final GunType type;
+    /** What a magazine is filled with: ordinary ball, all tracer, or training rounds that do no harm. */
+    public static final int KIND_BALL = 0, KIND_TRACER = 1, KIND_TRAINING = 2;
+    public static final String[] KIND_KEY = {"ball", "tracer", "training"};
 
     public GunItem(GunType type, Properties properties) {
         super(properties);

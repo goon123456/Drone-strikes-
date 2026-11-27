@@ -80,13 +80,23 @@ public class GunItemRenderer extends BlockEntityWithoutLevelRenderer {
                 case PSO1 -> { place(ctx, pose, 2.5f); pose.translate(0, -0.01, 0); }
                 case FOREGRIP -> { place(ctx, pose, 7.5f); pose.translate(0, 0.055, 0); }
                 case SCOPE10 -> { place(ctx, pose, 2.6f); pose.translate(0, -0.04, 0); }
+                case HOLO -> { place(ctx, pose, 8f); pose.translate(0, -0.035, 0); }
+                case LPVO -> { place(ctx, pose, 3.2f); pose.translate(0, -0.04, 0); }
+                case MAGNIFIER -> { place(ctx, pose, 7.5f); pose.translate(0, -0.035, 0); }
+                case NV_SCOPE -> { place(ctx, pose, 3.0f); pose.translate(0, -0.05, 0); }
+                case THERMAL -> { place(ctx, pose, 3.6f); pose.translate(0, -0.05, 0); }
+                case FLASHLIGHT -> { place(ctx, pose, 6.5f); pose.translate(-0.019, 0, 0); }
+                case LASER -> { place(ctx, pose, 10f); pose.translate(-0.021, 0, 0); }
+                case ANGLED_GRIP -> { place(ctx, pose, 7f); pose.translate(0, 0.03, 0); }
+                case BIPOD -> { place(ctx, pose, 3.8f); pose.translate(0, 0.02, -0.10); }
                 default -> { place(ctx, pose, 5.2f); pose.translate(0, 0, -0.08); }
             }
             m.render(pose, buffers.getBuffer(RenderType.entityCutoutNoCull(m.texture())), light);
         } else {
             for (Caliber c : Caliber.values()) {
-                if (!stack.is(com.steelrain.ModRegistry.AMMO.get(c).get())) continue;
-                BoxModel m = GunModels.ammo(c);
+                int kind = com.steelrain.ModRegistry.kindOf(c, stack);
+                if (kind < 0) continue;
+                BoxModel m = GunModels.ammo(c, kind);
                 place(ctx, pose, c.rocket() ? 1.35f : c == Caliber.B50 ? 5.5f : c == Caliber.G12 ? 9f : c == Caliber.P9 ? 20f : c == Caliber.R762 ? 9f : 12f);
                 pose.mulPose(Axis.XP.rotationDegrees(c == Caliber.G12 ? 0 : c.rocket() ? -30 : -20));
                 m.render(pose, buffers.getBuffer(RenderType.entityCutoutNoCull(m.texture())), light);

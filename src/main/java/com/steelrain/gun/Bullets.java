@@ -166,10 +166,10 @@ public final class Bullets {
         DamageSource source = new DamageSource(level.registryAccess().registryOrThrow(Registries.DAMAGE_TYPE).getHolderOrThrow(BULLET),
                 null, b.shooter, b.origin);
         boolean wasAlive = e.isAlive();
-        boolean hurt = e.hurt(source, damage);
+        boolean hurt = damage > 0 && e.hurt(source, damage);                              // training rounds only mark the hit
         if (e instanceof LivingEntity) level.sendParticles(ParticleTypes.CRIT, at.x, at.y, at.z, 3, 0.05, 0.05, 0.05, 0.1);
         else level.sendParticles(ParticleTypes.ELECTRIC_SPARK, at.x, at.y, at.z, 3, 0.05, 0.05, 0.05, 0.2);
-        if (hurt && b.shooter instanceof ServerPlayer sp) {
+        if ((hurt || damage <= 0) && b.shooter instanceof ServerPlayer sp) {
             PacketDistributor.sendToPlayer(sp, new Payloads.GunHit(head, wasAlive && !e.isAlive()));
         }
         // a full-power rifle bullet goes through a body and may hit what is behind it

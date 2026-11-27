@@ -21,7 +21,7 @@ public class AttachmentItem extends Item {
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
         tooltip.add(Component.translatable("tooltip.steelrain." + attachment.id).withStyle(ChatFormatting.GRAY));
         StringBuilder fits = new StringBuilder();
-        for (GunType t : GunType.VALUES) if (t.fits.contains(attachment)) fits.append(fits.isEmpty() ? "" : ", ").append(Component.translatable("item.steelrain." + t.id).getString());
+        for (GunType t : GunType.VALUES) if (t.accepts(attachment)) fits.append(fits.isEmpty() ? "" : ", ").append(Component.translatable("item.steelrain." + t.id).getString());
         tooltip.add(Component.translatable("tooltip.steelrain.magazine.fits", fits.toString()).withStyle(ChatFormatting.DARK_GRAY));
         tooltip.add(Component.translatable("tooltip.steelrain.attachment.use").withStyle(ChatFormatting.DARK_GRAY));
     }

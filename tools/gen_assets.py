@@ -579,8 +579,10 @@ def tags():
 # ---------------------------------------------------------------- small arms
 GUN_ITEMS = ["ak74m", "m4a1", "svd", "pkm", "m17", "m590", "m107", "rpg7", "m18", "m9", "hk416", "g36", "scarh", "m249", "m240", "m110"]
 GUN_MAGS = ["ak74m", "m4a1", "svd", "pkm", "m17", "m107", "m18", "m9", "hk416", "g36", "scarh", "m249", "m240", "m110"]
-GUN_PARTS = ["red_dot", "acog", "pso1", "suppressor", "pistol_suppressor", "foregrip", "scope_10x"]
-GUN_AMMO = ["ammo_545", "ammo_556", "ammo_762", "ammo_9mm", "ammo_12g", "ammo_50", "rocket_pg7v", "rocket_og7v", "ammo_76251"]
+GUN_PARTS = ["red_dot", "acog", "pso1", "suppressor", "pistol_suppressor", "foregrip", "scope_10x", "holo", "lpvo", "magnifier", "nv_scope",
+             "thermal_scope", "flashlight", "laser", "angled_grip", "bipod"]
+ROUND_NAMES = {"ammo_545": "5.45x39", "ammo_556": "5.56x45", "ammo_762": "7.62x54R", "ammo_9mm": "9x19", "ammo_50": ".50 BMG", "ammo_76251": "7.62x51"}
+GUN_AMMO = ["ammo_545", "ammo_556", "ammo_762", "ammo_9mm", "ammo_12g", "ammo_50", "rocket_pg7v", "rocket_og7v", "ammo_76251"] + [r + k for r in ROUND_NAMES for k in ("_tracer", "_training")]
 
 GUN_LANG = {
     "item.steelrain.ak74m": "AK-74M", "item.steelrain.m4a1": "M4A1", "item.steelrain.svd": "SVD", "item.steelrain.pkm": "PKM",
@@ -596,6 +598,28 @@ GUN_LANG = {
     "item.steelrain.m240_magazine": "M240 Belt Can (100)", "item.steelrain.m110_magazine": "M110 Magazine (20)",
     "item.steelrain.ammo_76251": "7.62x51 Round",
     "gui.steelrain.gun.reloading": "RELOADING",
+    **{f"item.steelrain.{r}_tracer": f"{n} Tracer Round" for r, n in ROUND_NAMES.items()},
+    **{f"item.steelrain.{r}_training": f"{n} Training Round" for r, n in ROUND_NAMES.items()},
+    "gun.steelrain.kind.ball": "Ball", "gun.steelrain.kind.tracer": "Tracer", "gun.steelrain.kind.training": "Training",
+    "item.steelrain.holo": "Holographic Sight", "item.steelrain.lpvo": "1-6x Variable Scope", "item.steelrain.magnifier": "3x Flip Magnifier",
+    "item.steelrain.nv_scope": "Night Sight", "item.steelrain.thermal_scope": "Thermal Sight", "item.steelrain.flashlight": "Weapon Light",
+    "item.steelrain.laser": "Laser Pointer", "item.steelrain.angled_grip": "Angled Foregrip", "item.steelrain.bipod": "Clip-on Bipod",
+    "tooltip.steelrain.holo": "Unmagnified sight: a lit ring and dot in a wide window",
+    "tooltip.steelrain.lpvo": "1x to 6x; turn the power with the scroll wheel while aiming",
+    "tooltip.steelrain.magnifier": "Sits behind a red dot or holographic sight and makes it 3x; flips aside with its key",
+    "tooltip.steelrain.nv_scope": "4x night sight: sees in the dark, in green",
+    "tooltip.steelrain.thermal_scope": "3x thermal sight: living things in the open show as bright shapes",
+    "tooltip.steelrain.flashlight": "Lights what the gun points at, out to 14 blocks; switched with its key",
+    "tooltip.steelrain.laser": "A red spot where the gun points; steadier fire from the hip while it is on",
+    "tooltip.steelrain.angled_grip": "Sights come up quicker; a little less muzzle climb",
+    "tooltip.steelrain.bipod": "Crouch and keep still to rest the gun: far less kick and drift",
+    "gui.steelrain.part.red_dot": "Dot", "gui.steelrain.part.acog": "4x", "gui.steelrain.part.pso1": "PSO-1", "gui.steelrain.part.scope_10x": "10x",
+    "gui.steelrain.part.holo": "Holo", "gui.steelrain.part.lpvo": "1-6x", "gui.steelrain.part.nv_scope": "Night", "gui.steelrain.part.thermal_scope": "Thermal",
+    "gui.steelrain.part.magnifier": "3x Magnifier", "gui.steelrain.part.suppressor": "Suppressor", "gui.steelrain.part.pistol_suppressor": "Suppressor",
+    "gui.steelrain.part.foregrip": "Grip", "gui.steelrain.part.angled_grip": "Angled", "gui.steelrain.part.bipod": "Bipod",
+    "gui.steelrain.part.flashlight": "Light", "gui.steelrain.part.laser": "Laser",
+    "gui.steelrain.gun.slot.magnifier": "Magnifier", "gui.steelrain.gun.slot.side": "Side",
+    "key.steelrain.gun_magnifier": "Firearm: flip magnifier", "key.steelrain.gun_side": "Firearm: light or laser on/off",
     "tooltip.steelrain.scope_10x": "10x telescope with a mil-dot reticle and an elevation drum, 100 to 1800 m",
     "message.steelrain.gun_no_rockets": "No rockets",
     "message.steelrain.gun_backblast": "Backblast: there is a wall behind you",
@@ -719,6 +743,21 @@ def guns():
     shaped("rocket_pg7v", [" C ", "ITI", " P "], {"C": C, "I": I, "T": MC + "tnt", "P": P}, 2)
     shaped("rocket_og7v", [" N ", "ITI", " P "], {"N": N, "I": I, "T": MC + "tnt", "P": P}, 2)
     shaped("scope_10x", ["GIG", "IRI", " I "], {"R": R, "I": I, "G": G})
+    E_, T_, Q_ = MC + "ender_eye", MC + "torch", MC + "quartz"
+    shaped("holo", ["GRG", "III"], {"R": R, "I": I, "G": G})
+    shaped("lpvo", ["GIG", "IRI", "I  "], {"R": R, "I": I, "G": G})
+    shaped("magnifier", ["GIG", " N "], {"I": I, "G": G, "N": N})
+    shaped("nv_scope", ["GEG", "IRI", " I "], {"R": R, "I": I, "G": G, "E": E_})
+    shaped("thermal_scope", ["QEQ", "IRI", " I "], {"R": R, "I": I, "Q": Q_, "E": E_})
+    shaped("flashlight", ["NTG", " N "], {"N": N, "T": T_, "G": G})
+    shaped("laser", ["NRG", " N "], {"N": N, "R": R, "G": G})
+    shaped("angled_grip", ["II", " K"], {"I": I, "K": K})
+    shaped("bipod", [" N ", "I I", "I I"], {"I": I, "N": N})
+    for r in ROUND_NAMES:                                       # a round and red dye makes a tracer; with blue dye, a training round
+        write(f"{D}/recipe/{r}_tracer.json", {"type": "minecraft:crafting_shapeless", "category": "misc",
+            "ingredients": [{"item": f"{MOD}:{r}"}] * 8 + [{"item": MC + "red_dye"}], "result": {"id": f"{MOD}:{r}_tracer", "count": 8}})
+        write(f"{D}/recipe/{r}_training.json", {"type": "minecraft:crafting_shapeless", "category": "misc",
+            "ingredients": [{"item": f"{MOD}:{r}"}] * 8 + [{"item": MC + "blue_dye"}], "result": {"id": f"{MOD}:{r}_training", "count": 8}})
     shaped("ak74m_magazine", ["N ", "NN", " N"], {"N": N})
     shaped("m4a1_magazine", ["NN", "N ", "N "], {"N": N})
     shaped("svd_magazine", ["NN", "NN"], {"N": N})

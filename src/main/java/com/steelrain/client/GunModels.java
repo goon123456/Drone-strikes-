@@ -27,6 +27,14 @@ public final class GunModels {
     public static BoxModel part(Attachment a) { return PARTS.computeIfAbsent(a, k -> BoxModel.load("gun", k.id)); }
     public static BoxModel ammo(Caliber c) { return AMMO.computeIfAbsent(c, k -> BoxModel.load("gun", k.ammoId)); }
 
+    private static final Map<String, BoxModel> AMMO_KINDS = new java.util.HashMap<>();
+
+    /** Loose rounds of a calibre in one of its kinds: 0 ball, 1 tracer, 2 training. */
+    public static BoxModel ammo(Caliber c, int kind) {
+        if (kind <= 0) return ammo(c);
+        return AMMO_KINDS.computeIfAbsent(c.ammoId + (kind == 1 ? "_tracer" : "_training"), k -> BoxModel.load("gun", k));
+    }
+
     /** How the moving parts stand for one drawing of a gun. */
     public static final class Pose {
         /** 0 forward to 1 fully back. */
@@ -52,7 +60,14 @@ public final class GunModels {
 
     /** Where on the gun a fitting goes. */
     public static Vector3f mount(BoxModel gun, Attachment a) {
-        return gun.point(switch (a.slot) { case OPTIC -> "optic"; case MUZZLE -> "thread"; case UNDER -> "under"; });
+        return switch (a.slot) {
+            case OPTIC -> gun.point("optic");
+            case MUZZLE -> gun.point("thread");
+            case UNDER -> gun.point("under");
+            // the magnifier sits on the rail just behind the sight; lights and lasers go on the left of the fore-end
+            case MAGNIFIER -> new Vector3f(gun.point("optic")).add(0, 0, -0.082f);
+            case SIDE -> new Vector3f(gun.point("under")).add(0.027f, 0.028f, 0.02f);
+        };
     }
 
     /** The point the eye lines up behind: through the optic if one is fitted, else over the iron sights. */
@@ -126,6 +141,15 @@ public final class GunModels {
             Vector3f at = mount(m, a);
             pose.pushPose();
             pose.translate(at.x, at.y, at.z);
+            if (a.slot == Attachment.Slot.SIDE && type.pistol()) {             // on a pistol it hangs from the rail under the barrel
+                pose.translate(-0.027f, -0.028f, -0.02f);
+                pose.mulPose(Axis.ZP.rotationDegrees(90));
+            }
+            if (a == Attachment.MAGNIFIER && !GunClient.magnifierOn) {         // swung aside on its hinge
+                pose.translate(-0.020f, 0.014f, 0);
+                pose.mulPose(Axis.ZP.rotationDegrees(-90));
+                pose.translate(0.020f, -0.014f, 0);
+            }
             am.render(pose, buffers.getBuffer(RenderType.entityCutoutNoCull(am.texture())), light);
             pose.popPose();
         }

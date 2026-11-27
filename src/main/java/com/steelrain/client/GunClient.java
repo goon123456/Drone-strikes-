@@ -71,10 +71,25 @@ public final class GunClient {
         return s.getItem() instanceof GunItem ? GunItem.part(s, Attachment.Slot.OPTIC) : null;
     }
 
+    /** The flip magnifier's position, and where the variable scope's ring is set. */
+    public static boolean magnifierOn = true;
+    static float varZoom = 1f;
+    private static net.minecraft.world.effect.MobEffectInstance nightSight;
+
+    /** The magnification of the sight picture if the sight in use is looked through like a telescope, else 0. */
+    public static float scopeZoom() {
+        ItemStack s = stack();
+        Attachment o = optic();
+        if (o == null) return 0;
+        if (o == Attachment.LPVO) return varZoom;
+        if (o.zoom > 1f) return o.zoom;
+        if ((o == Attachment.RED_DOT || o == Attachment.HOLO) && magnifierOn && GunItem.part(s, Attachment.Slot.MAGNIFIER) != null) return Attachment.MAGNIFIER.zoom;
+        return 0;
+    }
+
     /** Looking through a magnifying scope: the gun is not drawn and the scope picture fills the view. */
     public static boolean scoped() {
-        Attachment o = optic();
-        return held != null && o != null && o.zoom > 1f && ads() > 0.9f && Minecraft.getInstance().options.getCameraType().isFirstPerson();
+        return held != null && scopeZoom() > 0 && ads() > 0.9f && Minecraft.getInstance().options.getCameraType().isFirstPerson();
     }
 
     /** How much the view is magnified right now. */
@@ -82,7 +97,8 @@ public final class GunClient {
         if (held == null) return 1f;
         Attachment o = optic();
         float a = ads();
-        if (o != null && o.zoom > 1f) return Mth.lerp(Mth.clamp((a - 0.7f) / 0.3f, 0, 1), 1f + 0.2f * a, o.zoom);
+        float z = scopeZoom();
+        if (z > 0) return Mth.lerp(Mth.clamp((a - 0.7f) / 0.3f, 0, 1), 1f + 0.2f * a, Math.max(1f, z));
         return 1f + 0.22f * a;
     }
 
@@ -103,7 +119,11 @@ public final class GunClient {
         if (ads > 0.6f) k *= 0.85f;
         if (p.isCrouching()) k *= 0.82f;
         if (bipod > 0.5f) k *= 0.4f;
-        if (GunItem.part(stack, Attachment.Slot.UNDER) != null) k *= 0.8f;
+        Attachment under = GunItem.part(stack, Attachment.Slot.UNDER);
+        if (under == Attachment.FOREGRIP) k *= 0.8f;
+        else if (under == Attachment.ANGLED_GRIP) k *= 0.9f;
+        boolean calm = ClientConfig.calm();
+        if (calm) k *= 0.45f;
         if (GunItem.part(stack, Attachment.Slot.MUZZLE) != null) k *= 0.9f;
         var r = p.getRandom();
         // the first rounds of a burst climb, then the muzzle wanders more than it rises
@@ -111,7 +131,7 @@ public final class GunClient {
         kickPitch += type.recoilUp * k * climb * (0.85f + r.nextFloat() * 0.3f);
         float drift = (float) Math.sin(burst * 0.9) * 0.6f + (r.nextFloat() - 0.5f) * 1.6f;
         kickYaw += type.recoilSide * k * drift * (burst < 2 ? 0.5f : 1f);
-        jolt = Math.min(1.6f, jolt + 1f);
+        jolt = Math.min(1.6f, jolt + (calm ? 0.3f : 1f));
         joltSide = (r.nextFloat() - 0.5f) * 2f;
     }
 
@@ -130,10 +150,11 @@ public final class GunClient {
         }
         boolean busy = reloading() || now - drawnAt < 250;
         boolean want = aimHeld && !p.isSprinting() && !busy && mc.screen == null;
-        float rate = dt / (held.adsMs * (GunItem.part(stack(), Attachment.Slot.OPTIC) != null ? 1.1f : 1f));
+        float rate = dt / (held.adsMs * (GunItem.part(stack(), Attachment.Slot.OPTIC) != null ? 1.1f : 1f)
+                * (GunItem.part(stack(), Attachment.Slot.UNDER) == Attachment.ANGLED_GRIP ? 0.85f : 1f));
         ads = Mth.clamp(ads + (want ? rate : -rate * 1.2f), 0, 1);
         sprint += ((p.isSprinting() && !want ? 1f : 0f) - sprint) * Math.min(1, dt / 110f);
-        boolean rest = held.bipod() && p.isCrouching() && p.onGround() && p.getDeltaMovement().horizontalDistanceSqr() < 1e-4;
+        boolean rest = (held.bipod() || GunItem.part(stack(), Attachment.Slot.UNDER) == Attachment.BIPOD) && p.isCrouching() && p.onGround() && p.getDeltaMovement().horizontalDistanceSqr() < 1e-4;
         bipod += ((rest ? 1f : 0f) - bipod) * Math.min(1, dt / 160f);
         jolt *= (float) Math.exp(-dt / 55.0);
 
@@ -162,6 +183,7 @@ public final class GunClient {
         if (holding) amp *= 0.12f;
         amp *= 1f - 0.85f * bipod;
         if (GunItem.part(stack(), Attachment.Slot.UNDER) != null) amp *= 0.85f;
+        if (ClientConfig.calm()) amp *= 0.3f;
         amp *= ads();
         double sx = amp * (Math.sin(t * 1.15) * 0.8 + Math.sin(t * 2.9 + 1.3) * 0.25);
         double sy = amp * (Math.sin(t * 2.3 + 0.6) * 0.5 + Math.sin(t * 0.8) * 0.35);
@@ -327,6 +349,10 @@ public final class GunClient {
             ads = 0;
         }
         if (type == null) {
+            if (nightSight != null && p != null) {
+                if (p.getEffect(net.minecraft.world.effect.MobEffects.NIGHT_VISION) == nightSight) p.removeEffect(net.minecraft.world.effect.MobEffects.NIGHT_VISION);
+                nightSight = null;
+            }
             aimHeld = triggerHeld = false;
             fatigue = Math.max(0, fatigue - 0.005f);
             return;
@@ -344,6 +370,20 @@ public final class GunClient {
         while (ClientSetup.GUN_MODE.consumeClick()) if (free) send(GunLogic.ACT_MODE, 0);
         while (ClientSetup.GUN_ZERO_UP.consumeClick()) if (free) send(GunLogic.ACT_ZERO, 1);
         while (ClientSetup.GUN_ZERO_DOWN.consumeClick()) if (free) send(GunLogic.ACT_ZERO, -1);
+        while (ClientSetup.GUN_MAGNIFIER.consumeClick()) if (free && GunItem.part(stack, Attachment.Slot.MAGNIFIER) != null) {
+            magnifierOn = !magnifierOn;
+            play(p, "gun_selector", 0.6f, 1.3f);
+        }
+        while (ClientSetup.GUN_SIDE.consumeClick()) if (free) send(GunLogic.ACT_SIDE, 0);
+        // a night sight amplifies what light there is, for as long as the eye is at it
+        boolean night = scoped() && optic() == Attachment.NV_SCOPE;
+        if (night && nightSight == null && !p.hasEffect(net.minecraft.world.effect.MobEffects.NIGHT_VISION)) {
+            nightSight = new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.NIGHT_VISION, -1, 0, true, false, false);
+            p.addEffect(nightSight);
+        } else if (!night && nightSight != null) {
+            if (p.getEffect(net.minecraft.world.effect.MobEffects.NIGHT_VISION) == nightSight) p.removeEffect(net.minecraft.world.effect.MobEffects.NIGHT_VISION);
+            nightSight = null;
+        }
         while (ClientSetup.GUN_FIT.consumeClick()) if (free && !reloading()) mc.setScreen(new GunScreen());
         // running leaves the firer out of breath; a held breath steadies the sights for a few seconds
         fatigue = Mth.clamp(fatigue + (p.isSprinting() ? 0.009f : -0.0045f), 0, 1);
@@ -352,6 +392,14 @@ public final class GunClient {
         breath = Mth.clamp(breath + (holding ? -0.011f : 0.008f), 0, 1);
         if (breath <= 0) winded = true;
         if (winded && breath > 0.45f) winded = false;
+    }
+
+    /** The scroll wheel turns the power ring of a variable scope while the eye is at it. */
+    @SubscribeEvent
+    public static void scroll(InputEvent.MouseScrollingEvent e) {
+        if (held == null || !aimHeld || optic() != Attachment.LPVO || e.getScrollDeltaY() == 0) return;
+        varZoom = Mth.clamp(varZoom + (float) Math.signum(e.getScrollDeltaY()) * 0.5f, 1f, Attachment.LPVO.zoom);
+        e.setCanceled(true);
     }
 
     /** Aiming narrows the view; a magnifying scope narrows it a great deal. */

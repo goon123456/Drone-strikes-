@@ -201,6 +201,22 @@ public final class ModRegistry {
     public static final Map<com.steelrain.gun.GunType, DeferredItem<Item>> GUNS = new EnumMap<>(com.steelrain.gun.GunType.class);
     public static final Map<com.steelrain.gun.GunType, DeferredItem<Item>> MAGAZINES = new EnumMap<>(com.steelrain.gun.GunType.class);
     public static final Map<com.steelrain.gun.Caliber, DeferredItem<Item>> AMMO = new EnumMap<>(com.steelrain.gun.Caliber.class);
+    public static final Map<com.steelrain.gun.Caliber, DeferredItem<Item>> AMMO_TRACER = new EnumMap<>(com.steelrain.gun.Caliber.class);
+    public static final Map<com.steelrain.gun.Caliber, DeferredItem<Item>> AMMO_TRAINING = new EnumMap<>(com.steelrain.gun.Caliber.class);
+
+    /** The round item of a calibre in one of its kinds (ball, tracer, training); ball if that kind is not made. */
+    public static Item ammo(com.steelrain.gun.Caliber c, int kind) {
+        DeferredItem<Item> i = kind == 1 ? AMMO_TRACER.get(c) : kind == 2 ? AMMO_TRAINING.get(c) : null;
+        return (i != null ? i : AMMO.get(c)).get();
+    }
+
+    /** Which kind of this calibre a stack is, or -1 if it is not this calibre at all. */
+    public static int kindOf(com.steelrain.gun.Caliber c, ItemStack s) {
+        if (s.isEmpty()) return -1;
+        for (int k = 0; k < 3; k++) if ((k == 0 || (k == 1 ? AMMO_TRACER : AMMO_TRAINING).containsKey(c)) && s.is(ammo(c, k))) return k;
+        return -1;
+    }
+
     public static final Map<com.steelrain.gun.Attachment, DeferredItem<Item>> ATTACHMENTS = new EnumMap<>(com.steelrain.gun.Attachment.class);
     static {
         for (com.steelrain.gun.GunType type : com.steelrain.gun.GunType.VALUES) {
@@ -211,6 +227,11 @@ public final class ModRegistry {
                     () -> new com.steelrain.gun.MagazineItem(type, new Item.Properties().stacksTo(1))));
         }
         for (com.steelrain.gun.Caliber c : com.steelrain.gun.Caliber.values()) AMMO.put(c, simple(c.ammoId, c.stack()));
+        for (com.steelrain.gun.Caliber c : com.steelrain.gun.Caliber.values()) {
+            if (c.rocket() || c.pellets > 1) continue;                      // tracer and training rounds for the rifled calibres
+            AMMO_TRACER.put(c, simple(c.ammoId + "_tracer", 64));
+            AMMO_TRAINING.put(c, simple(c.ammoId + "_training", 64));
+        }
         for (com.steelrain.gun.Attachment a : com.steelrain.gun.Attachment.VALUES) {
             ATTACHMENTS.put(a, ITEMS.register(a.id, () -> new com.steelrain.gun.AttachmentItem(a, new Item.Properties().stacksTo(1))));
         }

@@ -224,10 +224,21 @@ public final class GunFx {
     @SubscribeEvent
     public static void render(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES) return;
-        if (ROUNDS.isEmpty() && CASES.isEmpty() && FLASHES.isEmpty()) return;
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null) return;
         float pt = event.getPartialTick().getGameTimeDeltaPartialTick(false);
+        // laser pointers: from each gun that has one switched on, to whatever it falls on
+        List<Vec3[]> lasers = new ArrayList<>();
+        for (net.minecraft.world.entity.player.Player pl : mc.level.players()) {
+            var held = pl.getMainHandItem();
+            if (!(held.getItem() instanceof GunItem) || GunItem.part(held, com.steelrain.gun.Attachment.Slot.SIDE) != com.steelrain.gun.Attachment.LASER
+                    || !held.getOrDefault(ModRegistry.ACTIVE.get(), false) || pl.distanceToSqr(mc.player) > 96 * 96) continue;
+            Vec3 eye = pl.getEyePosition(pt), look = pl.getViewVector(pt);
+            BlockHitResult hit = mc.level.clip(new ClipContext(eye, eye.add(look.scale(120)), ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, pl));
+            if (hit.getType() == HitResult.Type.MISS) continue;
+            lasers.add(new Vec3[]{eye.add(look.scale(0.8)).add(sideways(look).scale(0.12)).add(0, -0.14, 0), hit.getLocation().subtract(look.scale(0.02))});
+        }
+        if (ROUNDS.isEmpty() && CASES.isEmpty() && FLASHES.isEmpty() && lasers.isEmpty()) return;
         Vec3 cam = event.getCamera().getPosition();
         PoseStack pose = event.getPoseStack();
         MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
@@ -286,6 +297,29 @@ public final class GunFx {
             vertex(glow, m, head.subtract(side), cr, cg, cb, 0.95f);
             vertex(glow, m, tail.subtract(side.scale(0.4)), cr, cg, cb, 0f);
             vertex(glow, m, tail.add(side.scale(0.4)), cr, cg, cb, 0f);
+        }
+        for (Vec3[] l : lasers) {
+            Vec3 toCam = cam.subtract(l[1]);
+            double d = toCam.length();
+            Vec3 dir = l[1].subtract(l[0]);
+            if (d < 1e-3 || dir.lengthSqr() < 1e-6) continue;
+            // the spot: a small bright square turned to the eye
+            Vec3 a = toCam.cross(new Vec3(0, 1, 0));
+            if (a.lengthSqr() < 1e-6) a = new Vec3(1, 0, 0);
+            double sz = Mth.clamp(d * 0.011, 0.03, 0.6);
+            a = a.normalize().scale(sz);
+            Vec3 b = toCam.cross(a).normalize().scale(sz);
+            // drawn both ways round, so it shows whichever way the quad happens to face
+            Vec3[] q = {l[1].add(a).add(b), l[1].add(a).subtract(b), l[1].subtract(a).subtract(b), l[1].subtract(a).add(b)};
+            for (int i = 0; i < 4; i++) vertex(glow, m, q[i], 1f, 0.12f, 0.1f, 0.95f);
+            for (int i = 3; i >= 0; i--) vertex(glow, m, q[i], 1f, 0.12f, 0.1f, 0.95f);
+            // the beam itself is only just visible
+            Vec3 side = dir.cross(cam.subtract(l[0]));
+            if (side.lengthSqr() < 1e-8) continue;
+            side = side.normalize().scale(0.004);
+            Vec3[] bm = {l[0].add(side), l[0].subtract(side), l[1].subtract(side), l[1].add(side)};
+            for (int i = 0; i < 4; i++) vertex(glow, m, bm[i], 1f, 0.1f, 0.1f, i < 2 ? 0.10f : 0.16f);
+            for (int i = 3; i >= 0; i--) vertex(glow, m, bm[i], 1f, 0.1f, 0.1f, i < 2 ? 0.10f : 0.16f);
         }
         long now = Util.getMillis();
         for (Flash f : FLASHES) {

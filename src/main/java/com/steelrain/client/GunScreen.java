@@ -39,25 +39,27 @@ public class GunScreen extends Screen {
         shown = stack.copy();
         if (stack.isEmpty()) return;
         GunType type = ((GunItem) stack.getItem()).type;
-        int x = width / 2 - 190, y = height / 2 + 34;
+        int x = width / 2 - 190, y = height / 2 + 26;
         for (Attachment.Slot slot : Attachment.Slot.values()) {
-            int bx = x + 70;
+            int bx = x + 62;
             Attachment fitted = GunItem.part(stack, slot);
             for (Attachment a : Attachment.VALUES) {
-                if (a.slot != slot || !type.fits.contains(a)) continue;
+                if (a.slot != slot || !type.accepts(a)) continue;
                 boolean on = fitted == a;
                 boolean have = on || minecraft.player.getAbilities().instabuild
                         || minecraft.player.getInventory().contains(new ItemStack(com.steelrain.ModRegistry.ATTACHMENTS.get(a).get()));
-                Component name = Component.translatable("item.steelrain." + a.id);
-                int bw = font.width(name) + 14;
-                var button = new Ui.TabletButton(bx, y, bw, 16, name, on, () -> {
+                Component name = Component.translatable("gui.steelrain.part." + a.id);
+                int bw = font.width(name) + 10;
+                var button = new Ui.TabletButton(bx, y, bw, 14, name, on, () -> {
                     PacketDistributor.sendToServer(on ? new Payloads.GunAction(GunLogic.ACT_REMOVE, slot.ordinal()) : new Payloads.GunAction(GunLogic.ACT_FIT, a.ordinal()));
                 });
                 button.active = have;
+                button.setTooltip(net.minecraft.client.gui.components.Tooltip.create(Component.translatable("item.steelrain." + a.id)
+                        .append("\n").append(Component.translatable("tooltip.steelrain." + a.id).withStyle(net.minecraft.ChatFormatting.GRAY))));
                 addRenderableWidget(button);
-                bx += bw + 4;
+                bx += bw + 3;
             }
-            y += 22;
+            y += 17;
         }
     }
 
@@ -73,7 +75,7 @@ public class GunScreen extends Screen {
 
     @Override
     public boolean mouseDragged(double mx, double my, int button, double dx, double dy) {
-        if (my < height / 2.0 + 28) { spin += (float) dx * 0.8f; dragging = true; return true; }
+        if (my < height / 2.0 + 20) { spin += (float) dx * 0.8f; dragging = true; return true; }
         return super.mouseDragged(mx, my, button, dx, dy);
     }
 
@@ -91,7 +93,7 @@ public class GunScreen extends Screen {
         ItemStack stack = gun();
         if (stack.isEmpty()) return;
         GunType type = ((GunItem) stack.getItem()).type;
-        int x = width / 2 - 190, top = height / 2 - 108, w = 380;
+        int x = width / 2 - 190, top = height / 2 - 116, w = 380;
         Ui.header(g, font, x, top, w, Component.translatable("gui.steelrain.gun.fittings"), Component.translatable("item.steelrain." + type.id));
         Ui.well(g, x, top + 14, w - 122, 122);
         // the gun, turning
@@ -132,14 +134,13 @@ public class GunScreen extends Screen {
             fy += 13;
         }
         // mounting points
-        int y = height / 2 + 34;
+        int y = height / 2 + 26;
         for (Attachment.Slot slot : Attachment.Slot.values()) {
-            g.drawString(font, Ui.upper(Component.translatable("gui.steelrain.gun.slot." + slot.name().toLowerCase(java.util.Locale.ROOT))), x, y + 4, Ui.DIM, false);
+            g.drawString(font, Ui.upper(Component.translatable("gui.steelrain.gun.slot." + slot.name().toLowerCase(java.util.Locale.ROOT))), x, y + 3, Ui.DIM, false);
             boolean any = false;
-            for (Attachment a : Attachment.VALUES) if (a.slot == slot && type.fits.contains(a)) any = true;
-            if (!any) g.drawString(font, Component.translatable("gui.steelrain.gun.no_mount"), x + 70, y + 4, Ui.FAINT, false);
-            y += 22;
+            for (Attachment a : Attachment.VALUES) if (a.slot == slot && type.accepts(a)) any = true;
+            if (!any) g.drawString(font, Component.translatable("gui.steelrain.gun.no_mount"), x + 62, y + 3, Ui.FAINT, false);
+            y += 17;
         }
-        g.drawString(font, Component.translatable("gui.steelrain.gun.fit_hint"), x, y + 4, Ui.FAINT, false);
     }
 }

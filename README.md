@@ -317,6 +317,21 @@ bullets that fly, drop and go through cover.
   magnified picture: the 4x has a chevron with hold-over bars for 200 to 600 m worked out for the gun it is on,
   the PSO-1 its chevrons, 10-mil lead marks and the stadiametric range-finder (stand a man between the line and
   the curve and read his range).
+- **More sights**: the **Holographic Sight** (a lit ring and dot in a wide window), the **1-6x Variable Scope**
+  (turn the power with the scroll wheel while aiming; hold-over marks below the dot), and the **3x Flip
+  Magnifier**, which goes in its own slot behind a red dot or holographic sight and swings in or aside with
+  **H**. The **Night Sight** (4x) sees in the dark, in green; the **Thermal Sight** (3x) dulls the scene to grey
+  and shows every living thing that is in view and in the open as a bright warm shape.
+- **Side slot** (**L** switches it): a **Weapon Light** lights what the gun points at out to 14 blocks; a
+  **Laser Pointer** puts a red spot where the gun points, which others can see, and steadies fire from the hip.
+- **Under the fore-end**: the vertical foregrip (least muzzle climb), an **Angled Foregrip** (sights come up
+  quicker, a little less climb) or a **Clip-on Bipod** (crouch and keep still to rest the gun, as on the
+  machine guns).
+- **Kinds of round**: every rifle and pistol calibre also comes as **tracer** (every round leaves a trace; craft
+  eight rounds with red dye) and **training** (marks a hit but does no harm; blue dye). A magazine holds one
+  kind, set by the first round pressed into it, and the HUD shows what is loaded.
+- **Reduced motion**: set `reducedMotion = true` in `config/steelrain-client.toml` for less than half the view
+  kick, far less sight drift, no bob or reload dip and no muzzle flash.
 - **Fittings** (**G**): the gun turns on the bench with its figures beside it; click a sight, suppressor or grip
   from your pack to fit it, click it again to take it off. A suppressor hides the flash and cuts the distance
   the shot is heard at from about 420 blocks to 160.
@@ -446,6 +461,9 @@ on recon drones; and its recordings stand in for sounds Steel Rain does not have
 using `./gradlew runClient -PwithSbw`.
 
 ## Known limits
+- The weapon light works by placing an invisible light block where the beam falls and moving it with the gun;
+  it is removed when the light is switched off, the gun is put away or the player leaves.
+- The thermal sight is drawn over the picture (warm shapes on a dulled scene), not a true heat image.
 - Rockets from the RPG-7 are flown as points like bullets and drawn by each player's game, not entities, so
   air defence does not see them and they cannot be shot down.
 - Small arms: the guns are textured meshes from `tools/gen_guns.py` (rounded receivers and handguards through

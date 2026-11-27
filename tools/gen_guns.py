@@ -1253,6 +1253,121 @@ def scope_10x():
     return gun(p, [], dict(eye=(0, AX, -0.175), lens=(0, AX, 0.176)))
 
 
+def holo():
+    """A holographic sight: a squat housing with a square window under a protective hood, battery box in front."""
+    K = GUN_BLACK
+    p = rail_clamp(K, -0.040, 0.040) + [B(K, -0.019, 0.012, -0.040, 0.038, 0.016, 0.080, plain=True)]
+    p += slab(K, 0.004, [(-0.030, 0.026), (0.016, 0.026), (0.016, 0.064), (-0.022, 0.064), (-0.030, 0.052)], x=0.0185, edge=0.001, r=0.004)
+    p += slab(K, 0.004, [(-0.030, 0.026), (0.016, 0.026), (0.016, 0.064), (-0.022, 0.064), (-0.030, 0.052)], x=-0.0185, edge=0.001, r=0.004)
+    p += [B(K, -0.0205, 0.062, -0.024, 0.041, 0.004, 0.040, plain=True), B(K, -0.019, 0.026, 0.012, 0.038, 0.004, 0.004, plain=True),
+          B(K, -0.019, 0.026, 0.012, 0.004, 0.038, 0.004, plain=True), B(K, 0.015, 0.026, 0.012, 0.004, 0.038, 0.004, plain=True),
+          B(K, -0.019, 0.016, 0.018, 0.038, 0.022, 0.022, plain=True)]
+    p += [lathe(GUN_STEEL, "x", 0.020, -0.030, [(0.019, 0.006), (0.026, 0.006), (0.026, 0.0)], plain=True, seg=8)]
+    return gun(p, [], dict(eye=(0, 0.045, -0.030), lens=(0, 0.045, 0.012)))
+
+
+def lpvo():
+    """A 1-6x variable scope: a stout 30 mm tube with a power ring behind the turrets, in a one-piece forward mount."""
+    K, S = GUN_BLACK, GUN_STEEL
+    AX = 0.048
+    p = rail_clamp(K, -0.050, 0.060) + [B(K, -0.011, 0.010, -0.044, 0.022, 0.012, 0.100, plain=True)]
+    for z in (-0.040, 0.040):
+        p += [turned(K, [(z, 0.038), (z + 0.016, 0.038)], y=AX, seg=14), B(K, -0.009, 0.018, z, 0.018, 0.014, 0.016, plain=True)]
+    p += [turned(K, [(-0.140, 0.042), (-0.132, 0.046), (-0.090, 0.046), (-0.082, 0.032), (0.070, 0.032), (0.100, 0.038), (0.130, 0.038), (0.134, 0.034)],
+                 y=AX, open=True, seg=14),
+          turned(S, [(-0.084, 0.036), (-0.066, 0.036)], y=AX, plain=True, open=True, seg=14)]
+    p += [lathe(LENS, "z", 0.0, AX, [(0.126, 0.0175), (0.126, 0.0)], plain=True, seg=14), lathe(LENS, "z", 0.0, AX, [(-0.136, 0.0), (-0.136, 0.0205)], plain=True, seg=14)]
+    p += [lathe(K, "y", 0.0, -0.002, [(AX + 0.014, 0.012), (AX + 0.030, 0.012), (AX + 0.030, 0.0)], plain=True, seg=10),
+          lathe(K, "x", AX, -0.002, [(-0.034, 0.0), (-0.034, 0.012), (-0.014, 0.012)], plain=True, seg=10)]
+    return gun(p, [], dict(eye=(0, AX, -0.140), lens=(0, AX, 0.126)))
+
+
+def magnifier():
+    """A 3x magnifier: a short telescope on a hinged mount that swings it in behind the sight or out to the side."""
+    K, S = GUN_BLACK, GUN_STEEL
+    AX = 0.040
+    p = rail_clamp(K, -0.020, 0.020) + [B(K, -0.022, 0.010, -0.016, 0.034, 0.008, 0.032, plain=True),
+                                        lathe(S, "z", -0.020, 0.014, [(-0.018, 0.004), (0.018, 0.004)], plain=True, seg=8)]
+    p += [B(K, -0.009, 0.016, -0.012, 0.018, 0.010, 0.024, plain=True)]
+    p += [turned(K, [(-0.052, 0.034), (-0.044, 0.038), (-0.020, 0.038), (-0.014, 0.032), (0.030, 0.032), (0.036, 0.036), (0.048, 0.036)], y=AX, open=True, seg=14)]
+    p += [lathe(LENS, "z", 0.0, AX, [(0.044, 0.0165), (0.044, 0.0)], plain=True, seg=14), lathe(LENS, "z", 0.0, AX, [(-0.048, 0.0), (-0.048, 0.0165)], plain=True, seg=14)]
+    return gun(p, [], dict(eye=(0, AX, -0.052)))
+
+
+def nv_scope():
+    """A night sight: a fat image-intensifier tube with a big objective, rubber eye cup and a battery pod on the side."""
+    K, S = GUN_BLACK, GUN_STEEL
+    AX = 0.056
+    p = rail_clamp(K, -0.060, 0.060) + [B(K, -0.014, 0.010, -0.050, 0.028, 0.016, 0.100, plain=True)]
+    p += [turned(K, [(-0.150, 0.050), (-0.110, 0.044), (-0.100, 0.060), (0.060, 0.060), (0.076, 0.076), (0.150, 0.080), (0.156, 0.074)], y=AX, open=True, seg=16)]
+    p += [lathe(_mat("nv_lens", (40, 110, 60), "lens"), "z", 0.0, AX, [(0.148, 0.037), (0.148, 0.0)], plain=True, seg=16),
+          lathe(LENS, "z", 0.0, AX, [(-0.146, 0.0), (-0.146, 0.022)], plain=True, seg=14)]
+    p += [lathe(K, "z", 0.036, AX + 0.010, [(-0.060, 0.0), (-0.060, 0.014), (0.020, 0.014), (0.020, 0.0)], plain=True, seg=10),
+          lathe(S, "y", 0.0, -0.030, [(AX + 0.030, 0.010), (AX + 0.040, 0.010), (AX + 0.040, 0.0)], plain=True, seg=10)]
+    return gun(p, [], dict(eye=(0, AX, -0.150), lens=(0, AX, 0.148)))
+
+
+def thermal_scope():
+    """A thermal weapon sight: a boxy housing with a short germanium objective, a shrouded eyepiece and a keypad on top."""
+    K, S = GUN_GREY, GUN_STEEL
+    AX = 0.052
+    p = rail_clamp(K, -0.055, 0.055)
+    p += [body(K, [(-0.080, AX, 0.050, 0.056), (-0.072, AX, 0.058, 0.066), (0.070, AX, 0.058, 0.066), (0.080, AX, 0.050, 0.056)], power=6)]
+    p += [turned(K, [(0.078, 0.052), (0.120, 0.056), (0.124, 0.050)], y=AX, open=True, seg=14),
+          lathe(_mat("ge_lens", (70, 50, 40), "lens"), "z", 0.0, AX, [(0.118, 0.025), (0.118, 0.0)], plain=True, seg=14),
+          turned(POLYMER, [(-0.078, 0.040), (-0.120, 0.046), (-0.132, 0.054)], y=AX, open=True, seg=14),
+          lathe(LENS, "z", 0.0, AX, [(-0.100, 0.0), (-0.100, 0.019)], plain=True, seg=14)]
+    for i in range(4):
+        p += [B(POLYMER, -0.022 + i * 0.012, AX + 0.033, -0.030, 0.008, 0.002, 0.012, plain=True)]
+    p += [label(K, "THERMAL", 0.0292, AX, -0.050, 0.05, 0.004)]
+    return gun(p, [], dict(eye=(0, AX, -0.132), lens=(0, AX, 0.118)))
+
+
+# Side fittings are built with the rail face at x = 0 and the device standing out to the left (+x).
+def flashlight():
+    """A weapon light: a knurled body with a wide bezel and lens, in a clamp ring, tail switch at the back."""
+    K, S = GUN_BLACK, GUN_STEEL
+    p = [B(K, 0.0, -0.011, -0.014, 0.008, 0.022, 0.028, plain=True), turned(K, [(-0.012, 0.030), (0.012, 0.030)], y=0.0, x=0.019, seg=12)]
+    p += [turned(K, [(-0.058, 0.018), (-0.052, 0.024), (0.030, 0.024), (0.040, 0.034), (0.064, 0.034)], x=0.019, seg=12),
+          lathe(WHITE, "z", 0.019, 0.0, [(0.062, 0.0145), (0.062, 0.0)], plain=True, seg=12),
+          turned(S, [(-0.066, 0.0), (-0.066, 0.012), (-0.058, 0.014)], x=0.019, seg=8)]
+    for z in (-0.040, -0.030, -0.020):
+        p += [turned(S, [(z, 0.0246), (z + 0.004, 0.0246)], x=0.019, plain=True, open=True, seg=12)]
+    return gun(p, [], {})
+
+
+def laser():
+    """A laser pointer: a small box on a rail clamp with its emitter window and two adjusters."""
+    K, S = GUN_BLACK, GUN_STEEL
+    p = [B(K, 0.0, -0.011, -0.016, 0.006, 0.022, 0.032, plain=True)]
+    p += [body(K, [(-0.036, 0.0, 0.026, 0.030), (-0.030, 0.0, 0.030, 0.034), (0.030, 0.0, 0.030, 0.034), (0.036, 0.0, 0.026, 0.030)], power=6)]
+    for q in p[-1:]:
+        q["sections"] = [(z, 0.021, cy, w, h) for z, cx, cy, w, h in q["sections"]]
+    p += [lathe(LENS_RED, "z", 0.021, 0.004, [(0.0365, 0.005), (0.0365, 0.0)], plain=True, seg=10),
+          lathe(S, "y", 0.021, -0.010, [(0.017, 0.004), (0.021, 0.004), (0.021, 0.0)], plain=True, seg=8),
+          lathe(S, "x", 0.004, -0.010, [(0.036, 0.004), (0.040, 0.004), (0.040, 0.0)], plain=True, seg=8)]
+    return gun(p, [], {})
+
+
+def angled_grip():
+    """An angled fore-grip: a wedge under the rail that the support hand pulls back against."""
+    PL = POLYMER
+    p = [B(PL, -0.013, -0.012, -0.050, 0.026, 0.012, 0.100, plain=True)]
+    p += slab(PL, 0.028, [(-0.050, -0.010), (0.050, -0.010), (0.046, -0.022), (-0.010, -0.050), (-0.044, -0.054), (-0.052, -0.040)], edge=0.006, r=0.008)
+    for i in range(4):
+        p += P(PL, 0.0135, -0.040 + i * 0.006, -0.040 + i * 0.014, 0.0012, 0.003, 0.020, plain=True)
+    return gun(p, [], dict(hand=(0, -0.040, -0.010)))
+
+
+def bipod():
+    """A clip-on bipod: a rail clamp with two sprung legs folded forward along the barrel, rubber feet."""
+    S, K = GUN_STEEL, GUN_BLACK
+    p = [B(K, -0.016, -0.014, -0.020, 0.032, 0.014, 0.040, plain=True), lathe(S, "x", -0.008, 0.0, [(-0.022, 0.005), (0.022, 0.005)], plain=True, seg=8)]
+    for sgn in (-1, 1):
+        p += [bar(S, (sgn * 0.016, -0.016, 0.004), (sgn * 0.024, -0.030, 0.200), 0.011), bar(K, (sgn * 0.024, -0.030, 0.200), (sgn * 0.025, -0.031, 0.228), 0.015)]
+    return gun(p, [], dict(hand=(0, -0.030, -0.03)))
+
+
 def suppressor():
     """A rifle sound suppressor: a knurled steel can that screws over the muzzle."""
     K = GUN_BLACK
@@ -1283,10 +1398,16 @@ def foregrip():
 
 
 # ---------------------------------------------------------------- loose ammunition, as it lies in the hand
-def _rounds(case, case_len, case_dia, neck, bullet_len, n=3):
+TIP_RED, TIP_GREEN, TIP_BLUE = _mat("tip_red", (214, 60, 40), "polymer"), _mat("tip_green", (70, 170, 80), "polymer"), _mat("tip_blue", (60, 110, 210), "polymer")
+ROUND_SPECS = {"ammo_545": (CASE_STEEL, 0.0396, 0.010, 0.0062, 0.017, 3, TIP_GREEN), "ammo_556": (CASE_BRASS, 0.0447, 0.0095, 0.0063, 0.012, 3, TIP_RED),
+               "ammo_762": (CASE_STEEL, 0.0537, 0.0124, 0.0085, 0.022, 3, TIP_GREEN), "ammo_9mm": (CASE_BRASS, 0.019, 0.0098, 0.0096, 0.010, 3, TIP_RED),
+               "ammo_50": (CASE_BRASS, 0.099, 0.0204, 0.0142, 0.036, 2, TIP_RED), "ammo_76251": (CASE_BRASS, 0.0512, 0.0119, 0.0087, 0.020, 3, TIP_RED)}
+
+
+def _rounds(case, case_len, case_dia, neck, bullet_len, n=3, tip=BULLET):
     p = []
     for i in range(n):
-        p += cartridge(case, -(case_len + bullet_len) / 2, 0.0, case_len, case_dia, neck, bullet_len, x=(i - (n - 1) / 2) * case_dia * 1.25)
+        p += cartridge(case, -(case_len + bullet_len) / 2, 0.0, case_len, case_dia, neck, bullet_len, x=(i - (n - 1) / 2) * case_dia * 1.25, tip=tip)
     return gun(p, [], {})
 
 
@@ -1312,10 +1433,18 @@ MODELS = {"ak74m": (ak74m, 1600), "m4a1": (m4a1, 1600), "svd": (svd, 1300), "pkm
           "rocket_pg7v": (rocket_pg7v, 1500), "rocket_og7v": (rocket_og7v, 1500), "scope_10x": (scope_10x, 2000), "ammo_50": (ammo_50, 2600),
           "m18": (m18, 3200), "m9": (m9, 3200), "hk416": (hk416, 1500), "g36": (g36, 1500), "scarh": (scarh, 1500), "m249": (m249, 1200),
           "m240": (m240, 1100), "m110": (m110, 1300), "ammo_76251": (ammo_76251, 3500),
+          "holo": (holo, 2600), "lpvo": (lpvo, 2000), "magnifier": (magnifier, 2600), "nv_scope": (nv_scope, 1800), "thermal_scope": (thermal_scope, 1800),
+          "flashlight": (flashlight, 2600), "laser": (laser, 3000), "angled_grip": (angled_grip, 2400), "bipod": (bipod, 2000),
           "red_dot": (red_dot, 3000), "acog": (acog, 2400), "pso1": (pso1, 2000), "suppressor": (suppressor, 2400),
           "pistol_suppressor": (pistol_suppressor, 2400), "foregrip": (foregrip, 2400),
           "ammo_545": (ammo_545, 4000), "ammo_556": (ammo_556, 4000), "ammo_762": (ammo_762, 3500), "ammo_9mm": (ammo_9mm, 5000),
           "ammo_12g": (ammo_12g, 3000)}
+
+
+for _id, (_case, _cl, _cd, _nk, _bl, _n, _tracer) in ROUND_SPECS.items():
+    _px = MODELS[_id][1]
+    MODELS[_id + "_tracer"] = ((lambda c=_case, a=_cl, b=_cd, d=_nk, e=_bl, n=_n, t=_tracer: _rounds(c, a, b, d, e, n, t)), _px)
+    MODELS[_id + "_training"] = ((lambda c=_case, a=_cl, b=_cd, d=_nk, e=_bl, n=_n: _rounds(c, a, b, d, e, n, TIP_BLUE)), _px)
 
 
 def preview(names, out):

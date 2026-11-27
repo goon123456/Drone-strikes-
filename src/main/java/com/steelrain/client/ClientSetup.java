@@ -36,6 +36,10 @@ public final class ClientSetup {
             InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_PAGE_DOWN, "key.categories.steelrain");
     public static final KeyMapping GUN_FIT = new KeyMapping("key.steelrain.gun_fit",
             InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_G, "key.categories.steelrain");
+    public static final KeyMapping GUN_MAGNIFIER = new KeyMapping("key.steelrain.gun_magnifier",
+            InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_H, "key.categories.steelrain");
+    public static final KeyMapping GUN_SIDE = new KeyMapping("key.steelrain.gun_side",
+            InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_L, "key.categories.steelrain");
     public static final KeyMapping GUN_BREATH = new KeyMapping("key.steelrain.gun_breath",
             InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_LEFT_ALT, "key.categories.steelrain");
 
@@ -109,6 +113,8 @@ public final class ClientSetup {
         ModRegistry.MAGAZINES.values().forEach(i -> arms.add(i.get()));
         ModRegistry.ATTACHMENTS.values().forEach(i -> arms.add(i.get()));
         ModRegistry.AMMO.values().forEach(i -> arms.add(i.get()));
+        ModRegistry.AMMO_TRACER.values().forEach(i -> arms.add(i.get()));
+        ModRegistry.AMMO_TRAINING.values().forEach(i -> arms.add(i.get()));
         e.registerItem(new net.neoforged.neoforge.client.extensions.common.IClientItemExtensions() {
             private GunItemRenderer renderer;
             @Override
@@ -138,6 +144,8 @@ public final class ClientSetup {
         e.register(GUN_ZERO_DOWN);
         e.register(GUN_FIT);
         e.register(GUN_BREATH);
+        e.register(GUN_MAGNIFIER);
+        e.register(GUN_SIDE);
     }
 
     @SubscribeEvent

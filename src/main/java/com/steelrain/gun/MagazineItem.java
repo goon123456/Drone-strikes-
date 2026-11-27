@@ -40,7 +40,7 @@ public class MagazineItem extends Item {
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
-        Item ammo = ModRegistry.AMMO.get(gun.caliber).get();
+        Item ammo = ModRegistry.ammo(gun.caliber, stack.getOrDefault(ModRegistry.LOAD.get(), 0));
         if (player.isShiftKeyDown()) {
             int n = rounds(stack);
             if (n <= 0) return InteractionResultHolder.pass(stack);
@@ -55,7 +55,7 @@ public class MagazineItem extends Item {
             }
             return InteractionResultHolder.sidedSuccess(stack, level.isClientSide);
         }
-        if (rounds(stack) >= gun.capacity || (!player.getAbilities().instabuild && !player.getInventory().contains(new ItemStack(ammo)))) {
+        if (rounds(stack) >= gun.capacity || (!player.getAbilities().instabuild && feedSlot(player, stack) < 0)) {
             return InteractionResultHolder.fail(stack);
         }
         player.startUsingItem(hand);
@@ -71,14 +71,24 @@ public class MagazineItem extends Item {
         int n = rounds(stack);
         if (n >= gun.capacity) { user.releaseUsingItem(); return; }
         if (!player.getAbilities().instabuild) {
-            Item ammo = ModRegistry.AMMO.get(gun.caliber).get();
-            int slot = -1;
-            for (int i = 0; i < player.getInventory().getContainerSize(); i++) if (player.getInventory().getItem(i).is(ammo)) { slot = i; break; }
+            int slot = feedSlot(player, stack);
             if (slot < 0) { user.releaseUsingItem(); return; }
+            // an empty magazine takes on the kind of the first round pressed into it
+            if (n == 0) stack.set(ModRegistry.LOAD.get(), ModRegistry.kindOf(gun.caliber, player.getInventory().getItem(slot)));
             player.getInventory().getItem(slot).shrink(1);
         }
         stack.set(ModRegistry.ROUNDS.get(), n + 1);
         level.playSound(null, player.blockPosition(), GunLogic.sound("gun_round_in"), SoundSource.PLAYERS, 0.5f, 0.95f + level.random.nextFloat() * 0.1f);
+    }
+
+    /** The first slot holding rounds this magazine can take: of its own kind once it has any in it, any kind if empty. */
+    private int feedSlot(Player player, ItemStack stack) {
+        int kind = rounds(stack) > 0 ? stack.getOrDefault(ModRegistry.LOAD.get(), 0) : -1;
+        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+            int k = ModRegistry.kindOf(gun.caliber, player.getInventory().getItem(i));
+            if (k >= 0 && (kind < 0 || k == kind)) return i;
+        }
+        return -1;
     }
 
     @Override
@@ -93,6 +103,8 @@ public class MagazineItem extends Item {
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
         tooltip.add(Component.translatable("tooltip.steelrain.magazine.rounds", rounds(stack), gun.capacity, gun.caliber.label).withStyle(ChatFormatting.GRAY));
+        int kind = stack.getOrDefault(ModRegistry.LOAD.get(), 0);
+        if (kind != 0 && rounds(stack) > 0) tooltip.add(Component.translatable("gun.steelrain.kind." + GunItem.KIND_KEY[Math.min(2, kind)]).withStyle(ChatFormatting.GOLD));
         tooltip.add(Component.translatable("tooltip.steelrain.magazine.fits", Component.translatable("item.steelrain." + gun.id)).withStyle(ChatFormatting.DARK_GRAY));
         tooltip.add(Component.translatable("tooltip.steelrain.magazine.use").withStyle(ChatFormatting.DARK_GRAY));
     }
