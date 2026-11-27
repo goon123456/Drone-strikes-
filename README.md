@@ -10,6 +10,9 @@ and tube artillery, and defend your base with air defence and jammers.
 0.8.9+ and Curios if they are installed (see below).
 **Licence:** GPL-3.0-only.
 
+**Download:** [Steel Rain 0.44.0 for NeoForge 1.21.1](dist/steelrain-1.21.1-0.44.0.jar).
+Replace your previous Steel Rain jar and use the same version on the client and server.
+
 The idea was inspired by the *Iron Drone* mod. All code, models and textures here are original.
 
 ## Interface
@@ -327,15 +330,10 @@ python3 tools/audit_models.py [model ...]   # check models for clipping, floatin
   jammer hums, a jammed video link hisses louder the worse it gets, and the fibre makes one of three snaps.
 
 ## On-screen displays
-The in-game displays are bare text over the world with no panels, and show only what you need at that moment:
-- **Driving:** speed and heading bottom right while moving. Fuel, battery, hull and engine state show for a few
-  seconds after they change, then fade; warnings (no fuel, flooded, low fuel, heavy damage) stay up.
-- **Guns:** a compass tape at the top, the barrel's elevation and level-ground range by the crosshair, and the
-  breech, shell and charge bottom right. The range table is hidden until you press **Y**.
-- **Air defence:** compass, elevation, the radar contact under the compass, and rounds bottom right.
-- **Drones and aircraft feeds:** name and recording dot top left, altitude, speed and range top right, battery and
-  link bottom left.
-- **Messages:** short notices under the crosshair that fade after a couple of seconds.
+The instrument panels described in [Interface](#interface) use live game data, with the centre and vanilla hotbar
+kept clear for driving, aiming and camera use. HUDs hide while a menu is open. Controls shown in the panels follow
+your key bindings; the artillery range table defaults to **Y**. Camera views are labelled **LIVE** and do not
+claim to record video. Unit lists stay empty until equipment is linked.
 
 ## Model checks
 `tools/audit_models.py` checks every model for:
