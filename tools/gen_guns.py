@@ -486,13 +486,16 @@ def pkm():
         bipod += [bar(S, (sgn * 0.014, -0.050, 0.560), (sgn * 0.020, -0.058, 0.250), 0.010),
                   B(S, sgn * 0.020 - 0.006, -0.064, 0.240, 0.012, 0.004, 0.022, plain=True)]
     bipod += [body(S, [(0.552, -0.046, 0.038, 0.030), (0.568, -0.046, 0.038, 0.030)], power=3)]
-    # ammunition box hung under the receiver: a pressed-steel can with a lid and stiffening beads, belt up into the tray
-    box = [body(GUN_STEEL, [(0.043, -0.112, 0.086, 0.100), (0.047, -0.112, 0.092, 0.108), (0.218, -0.112, 0.092, 0.108), (0.222, -0.112, 0.086, 0.100)], power=9),
-           body(S, [(0.043, -0.056, 0.094, 0.010), (0.222, -0.056, 0.094, 0.010)], power=6),
-           label(GUN_STEEL, "100 7.62", 0.0462, -0.100, 0.085, 0.09, 0.011),
+    # ammunition box hung across the gun under the receiver: a pressed-steel can with a lid and stiffening beads,
+    # the belt coming up out of its right-hand end into the tray
+    BX = -0.020                                                                                       # it sits a little to the right
+    can = lambda mat, secs, power: skin(mat, [(z, BX, cy, w, h) for z, cy, w, h in secs], power=power, seg=20)
+    box = [can(GUN_STEEL, [(0.083, -0.112, 0.168, 0.100), (0.087, -0.112, 0.175, 0.108), (0.175, -0.112, 0.175, 0.108), (0.179, -0.112, 0.168, 0.100)], 9),
+           can(S, [(0.083, -0.056, 0.177, 0.010), (0.179, -0.056, 0.177, 0.010)], 6),
+           B(GUN_STEEL, BX - 0.045, -0.111, 0.0826, 0.09, 0.022, 0.0003, yaw=180, plain=True, marks=[("front", "text:100 7.62", 0.5, 0.5, 0.011, None)]),
            B(S, -0.004, -0.052, 0.110, 0.008, 0.004, 0.040, plain=True)]
     for y in (-0.090, -0.135):
-        box += [body(S, [(0.046, y, 0.0935, 0.008), (0.219, y, 0.0935, 0.008)], power=4)]
+        box += [can(S, [(0.086, y, 0.1765, 0.008), (0.176, y, 0.1765, 0.008)], 4)]
     belt = []
     for i in range(5):
         y = -0.050 + i * 0.017
