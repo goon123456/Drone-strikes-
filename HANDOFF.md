@@ -40,8 +40,11 @@ All of it is the small-arms system (README section "Small arms" is the user-faci
   hammers floating in 0.53.
 - **Check every model for floating parts** before shipping: `python3 tools/check_islands.py [names...]` (needs
   scipy). It reports every part not joined to the main body, with its gap in mm; 0.54.0 ships with 0 islands
-  across all guns and fittings. The preview renders in `vehicle_kit.render()` leave striped holes on large curved
-  surfaces (e.g. the M320 and RPG tubes look see-through): that is the point-splat previewer, not the model.
+  across all guns and fittings. It only finds parts joined to nothing; it cannot see daylight between two parts
+  that are joined elsewhere (an open-ended trigger guard, bipod legs hanging under a barrel), so also look at
+  every gun side-on and zoomed in. Use `tools/preview_render.py` (`rend(model, tex, yaw, pitch, size)`) for that:
+  `vehicle_kit.render()` samples by grid step and leaves striped holes on long or curved surfaces that look like
+  gaps but are not in the game.
 - **Regenerate only the gun assets** (do not run the whole of `gen_assets.py`: it rebakes every vehicle):
   `PYTHONPATH=tools python3 -c "import sys; sys.argv=['x']; import gen_assets as g; g.guns(); g.lang()"`
   After `tools/gen_gun_sounds.py`, run `git checkout -- tools/sounds src/main/resources/assets/steelrain/sounds`

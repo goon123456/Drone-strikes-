@@ -228,7 +228,7 @@ def _ak(mark, furn=POLYMER, magmat=POLYMER_PLUM, rnd=(0.0396, 0.010, 0.0062, 0.0
     p += [B(S, 0.0072, 0.029, 0.501, 0.0018, 0.027, 0.014, roll=-8, pivot=(0.008, 0.030, 0.508), plain=True),
           B(S, -0.0090, 0.029, 0.501, 0.0018, 0.027, 0.014, roll=8, pivot=(-0.008, 0.030, 0.508), plain=True),
           turned(S, [(0.5068, 0.0), (0.5068, 0.004), (0.5092, 0.004), (0.5092, 0.0)], y=0.0), bar(S, (0, 0.028, 0.508), (0, 0.052, 0.508), 0.0026)]
-    p += [bar(S, (0, -0.0185, 0.360), (0, -0.0185, 0.540), 0.006), turned(S, [(0.540, 0.006), (0.546, 0.008), (0.549, 0.006)], y=-0.0185, seg=6)]
+    p += [bar(S, (0, -0.0150, 0.360), (0, -0.0150, 0.540), 0.006), turned(S, [(0.540, 0.006), (0.546, 0.008), (0.549, 0.006)], y=-0.0150, seg=6)]
     # handguards in the chosen furniture
     p += [body(PL, [(0.163, -0.012, 0.040, 0.054), (0.172, -0.013, 0.044, 0.058), (0.250, -0.014, 0.049, 0.060), (0.330, -0.013, 0.046, 0.058),
                     (0.356, -0.012, 0.043, 0.054), (0.362, -0.012, 0.040, 0.050)], power=3.4)]
@@ -262,7 +262,7 @@ def _ak(mark, furn=POLYMER, magmat=POLYMER_PLUM, rnd=(0.0396, 0.010, 0.0062, 0.0
     if muzzle == "slant":
         tip = 0.566
         brake = [turned(S, [(0.524, 0.016), (0.528, 0.0235), (0.560, 0.0235), (0.566, 0.021)], seg=12), bore(0.566, 0.012),
-                 B(BLACK, -0.012, 0.0, 0.552, 0.024, 0.024, 0.0016, roll=24, pivot=(0, 0, 0.56), plain=True)]
+                 B(BLACK, -0.005, 0.0108, 0.546, 0.010, 0.0012, 0.014, plain=True)]                                   # the slant cut
     elif muzzle == "brake12":
         tip = 0.598
         brake = [turned(S, [(0.524, 0.016), (0.530, 0.023), (0.594, 0.023), (0.598, 0.020)], seg=12), bore(0.598, 0.012)]
@@ -329,7 +329,7 @@ def _trig(z, y, drop=0.032):
 
 def _guard(mat, z0, z1, y, drop=0.040, w=0.014, t=0.004):
     """A trigger guard from z0 (behind, buried in the grip) to z1 (ahead), hanging `drop` below belly height y."""
-    return sweep(mat, [(z0, y - drop + 0.012), (z0 + 0.012, y - drop), (z1 - 0.014, y - drop), (z1 - 0.002, y - drop + 0.012), (z1, y + 0.006)], w, t, power=5, seg=8, ends="flat")
+    return sweep(mat, [(z0, y + 0.006), (z0, y - drop + 0.012), (z0 + 0.012, y - drop), (z1 - 0.014, y - drop), (z1 - 0.002, y - drop + 0.012), (z1, y + 0.006)], w, t, power=5, seg=8, ends="flat")
 
 
 def _hand_guard(mat, grip_foot, z1, y1, w=0.022, t=0.008):
@@ -382,7 +382,7 @@ def _stanag(mat, z, y, rnd=(0.0447, 0.0095, 0.0063, 0.012), case=CASE_BRASS, len
     e = path[-1]
     dz, dy = _unit(e[0] - path[-2][0], e[1] - path[-2][1])
     mag += sweep(mat, [(e[0] - dz * 0.002, e[1] - dy * 0.002), (e[0] + dz * 0.006, e[1] + dy * 0.006)], w + 0.004, depth + 0.004, power=6, ends="flat")
-    mag += cartridge(case, z - rnd[0] * 0.55, y + 0.001, *rnd)
+    mag += cartridge(case, z + depth / 2 - 0.002 - rnd[0] - rnd[3], y + 0.001, *rnd)
     return mag
 
 
@@ -430,7 +430,7 @@ def aug():
     path = [(-0.136, -0.090), (-0.134, -0.130), (-0.126, -0.168)]
     for q in path:                                                                                                  # the rounds seen through the wall
         for sx in (1, -1):
-            mag += [B(CASE_BRASS, sx * 0.0131 - 0.0003, q[1] - 0.012, q[0] - 0.022, 0.0006, 0.010, 0.044, plain=True)]
+            mag += [B(_mat("round_seen", (98, 82, 50), "polymer"), sx * 0.0131 - 0.0003, q[1] - 0.010, q[0] - 0.020, 0.0006, 0.007, 0.040, plain=True)]
     return gun(p, [bone("muzzle", (0, 0, 0.372), hider), bone("bolt", (0, 0.010, -0.16), []), bone("charge", (0, 0.012, 0.110), charge),
                    bone("trigger", (0, -0.034, 0.006), trigger), bone("selector", (0, -0.012, -0.046), selector), bone("mag", (0, -0.058, -0.136), mag)],
                dict(muzzle=(0, 0, tip), thread=(0, 0, 0.372), eject=(-0.028, 0.008, -0.165), sight=(0, 0.090, -0.150), front=(0, 0.090, 0.076),
@@ -651,7 +651,7 @@ def qbu88():
     # bipod: collar on the barrel and two legs folded forward underneath
     p += [turned(S, [(0.286, 0.030), (0.304, 0.030)], seg=12)]
     for sx in (1, -1):
-        p += [bar(S, (sx * 0.010, -0.010, 0.295), (sx * 0.014, -0.026, 0.300), 0.009), bar(S, (sx * 0.014, -0.026, 0.298), (sx * 0.014, -0.030, 0.452), 0.007)]
+        p += [bar(S, (sx * 0.006, -0.010, 0.295), (sx * 0.006, -0.012, 0.300), 0.009), bar(S, (sx * 0.006, -0.0115, 0.298), (sx * 0.006, -0.0115, 0.452), 0.007)]
     hider, tip = _birdcage(0.474, 0.024, 0.062, bore_dia=0.0078, slots=6)
     p += _pgrip(PL, -0.038, -0.030, length=0.114, rake=0.22, w=0.032, d=0.045)
     p += _guard(K, -0.046, 0.034, -0.038, drop=0.042)
@@ -679,7 +679,7 @@ def _box_mag(mat, z, y, length, depth, w, rnd, case=CASE_BRASS, rake=0.06, curve
     e = path[-1]
     dz, dy = _unit(e[0] - path[-2][0], e[1] - path[-2][1])
     mag += sweep(mat, [(e[0] - dz * 0.002, e[1] - dy * 0.002), (e[0] + dz * 0.005, e[1] + dy * 0.005)], w + 0.004, depth + 0.004, power=6, ends="flat")
-    mag += cartridge(case, z - rnd[0] * 0.55, y + 0.001, *rnd)
+    mag += cartridge(case, z + depth / 2 - 0.002 - rnd[0] - rnd[3], y + 0.001, *rnd)
     return mag
 
 
@@ -795,8 +795,8 @@ def _m14(mark, wood=WOOD, guard_mat=None, muzzle_z=0.600, style="us"):
     mz = muzzle_z
     p += [turned(S, [(0.120, 0.022), (0.336, 0.022), (0.340, 0.019), (mz, 0.017)], seg=14)]
     p += [turned(S, [(0.324, 0.042), (0.340, 0.042)], y=-0.008, seg=12)]                                              # front band
-    p += [turned(S, [(0.334, 0.016), (0.340, 0.021), (0.474, 0.021), (0.480, 0.014), (0.500, 0.014)], y=-0.019, seg=12)]
-    p += slab(S, 0.014, [(0.452, -0.022), (0.472, -0.022), (0.470, 0.006), (0.454, 0.006)], edge=0.003, r=0.002)
+    p += [turned(S, [(0.334, 0.016), (0.340, 0.021), (0.474, 0.021), (0.480, 0.014), (0.500, 0.014)], y=-0.016, seg=12)]
+    p += slab(S, 0.014, [(0.452, -0.026), (0.472, -0.026), (0.470, 0.006), (0.454, 0.006)], edge=0.003, r=0.002)
     hider = [turned(S, [(mz - 0.004, 0.017), (mz, 0.022), (mz + 0.084, 0.022), (mz + 0.090, 0.019)], seg=12), bore(mz + 0.090, 0.011)]
     for k in range(5):
         hider.append(B(BLACK, -0.0016, 0.0105, mz + 0.034, 0.0032, 0.0008, 0.046, roll=k * 72 + 36, pivot=(0, 0, mz + 0.057), plain=True))
@@ -814,7 +814,7 @@ def _m14(mark, wood=WOOD, guard_mat=None, muzzle_z=0.600, style="us"):
     bip = []
     if style == "bm59":                                                                                              # folded bipod on the gas cylinder, winter trigger
         for sx in (1, -1):
-            bip += [bar(S, (sx * 0.010, -0.026, 0.440), (sx * 0.016, -0.036, 0.432), 0.008), bar(S, (sx * 0.016, -0.036, 0.436), (sx * 0.016, -0.040, 0.220), 0.007)]
+            bip += [bar(S, (sx * 0.004, -0.020, 0.446), (sx * 0.007, -0.028, 0.440), 0.008), bar(S, (sx * 0.007, -0.028, 0.444), (sx * 0.007, -0.028, 0.250), 0.007)]
     return gun(p + bip, [bone("muzzle", (0, 0, mz), hider), bone("bolt", (0, 0.012, 0.03), []), bone("charge", (0, 0.010, 0.040), charge),
                          bone("trigger", (0, -0.046, -0.012), trigger), bone("selector", (0, -0.054, 0.018), selector), bone("mag", (0, -0.036, 0.076), mag)],
                dict(muzzle=(0, 0, mz + 0.090), thread=(0, 0, mz), eject=(-0.022, 0.022, 0.040), sight=(0, 0.042, -0.079), front=(0, 0.032, mz + 0.012),
@@ -849,7 +849,7 @@ def m39emr():
     mz = 0.600
     p += [turned(S, [(0.120, 0.024), (0.340, 0.024), (0.344, 0.021), (mz, 0.019)], seg=14)]
     p += [turned(S, [(0.340, 0.016), (0.346, 0.021), (0.474, 0.021), (0.480, 0.014), (0.500, 0.014)], y=-0.019, seg=12)]
-    p += slab(S, 0.014, [(0.452, -0.022), (0.472, -0.022), (0.470, 0.006), (0.454, 0.006)], edge=0.003, r=0.002)
+    p += slab(S, 0.014, [(0.452, -0.026), (0.472, -0.026), (0.470, 0.006), (0.454, 0.006)], edge=0.003, r=0.002)
     hider = [turned(S, [(mz - 0.004, 0.019), (mz, 0.022), (mz + 0.084, 0.022), (mz + 0.090, 0.019)], seg=12), bore(mz + 0.090, 0.011)]
     for k in range(5):
         hider.append(B(BLACK, -0.0016, 0.0105, mz + 0.034, 0.0032, 0.0008, 0.046, roll=k * 72 + 36, pivot=(0, 0, mz + 0.057), plain=True))
@@ -930,8 +930,8 @@ def _bolt(mark, stock, col, rnd=R762NATO, case=CASE_BRASS, barrel=0.610, brake=T
     # bipod: mount under the fore-end tip, legs folded forward
     p += [B(S, -0.012, -0.050, 0.352, 0.024, 0.012, 0.030, plain=True)]
     for sx in (1, -1):
-        p += [bar(S, (sx * 0.010, -0.046, 0.366), (sx * 0.020, -0.056, 0.372), 0.010), bar(S, (sx * 0.020, -0.056, 0.368), (sx * 0.020, -0.058, 0.560), 0.009),
-              lathe(RUBBER_PAD, "z", sx * 0.020, -0.058, [(0.556, 0.0), (0.556, 0.007), (0.572, 0.007), (0.574, 0.0)], plain=True, seg=8)]
+        p += [bar(S, (sx * 0.008, -0.044, 0.370), (sx * 0.012, -0.048, 0.362), 0.010), bar(S, (sx * 0.012, -0.048, 0.366), (sx * 0.012, -0.050, 0.190), 0.009),
+              lathe(RUBBER_PAD, "z", sx * 0.012, -0.050, [(0.170, 0.0), (0.172, 0.0035), (0.190, 0.0045), (0.194, 0.0)], plain=True, seg=8)]
     p += [label(col, mark, 0.0262, -0.014, -0.030, 0.050, 0.0038)]
     return gun(p, [bone("muzzle", (0, 0, mz), hider), bone("bolt", (0, 0.0, -0.04), []), bone("charge", (0, 0.0, -0.040), charge),
                    bone("trigger", (0, -0.044, -0.016), trigger), bone("selector", (-0.020, 0.008, -0.085), selector), bone("mag", (0, -0.040, 0.062), mag)],
@@ -1180,7 +1180,7 @@ def hk417():
 
 def g28():
     """HK G28, 7.62x51: the HK417 made a designated marksman rifle - tan, a longer barrel and handguard, fixed stock."""
-    return _ar("G28 7.62MM", scale=1.13, barrel=0.470, guard=0.340, fixed_stock=True, tan=True, straight_mag=True, case=CASE_BRASS, round_=R762NATO)
+    return _ar("G28 7.62MM", scale=1.13, barrel=0.470, guard=0.340, fixed_stock=False, tan=True, straight_mag=True, case=CASE_BRASS, round_=R762NATO)
 
 
 def mk12():
@@ -1399,8 +1399,8 @@ def pkm():
     selector += slab(S, 0.004, [(-0.044, -0.0325), (-0.020, -0.0335), (-0.020, -0.0265), (-0.044, -0.0275)], x=HW + 0.002, edge=0.001, r=0.002)
     bipod = []
     for sgn in (-1, 1):
-        bipod += [bar(S, (sgn * 0.014, -0.050, 0.560), (sgn * 0.020, -0.058, 0.250), 0.010),
-                  B(S, sgn * 0.020 - 0.006, -0.064, 0.240, 0.012, 0.004, 0.022, plain=True)]
+        bipod += [bar(S, (sgn * 0.012, -0.040, 0.556), (sgn * 0.016, -0.040, 0.300), 0.010),
+                  B(S, sgn * 0.016 - 0.006, -0.046, 0.288, 0.012, 0.008, 0.022, plain=True)]
     bipod += [body(S, [(0.552, -0.046, 0.038, 0.030), (0.568, -0.046, 0.038, 0.030)], power=3)]
     # ammunition box: an olive pressed-steel can hung across the gun under the receiver, well out to the right, its
     # lid held by a wire bail. The belt comes out of a mouth in the lid directly under the feed tray.
@@ -1442,17 +1442,17 @@ def _p320(name, F=0.0, GB=0.0):
     lengthens the grip and its magazine downwards."""
     T, TS, S = POLYMER_TAN, _mat("gun_tan", (146, 124, 92), "gunmetal", wear=(96, 90, 82)), GUN_STEEL
     # frame: dust cover with its rail, the grip swelling to the palm, beavertail, trigger guard
-    p = [body(T, [(-0.074, -0.020, 0.024, 0.014), (-0.060, -0.022, 0.0285, 0.020), (0.088 + F, -0.022, 0.0285, 0.020), (0.094 + F, -0.021, 0.026, 0.016)], power=5)]
+    p = [body(T, [(-0.074, -0.020, 0.024, 0.014), (-0.060, -0.0205, 0.0285, 0.023), (0.088 + F, -0.0205, 0.0285, 0.023), (0.094 + F, -0.021, 0.026, 0.016)], power=5)]
     p += sweep(T, [(-0.034, -0.026), (-0.040, -0.050), (-0.050, -0.090 - GB * 0.5), (-0.060 - GB * 0.25, -0.124 - GB)], [0.0295, 0.030, 0.031, 0.0315], [0.050, 0.050, 0.052, 0.054], power=3.6)
     p += sweep(T, [(-0.060, -0.022), (-0.078, -0.018), (-0.086, -0.016)], [0.024, 0.022, 0.018], [0.012, 0.010, 0.007], power=3, seg=10)
-    p += sweep(T, [(0.048, -0.028), (0.047, -0.060), (0.038, -0.072), (0.004, -0.073), (-0.016, -0.062)], 0.014, 0.0055, power=4, seg=8, ends="flat")
+    p += sweep(T, [(0.048, -0.028), (0.047, -0.060), (0.038, -0.072), (0.004, -0.073), (-0.018, -0.064), (-0.030, -0.054)], 0.014, 0.0055, power=4, seg=8, ends="flat")
     p += rail(T, 0.048, 0.090 + F, -0.031, w=0.020, up=-1)
     for sx in (1, -1):                                                                                  # stippled grip panels
         p += [B(T, sx * 0.0152 - 0.0003, -0.118, -0.068, 0.0006, 0.074, 0.030, pitch=-14, pivot=(0, -0.08, -0.05), plain=True,
                 marks=[("left" if sx > 0 else "right", "checker", 0.5, 0.5, 0.030, 0.074)])]
     p += [B(S, 0.0143, -0.022, 0.010, 0.0016, 0.005, 0.022, plain=True), B(S, 0.0143, -0.024, 0.040, 0.0016, 0.008, 0.012, plain=True),
           B(S, -0.0159, -0.024, 0.040, 0.0016, 0.008, 0.012, plain=True)]
-    p += [label(T, name, 0.01435, -0.022, 0.062, 0.020, 0.0038)]
+    p += [label(T, name, 0.01435, -0.022, 0.046 + F, 0.020, 0.0038)]
     # barrel showing at the muzzle, recoil spring guide under it
     p += [tube(S, 0.060, 0.1005 + F, 0.0142, seg=10), bore(0.1005 + F, 0.009), tube(S, 0.060, 0.0995 + F, 0.008, y=-0.0135)]
 
@@ -1585,8 +1585,8 @@ def m107():
     # bipod: yoke under the shroud, two legs with feet, folded back
     bipod = [body(S, [(0.372, -0.024, 0.060, 0.018), (0.392, -0.024, 0.060, 0.018)], power=4)]
     for sgn in (-1, 1):
-        bipod += [bar(S, (sgn * 0.028, -0.030, 0.382), (sgn * 0.036, -0.044, 0.110), 0.013),
-                  slab(S, 0.016, [(0.092, -0.050), (0.118, -0.050), (0.118, -0.040), (0.092, -0.040)], x=sgn * 0.036, edge=0.002, r=0.002)[0]]
+        bipod += [bar(S, (sgn * 0.012, -0.026, 0.382), (sgn * 0.014, -0.025, 0.110), 0.013),               # legs folded flat under the receiver
+                  slab(S, 0.016, [(0.092, -0.034), (0.118, -0.034), (0.118, -0.022), (0.092, -0.022)], x=sgn * 0.014, edge=0.002, r=0.002)[0]]
     carrier = slab(GUN_BARE, 0.005, [(0.062, -0.002), (0.178, -0.002), (0.178, 0.020), (0.062, 0.020)], x=-HW + 0.001, edge=0.0015, r=0.003)
     carrier += [bar(GUN_BARE, (-HW, 0.010, 0.160), (-HW - 0.026, 0.010, 0.160), 0.012),
                 turned(GUN_BARE, [(0.150, 0.0), (0.153, 0.014), (0.167, 0.015), (0.170, 0.0)], y=0.010, x=-HW - 0.030, seg=8)]
@@ -1695,11 +1695,11 @@ def _poly_pistol(name, mark, L=0.0, G=0.0, railed=True, rnd="9mm", frame=POLYMER
     S = GUN_STEEL
     cl, cd, nk, bl = PISTOL_ROUNDS[rnd]
     sh = 0.034 if boxy else 0.031                                                                      # slide height
-    p = [body(frame, [(-0.074, -0.020, 0.024, 0.014), (-0.060, -0.022, 0.0285, 0.020), (0.082 + L, -0.022, 0.0285, 0.020), (0.090 + L, -0.021, 0.026, 0.016)], power=5)]
+    p = [body(frame, [(-0.074, -0.020, 0.024, 0.014), (-0.060, -0.0205, 0.0285, 0.023), (0.082 + L, -0.0205, 0.0285, 0.023), (0.090 + L, -0.021, 0.026, 0.016)], power=5)]
     p += sweep(frame, [(-0.034, -0.026), (-0.040, -0.050), (-0.050, -0.090 - G * 0.5), (-0.060 - G * 0.25, -0.124 - G)], [0.0295, 0.030, 0.031, 0.0315], [0.050, 0.050, 0.052, 0.054], power=3.6)
     p += sweep(frame, [(-0.060, -0.022), (-0.078, -0.018), (-0.086, -0.016)], [0.024, 0.022, 0.018], [0.012, 0.010, 0.007], power=3, seg=10)
     tg = 0.060 if boxy else 0.047                                                                      # trigger-guard front
-    p += sweep(frame, [(tg, -0.028), (tg - 0.001, -0.060), (0.038, -0.072), (0.004, -0.073), (-0.016, -0.062)], 0.014, 0.0055, power=4, seg=8, ends="flat")
+    p += sweep(frame, [(tg, -0.028), (tg - 0.001, -0.060), (0.038, -0.072), (0.004, -0.073), (-0.018, -0.064), (-0.030, -0.054)], 0.014, 0.0055, power=4, seg=8, ends="flat")
     if railed:
         p += rail(frame, 0.048, 0.086 + L, -0.031, w=0.020, up=-1)
     for sx in (1, -1):
@@ -1738,14 +1738,14 @@ def _steel_pistol(name, mark, L=0.0, rnd="9mm", panels=WOOD, framemat=GUN_STEEL,
     cl, cd, nk, bl = PISTOL_ROUNDS[rnd]
     sh = 0.030
     # frame: dust cover, grip with panels, beavertail tang, curved trigger guard
-    p = [body(framemat, [(-0.070, -0.019, 0.024, 0.012), (-0.056, -0.021, 0.028, 0.019), (0.084 + L, -0.021, 0.028, 0.019), (0.092 + L, -0.020, 0.024, 0.014)], power=5)]
+    p = [body(framemat, [(-0.070, -0.019, 0.024, 0.012), (-0.056, -0.0195, 0.0255, 0.022), (0.084 + L, -0.0195, 0.0255, 0.022), (0.092 + L, -0.020, 0.024, 0.014)], power=5)]
     p += sweep(framemat, [(-0.036, -0.026), (-0.044, -0.052), (-0.052, -0.092), (-0.058, -0.126)], [0.029, 0.030, 0.031, 0.031], [0.050, 0.050, 0.052, 0.054], power=3.4)
     p += sweep(framemat, [(-0.056, -0.019), (-0.076, -0.015), (-0.094, -0.016), (-0.110, -0.019)], [0.022, 0.020, 0.016, 0.013], [0.012, 0.012, 0.012, 0.007], power=3, seg=10)
-    p += sweep(framemat, [(0.046, -0.027), (0.050, -0.050), (0.042, -0.064), (0.012, -0.070), (-0.012, -0.060)], 0.013, 0.005, power=4, seg=8, ends="flat")
+    p += sweep(framemat, [(0.046, -0.027), (0.050, -0.050), (0.042, -0.064), (0.012, -0.070), (-0.014, -0.062), (-0.030, -0.052)], 0.013, 0.005, power=4, seg=8, ends="flat")
     for sx in (1, -1):                                                                                  # separate grip panels, chequered
         p += [B(panels, sx * 0.0156 - 0.0005, -0.124, -0.072, 0.001, 0.080, 0.034, pitch=-12, pivot=(0, -0.08, -0.05), plain=True,
                 marks=[("left" if sx > 0 else "right", "checker", 0.5, 0.5, 0.034, 0.080)])]
-    p += [B(S, 0.0150, -0.022, 0.008, 0.0016, 0.005, 0.026, plain=True), label(framemat, mark, 0.0148, -0.022, 0.050, 0.018, 0.0034)]
+    p += [B(S, 0.0124, -0.022, 0.008, 0.0016, 0.005, 0.026, plain=True), label(framemat, mark, 0.01285, -0.022, 0.050, 0.018, 0.0034)]
     p += [tube(S, 0.056, 0.100 + L, cd * 1.45, seg=10), bore(0.100 + L, cd * 0.92)]
     # slide: rounded (1911) or squared (SIG), with its ejection port, sights and the exposed hammer behind
     prof = [(-0.100, 0.002, 0.024, 0.026), (-0.096, 0.004, 0.026, sh), (0.090 + L, 0.004, 0.026, sh), (0.100 + L, 0.002, 0.024, 0.024)]
@@ -1759,7 +1759,7 @@ def _steel_pistol(name, mark, L=0.0, rnd="9mm", panels=WOOD, framemat=GUN_STEEL,
               label(slidemat, mark, 0.01305, 0.006, 0.004, 0.040, 0.0030)]
     hammer = slab(S, 0.007, [(-0.105, -0.016), (-0.097, -0.016), (-0.099, 0.026), (-0.106, 0.030), (-0.113, 0.022)], edge=0.0015, r=0.003)   # rooted in the frame behind the slide
     trigger = sweep(S, [(0.016, -0.030), (0.017, -0.044), (0.020, -0.054), (0.017, -0.062)], 0.007, 0.006, power=3, seg=8)
-    selector = [B(S, 0.0150, -0.018, -0.058, 0.0035, 0.006, 0.022, plain=True)]
+    selector = [B(S, 0.0124, -0.018, -0.058, 0.0035, 0.006, 0.022, plain=True)]
     mag = sweep(GUN_STEEL, [(-0.037, -0.016), (-0.049, -0.068), (-0.058, -0.122)], 0.021, 0.040, power=6, ends="flat")
     mag += sweep(GUN_STEEL, [(-0.058, -0.123), (-0.060, -0.134)], 0.030, 0.054, power=4, ends="flat")
     mag += cartridge(CASE_BRASS, -0.052, -0.013, cl, cd, nk, bl)
@@ -1832,7 +1832,7 @@ def m9():
     p = [body(K, [(-0.070, -0.018, 0.024, 0.012), (-0.056, -0.021, 0.028, 0.020), (0.060, -0.021, 0.027, 0.018), (0.078, -0.020, 0.024, 0.014)], power=4)]
     p += sweep(K, [(-0.036, -0.026), (-0.042, -0.052), (-0.050, -0.092), (-0.058, -0.128)], [0.029, 0.030, 0.031, 0.032], [0.050, 0.050, 0.052, 0.054], power=3.4)
     p += sweep(K, [(-0.058, -0.020), (-0.076, -0.016), (-0.088, -0.018)], [0.022, 0.020, 0.016], [0.012, 0.010, 0.007], power=3, seg=10)
-    p += sweep(K, [(0.044, -0.028), (0.050, -0.048), (0.044, -0.066), (0.026, -0.074), (0.002, -0.070), (-0.014, -0.058)], 0.013, 0.005, power=4, seg=8, ends="flat")
+    p += sweep(K, [(0.044, -0.028), (0.050, -0.048), (0.044, -0.066), (0.026, -0.074), (0.002, -0.070), (-0.016, -0.060), (-0.030, -0.050)], 0.013, 0.005, power=4, seg=8, ends="flat")
     for sx in (1, -1):
         p += [B(PL, sx * 0.0156 - 0.0005, -0.122, -0.070, 0.001, 0.078, 0.032, pitch=-12, pivot=(0, -0.08, -0.05), plain=True,
                 marks=[("left" if sx > 0 else "right", "checker", 0.5, 0.5, 0.032, 0.078)])]
@@ -1943,7 +1943,7 @@ def _ar(mark, scale=1.0, barrel=0.368, guard=0.228, fixed_stock=False, tan=False
         for q in path[2::2]:
             mag += sweep(PL, [q, (q[0] + 0.001, q[1] - 0.006)], 0.0255, 0.050, power=6, seg=10, ends="flat")
     mag += sweep(mag[0]["mat"], [path[-1], (path[-1][0] + (path[-1][0] - path[-2][0]) * 0.2, path[-1][1] + (path[-1][1] - path[-2][1]) * 0.2)], 0.027 * k, 0.067 * k, power=6, ends="flat")
-    mag += cartridge(case, mz - round_[0] * 0.55, -0.042 * k, *round_)
+    mag += cartridge(case, mz + 0.0285 * k - round_[0] - round_[3], -0.042 * k, *round_)
     return gun(p, [bone("muzzle", (0, 0, M - 0.042), hider), bone("bolt", (0, 0.006, 0.03), carrier), bone("charge", (0, top - 0.002, -0.105 * k), charge),
                    bone("trigger", (0, -0.050 * k, 0.010), trigger), bone("selector", (HW, -0.024 * k, -0.036 * k), selector),
                    bone("irons", (0, ry, rz + 0.006), irons), bone("mag", (0, -0.050 * k, mz), mag)],
@@ -1965,6 +1965,9 @@ def m110():
 
 
 # ---------------------------------------------------------------- G36
+ROUND_SEEN = _mat("round_seen", (98, 82, 50), "polymer")            # brass seen through a smoky magazine wall
+
+
 def g36():
     """G36, 5.56x45: a polymer shell with the long carrying handle that holds its sights, a ventilated handguard,
     the side-folding skeleton stock and a translucent magazine with the rounds showing through."""
@@ -1982,7 +1985,6 @@ def g36():
     p += slab(PL, 0.026, [(0.090, 0.022), (0.130, 0.022), (0.124, 0.050), (0.096, 0.060)], edge=0.005, r=0.005)
     p += [body(PL, [(-0.096, 0.068, 0.026, 0.022), (-0.086, 0.068, 0.030, 0.026), (0.110, 0.066, 0.030, 0.024), (0.126, 0.062, 0.024, 0.016)], power=3.2)]
     p += rail(PL, -0.080, 0.100, 0.079, w=0.0212)
-    p += [B(BLACK, -0.0195, 0.036, -0.058, 0.039, 0.016, 0.146, plain=True)]                               # daylight under the handle
     # handguard with its vent slots, barrel, flash hider
     p += [body(PL, [(0.156, -0.006, 0.040, 0.050), (0.164, -0.006, 0.046, 0.058), (0.360, -0.004, 0.042, 0.052), (0.372, -0.004, 0.036, 0.044)], power=3.4)]
     for i in range(6):
@@ -2011,7 +2013,7 @@ def g36():
     mag = sweep(CLEAR, path, 0.029, 0.062, power=8, ends="flat")
     for q in path[1:-1]:                                                                              # the rounds seen through the wall
         for sx in (1, -1):
-            mag += [B(CASE_BRASS, sx * 0.0146 - 0.0003, q[1] - 0.008, q[0] - 0.022, 0.0006, 0.007, 0.044, plain=True)]
+            mag += [B(ROUND_SEEN, sx * 0.0146 - 0.0003, q[1] - 0.008, q[0] - 0.022, 0.0006, 0.007, 0.044, plain=True)]
     mag += sweep(POLYMER, [path[-1], (path[-1][0] + (path[-1][0] - path[-2][0]) * 0.2, path[-1][1] + (path[-1][1] - path[-2][1]) * 0.2)], 0.032, 0.068, power=6, ends="flat")
     mag += cartridge(CASE_BRASS, 0.056, -0.054, 0.0447, 0.0095, 0.0063, 0.012)
     return gun(p, [bone("muzzle", (0, 0, 0.510), hider), bone("bolt", (0, 0.008, 0.07), carrier), bone("charge", (0, 0.03, 0.05), charge),
@@ -2147,8 +2149,8 @@ def m249():
     selector = [lathe(S, "x", -0.036, -0.030, [(-HW - 0.004, 0.0), (-HW - 0.004, 0.005), (-HW, 0.005)], plain=True, seg=8)]
     bipod = [body(S, [(0.500, -0.044, 0.050, 0.014), (0.516, -0.044, 0.050, 0.014)], power=4)]
     for sgn in (-1, 1):
-        bipod += [bar(S, (sgn * 0.022, -0.050, 0.508), (sgn * 0.030, -0.060, 0.240), 0.010),
-                  B(S, sgn * 0.030 - 0.006, -0.066, 0.228, 0.012, 0.004, 0.022, plain=True)]
+        bipod += [bar(S, (sgn * 0.012, -0.036, 0.506), (sgn * 0.014, -0.036, 0.250), 0.010),
+                  B(S, sgn * 0.014 - 0.006, -0.042, 0.238, 0.012, 0.008, 0.022, plain=True)]
     # 200-round box: a green plastic can clipped under the receiver, leaning out to the left, belt out of its top
     BX, BELT = 0.034, 0.040
     can = lambda mat, secs, power: skin(mat, [(z, BX, cy, w, h) for z, cy, w, h in secs], power=power, seg=20)
@@ -2210,10 +2212,10 @@ def m240():
               B(S, -HW - 0.002, -0.026, 0.010, 0.002, 0.012, 0.080, plain=True)]
     trigger = sweep(S, [(-0.126, -0.063), (-0.124, -0.073), (-0.121, -0.083), (-0.124, -0.090)], 0.006, 0.006, power=3, seg=8)
     selector = [lathe(S, "x", -0.050, -0.150, [(-HW - 0.004, 0.0), (-HW - 0.004, 0.005), (-HW, 0.005)], plain=True, seg=8)]
-    bipod = [body(S, [(0.572, -0.058, 0.056, 0.016), (0.590, -0.058, 0.056, 0.016)], power=4)]
+    bipod = [body(S, [(0.572, -0.050, 0.056, 0.016), (0.590, -0.050, 0.056, 0.016)], power=4)]
     for sgn in (-1, 1):
-        bipod += [bar(S, (sgn * 0.024, -0.064, 0.580), (sgn * 0.032, -0.074, 0.290), 0.012),
-                  B(S, sgn * 0.032 - 0.007, -0.081, 0.276, 0.014, 0.004, 0.026, plain=True)]
+        bipod += [bar(S, (sgn * 0.014, -0.044, 0.578), (sgn * 0.017, -0.042, 0.300), 0.012),
+                  B(S, sgn * 0.017 - 0.007, -0.050, 0.286, 0.014, 0.008, 0.026, plain=True)]
     BX, BELT = 0.046, 0.046
     can = lambda mat, secs, power: skin(mat, [(z, BX, cy, w, h) for z, cy, w, h in secs], power=power, seg=20)
     box = [can(AMMO_GREEN, [(0.010, -0.120, 0.090, 0.130), (0.016, -0.120, 0.098, 0.138), (0.136, -0.120, 0.098, 0.138), (0.142, -0.120, 0.090, 0.130)], 9),
@@ -2226,7 +2228,7 @@ def m240():
     belt = _belt(CASE_BRASS, (0.0512, 0.0119, 0.0087, 0.020), BELT, 0.026, -0.056, 0.022, -1)
     return gun(p, [bone("muzzle", (0, 0, 0.796), hider), bone("cover", (0, 0.034, 0.152), cover), bone("bolt", (0, -0.020, 0.04), charge),
                    bone("trigger", (0, -0.063, -0.126), trigger), bone("selector", (-HW, -0.050, -0.150), selector),
-                   bone("bipod", (0, -0.058, 0.580), bipod), bone("mag", (0.02, -0.054, 0.076), box),
+                   bone("bipod", (0, -0.050, 0.580), bipod), bone("mag", (0.02, -0.054, 0.076), box),
                    dict(name="belt", pivot=(BELT, -0.02, 0.06), cubes=belt)],
                dict(muzzle=(0, 0, 0.864), thread=(0, 0, 0.796), eject=(0.0, -0.05, 0.06), sight=(0, 0.0765, -0.146), front=(0, 0.076, 0.751),
                     optic=(0, 0.0695, 0.000), under=(0, -0.06, 0.40), grip=(0, -0.112, -0.192), hand=(0.046, -0.194, 0.076), mag=(0.046, -0.090, 0.076),
