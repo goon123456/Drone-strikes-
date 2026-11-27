@@ -576,10 +576,135 @@ def tags():
     write(f"{D}/curios/entities/steelrain_player.json", {"entities": ["minecraft:player"], "slots": ["back"]})
 
 
+# ---------------------------------------------------------------- small arms
+GUN_ITEMS = ["ak74m", "m4a1", "svd", "pkm", "m17", "m590"]
+GUN_MAGS = ["ak74m", "m4a1", "svd", "pkm", "m17"]
+GUN_PARTS = ["red_dot", "acog", "pso1", "suppressor", "pistol_suppressor", "foregrip"]
+GUN_AMMO = ["ammo_545", "ammo_556", "ammo_762", "ammo_9mm", "ammo_12g"]
+
+GUN_LANG = {
+    "item.steelrain.ak74m": "AK-74M", "item.steelrain.m4a1": "M4A1", "item.steelrain.svd": "SVD", "item.steelrain.pkm": "PKM",
+    "item.steelrain.m17": "M17", "item.steelrain.m590": "M590A1",
+    "item.steelrain.ak74m_magazine": "AK-74 Magazine (30)", "item.steelrain.m4a1_magazine": "STANAG Magazine (30)",
+    "item.steelrain.svd_magazine": "SVD Magazine (10)", "item.steelrain.pkm_magazine": "PKM Belt Box (100)",
+    "item.steelrain.m17_magazine": "M17 Magazine (17)",
+    "item.steelrain.ammo_545": "5.45x39 Round", "item.steelrain.ammo_556": "5.56x45 Round", "item.steelrain.ammo_762": "7.62x54R Round",
+    "item.steelrain.ammo_9mm": "9x19 Round", "item.steelrain.ammo_12g": "12 Gauge Buckshot",
+    "item.steelrain.red_dot": "Red Dot Sight", "item.steelrain.acog": "4x Combat Sight", "item.steelrain.pso1": "PSO-1 Scope",
+    "item.steelrain.suppressor": "Rifle Suppressor", "item.steelrain.pistol_suppressor": "Pistol Suppressor",
+    "item.steelrain.foregrip": "Vertical Foregrip",
+    "tooltip.steelrain.red_dot": "Unmagnified sight with a lit aiming dot",
+    "tooltip.steelrain.acog": "4x sight; bars under the chevron give the hold for 200 to 600 m",
+    "tooltip.steelrain.pso1": "4x scope with range-finder and elevation drum, 100 to 1000 m",
+    "tooltip.steelrain.suppressor": "Hides the flash and quietens the report; a little less kick",
+    "tooltip.steelrain.pistol_suppressor": "Hides the flash and quietens the report",
+    "tooltip.steelrain.foregrip": "Steadier sights and less muzzle climb",
+    "tooltip.steelrain.attachment.use": "Hold the gun and press the fittings key to fit it",
+    "tooltip.steelrain.gun.calibre": "Calibre: %s",
+    "tooltip.steelrain.gun.loaded": "Loaded: %s / %s",
+    "tooltip.steelrain.gun.mode": "Selector: %s",
+    "tooltip.steelrain.gun.velocity": "Muzzle velocity: %s m/s",
+    "tooltip.steelrain.gun.rate": "Rate of fire: %s rounds/min",
+    "tooltip.steelrain.gun.accuracy": "Accuracy: %s MOA",
+    "tooltip.steelrain.gun.weight": "Weight: %s kg",
+    "tooltip.steelrain.gun.at300": "At 300 m: %s m/s after %s s",
+    "tooltip.steelrain.gun.more": "Hold Shift for ballistics",
+    "tooltip.steelrain.magazine.rounds": "%s / %s rounds of %s",
+    "tooltip.steelrain.magazine.fits": "Fits: %s",
+    "tooltip.steelrain.magazine.use": "Hold use to load rounds; sneak + use to empty",
+    "gun.steelrain.mode.safe": "Safe", "gun.steelrain.mode.semi": "Semi", "gun.steelrain.mode.auto": "Auto",
+    "message.steelrain.gun_safe": "Safety is on",
+    "message.steelrain.gun_no_magazine": "No magazine fitted",
+    "message.steelrain.gun_no_magazines": "No loaded magazine for this gun",
+    "message.steelrain.gun_no_ammo": "No shells",
+    "key.steelrain.gun_reload": "Firearm: reload",
+    "key.steelrain.gun_mode": "Firearm: fire selector",
+    "key.steelrain.gun_zero_up": "Firearm: sights up 100 m",
+    "key.steelrain.gun_zero_down": "Firearm: sights down 100 m",
+    "key.steelrain.gun_fit": "Firearm: fittings",
+    "key.steelrain.gun_breath": "Firearm: hold breath",
+    "gui.steelrain.gun.fittings": "Fittings",
+    "gui.steelrain.gun.zero": "ZERO %s M",
+    "gui.steelrain.gun.bipod": "BIPOD",
+    "gui.steelrain.gun.no_spare": "NO SPARE MAGAZINE",
+    "gui.steelrain.gun.shells": "SHELLS %s",
+    "gui.steelrain.gun.slot.optic": "Sight",
+    "gui.steelrain.gun.slot.muzzle": "Muzzle",
+    "gui.steelrain.gun.slot.under": "Handguard",
+    "gui.steelrain.gun.no_mount": "no mount on this gun",
+    "gui.steelrain.gun.fit_hint": "Click a fitting to take it from your pack; click it again to take it off. Drag to turn the gun.",
+    "gui.steelrain.gun.s_calibre": "Calibre", "gui.steelrain.gun.s_velocity": "Muzzle", "gui.steelrain.gun.s_rate": "Rate",
+    "gui.steelrain.gun.s_feed": "Feed", "gui.steelrain.gun.s_accuracy": "Group", "gui.steelrain.gun.s_weight": "Weight",
+    "gui.steelrain.gun.s_zero": "Zero", "gui.steelrain.gun.s_drop300": "Drop 300", "gui.steelrain.gun.s_v300": "V 300",
+    "death.attack.steelrain.bullet": "%1$s was shot",
+    "death.attack.steelrain.bullet.player": "%1$s was shot by %2$s",
+    "death.attack.steelrain.bullet.item": "%1$s was shot by %2$s with %3$s",
+    "subtitles.steelrain.gun_fire": "Gunshot", "subtitles.steelrain.gun_far": "Distant gunfire",
+    "subtitles.steelrain.gun_handling": "Gun handled", "subtitles.steelrain.bullet_pass": "Bullet passes",
+}
+
+
+def guns():
+    """Small arms: mesh and texture for every gun, magazine-bearing or not, every fitting and each kind of round;
+    item files that hand the drawing to GunItemRenderer; recipes; the bullet damage type."""
+    import gen_aircraft as GA
+    import gen_guns as GG
+    for name, (build, px) in GG.MODELS.items():
+        model = build()
+        tex, tw, th = VK.bake(model, name, px)
+        save(Image.fromarray(tex).convert("RGB"), f"{A}/textures/entity/gun/{name}.png")
+        out = GA.export(model, tw, th)
+        out["points"] = {k: [round(v, 4) for v in p] for k, p in model["points"].items()}
+        path = f"{A}/models/gun/{name}.json"
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w") as f:
+            json.dump(out, f, separators=(",", ":"))
+        # a small side view for the item's break particles
+        icon = VK.render(model, tex, math.radians(90), 0.0, 64, bg=(0, 0, 0)).resize((16, 16), Image.LANCZOS).convert("RGBA")
+        px_ = icon.load()
+        for yy in range(16):
+            for xx in range(16):
+                r, g_, b, _ = px_[xx, yy]
+                px_[xx, yy] = (r, g_, b, 0 if r + g_ + b < 12 else 255)
+        save(icon, f"{A}/textures/item/{name}.png")
+    for name in GUN_ITEMS + [m + "_magazine" for m in GUN_MAGS] + GUN_PARTS + GUN_AMMO:
+        tex = name[:-9] if name.endswith("_magazine") else name
+        write(f"{A}/models/item/{name}.json", {"parent": "minecraft:builtin/entity", "gui_light": "front",
+                                               "textures": {"particle": f"{MOD}:item/{tex}"}})
+    I, N, B, C, P = MC + "iron_ingot", MC + "iron_nugget", MC + "iron_block", MC + "copper_ingot", MC + "gunpowder"
+    K, W, G, R = MC + "black_dye", MC + "oak_planks", MC + "glass_pane", MC + "redstone"
+    shaped("ak74m", ["KII", "IBI", " I "], {"K": K, "I": I, "B": B})
+    shaped("m4a1", ["III", "KBI", " I "], {"K": K, "I": I, "B": B})
+    shaped("svd", ["III", "WBI", "W  "], {"W": W, "I": I, "B": B})
+    shaped("pkm", ["IIB", "WBI", " I "], {"W": W, "I": I, "B": B})
+    shaped("m17", ["II", "KI"], {"K": K, "I": I})
+    shaped("m590", ["III", "WII"], {"W": W, "I": I})
+    shaped("ak74m_magazine", ["N ", "NN", " N"], {"N": N})
+    shaped("m4a1_magazine", ["NN", "N ", "N "], {"N": N})
+    shaped("svd_magazine", ["NN", "NN"], {"N": N})
+    shaped("pkm_magazine", ["INI", "I I", "III"], {"N": N, "I": I})
+    shaped("m17_magazine", ["N", "N", "N"], {"N": N})
+    shaped("ammo_545", ["N", "P", "C"], {"N": N, "P": P, "C": C}, 20)
+    shaped("ammo_556", ["N", "P", "G"], {"N": N, "P": P, "G": MC + "gold_nugget"}, 20)
+    shaped("ammo_762", ["I", "P", "C"], {"I": I, "P": P, "C": C}, 20)
+    shaped("ammo_9mm", ["NP", "C "], {"N": N, "P": P, "C": C}, 24)
+    shaped("ammo_12g", ["N", "P", "R"], {"N": N, "P": P, "R": MC + "paper"}, 8)
+    shaped("red_dot", [" R ", "IGI"], {"R": R, "I": I, "G": G})
+    shaped("acog", ["GIG", " I "], {"I": I, "G": G})
+    shaped("pso1", ["GIG", "IRI"], {"R": R, "I": I, "G": G})
+    shaped("suppressor", ["I I", "I I"], {"I": I})
+    shaped("pistol_suppressor", ["N N", "N N"], {"N": N})
+    shaped("foregrip", ["I", "K", "K"], {"I": I, "K": K})
+    write(f"{D}/damage_type/bullet.json", {"exhaustion": 0.1, "message_id": "steelrain.bullet", "scaling": "never"})
+    for tag in ("no_knockback", "bypasses_cooldown", "is_projectile"):
+        write(f"{RES}/data/minecraft/tags/damage_type/{tag}.json", {"replace": False, "values": [f"{MOD}:bullet"]})
+
+
 # ---------------------------------------------------------------- lang
 def lang():
     L = {
         "itemGroup.steelrain": "Steel Rain",
+        **GUN_LANG,
         "key.categories.steelrain": "Steel Rain",
         "key.steelrain.exit_drone": "Leave drone camera",
         "item.steelrain.circuit_board": "Circuit Board",
@@ -1007,5 +1132,6 @@ if __name__ == "__main__":
     gen_sounds.main()
     vehicles()
     aircraft()
+    guns()
     block_textures(); block_models(); item_icons(); entity_textures(); recipes(); tags(); lang()
     print("assets generated")

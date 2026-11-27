@@ -35,6 +35,12 @@ public final class ClientHooks {
         }
     }
 
+    public static void onGunShot(Payloads.GunShot p) { GunFx.shot(p); }
+
+    public static void onGunEvent(Payloads.GunEvent p) { GunClient.event(p); }
+
+    public static void onGunHit(Payloads.GunHit p) { GunHud.hit(p.head(), p.kill()); }
+
     public static void onCable(Payloads.Cable p) { CableClient.update(p); }
 
     public static void startLoop(com.steelrain.entity.FlyingWeaponEntity entity) { LoopSound.start(entity); }

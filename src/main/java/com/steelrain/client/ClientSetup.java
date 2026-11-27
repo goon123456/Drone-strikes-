@@ -26,6 +26,19 @@ public final class ClientSetup {
     public static final KeyMapping SHELL_TYPE = new KeyMapping("key.steelrain.shell_type",
             InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_B, "key.categories.steelrain");
 
+    public static final KeyMapping GUN_RELOAD = new KeyMapping("key.steelrain.gun_reload",
+            InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_R, "key.categories.steelrain");
+    public static final KeyMapping GUN_MODE = new KeyMapping("key.steelrain.gun_mode",
+            InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_V, "key.categories.steelrain");
+    public static final KeyMapping GUN_ZERO_UP = new KeyMapping("key.steelrain.gun_zero_up",
+            InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_PAGE_UP, "key.categories.steelrain");
+    public static final KeyMapping GUN_ZERO_DOWN = new KeyMapping("key.steelrain.gun_zero_down",
+            InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_PAGE_DOWN, "key.categories.steelrain");
+    public static final KeyMapping GUN_FIT = new KeyMapping("key.steelrain.gun_fit",
+            InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_G, "key.categories.steelrain");
+    public static final KeyMapping GUN_BREATH = new KeyMapping("key.steelrain.gun_breath",
+            InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_LEFT_ALT, "key.categories.steelrain");
+
     @SubscribeEvent
     public static void renderers(EntityRenderersEvent.RegisterRenderers e) {
         e.registerEntityRenderer(ModRegistry.FPV.get(), c -> new EntityModelRenderer<>(c, Models.FPV, 0.14f, 0.25f));
@@ -90,6 +103,26 @@ public final class ClientSetup {
                 return renderer;
             }
         }, ModRegistry.FIELD_LAPTOP.get());
+        // guns, magazines, fittings and loose rounds are drawn as their 3D models; a gun is held in both hands
+        java.util.List<net.minecraft.world.item.Item> arms = new java.util.ArrayList<>();
+        ModRegistry.GUNS.values().forEach(i -> arms.add(i.get()));
+        ModRegistry.MAGAZINES.values().forEach(i -> arms.add(i.get()));
+        ModRegistry.ATTACHMENTS.values().forEach(i -> arms.add(i.get()));
+        ModRegistry.AMMO.values().forEach(i -> arms.add(i.get()));
+        e.registerItem(new net.neoforged.neoforge.client.extensions.common.IClientItemExtensions() {
+            private GunItemRenderer renderer;
+            @Override
+            public net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                if (renderer == null) renderer = new GunItemRenderer();
+                return renderer;
+            }
+            @Override
+            public net.minecraft.client.model.HumanoidModel.ArmPose getArmPose(net.minecraft.world.entity.LivingEntity entity,
+                    net.minecraft.world.InteractionHand hand, net.minecraft.world.item.ItemStack stack) {
+                return stack.getItem() instanceof com.steelrain.gun.GunItem && hand == net.minecraft.world.InteractionHand.MAIN_HAND
+                        ? net.minecraft.client.model.HumanoidModel.ArmPose.CROSSBOW_HOLD : null;
+            }
+        }, arms.toArray(new net.minecraft.world.item.Item[0]));
     }
 
     @SubscribeEvent
@@ -99,6 +132,12 @@ public final class ClientSetup {
         e.register(SHELL_TYPE);
         e.register(AUTO_MODE);
         e.register(RANGE_TABLE);
+        e.register(GUN_RELOAD);
+        e.register(GUN_MODE);
+        e.register(GUN_ZERO_UP);
+        e.register(GUN_ZERO_DOWN);
+        e.register(GUN_FIT);
+        e.register(GUN_BREATH);
     }
 
     @SubscribeEvent
@@ -106,6 +145,7 @@ public final class ClientSetup {
         e.registerAboveAll(ResourceLocation.fromNamespaceAndPath(ModRegistry.MODID, "fpv_hud"), FpvClient::renderHud);
         e.registerAboveAll(ResourceLocation.fromNamespaceAndPath(ModRegistry.MODID, "gun_sight"), ArtilleryHud::render);
         e.registerAboveAll(ResourceLocation.fromNamespaceAndPath(ModRegistry.MODID, "vehicle_dashboard"), VehicleHud::render);
+        e.registerAboveAll(ResourceLocation.fromNamespaceAndPath(ModRegistry.MODID, "gun_hud"), GunHud::render);
     }
 
     private ClientSetup() {}

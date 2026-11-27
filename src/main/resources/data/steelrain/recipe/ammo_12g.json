@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "N",
+    "P",
+    "R"
+  ],
+  "key": {
+    "N": {
+      "item": "minecraft:iron_nugget"
+    },
+    "P": {
+      "item": "minecraft:gunpowder"
+    },
+    "R": {
+      "item": "minecraft:paper"
+    }
+  },
+  "result": {
+    "id": "steelrain:ammo_12g",
+    "count": 8
+  }
+}

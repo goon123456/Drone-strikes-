@@ -4,7 +4,7 @@ A standalone mod for **NeoForge 1.21.1**: drones, cruise and ballistic missiles,
 defence and electronic warfare, on its own drivable vehicles.
 
 Fly kamikaze FPV drones through their own camera, plan missile strikes on a live map, shell targets with rocket
-and tube artillery, and defend your base with air defence and jammers.
+and tube artillery, defend your base with air defence and jammers, and fight on foot with detailed small arms.
 
 **Requires:** nothing but NeoForge. **Works with** [Superb Warfare](https://modrinth.com/mod/superb-warfare)
 0.8.9+ and Curios if they are installed (see below).
@@ -257,6 +257,65 @@ Everything a vehicle fires has to be crafted and loaded. A slot holds one kind a
 | Tomahawk, Iskander, Shahed launchers | Their missile or drone |
 | Ground Station | The aircraft, plus Hellfires for the Reaper |
 
+### Small arms
+Six guns, built to real measurements with their moving parts, fed from magazines you carry and load, firing
+bullets that fly, drop and go through cover.
+
+| Gun | Round | Feed | Selector | Rate | Muzzle | Fits |
+| --- | --- | --- | --- | --- | --- | --- |
+| **AK-74M** | 5.45x39 | 30-round magazine | safe / auto / semi | 650 | 880 m/s | red dot, PSO-1, suppressor, foregrip |
+| **M4A1** | 5.56x45 | 30-round magazine | safe / semi / auto | 800 | 890 m/s | red dot, 4x sight, suppressor, foregrip |
+| **SVD** | 7.62x54R | 10-round magazine | safe / semi | 260 | 830 m/s | PSO-1, suppressor |
+| **PKM** | 7.62x54R | 100-round belt box | safe / auto | 650 | 825 m/s | bipod (built in) |
+| **M17** | 9x19 | 17-round magazine | safe / semi | 420 | 375 m/s | pistol suppressor |
+| **M590A1** | 12 gauge | 8-shell tube, pump | safe / semi | 70 | 400 m/s | - |
+
+- **Keys** (all rebindable): **left click** is the trigger, **hold right click** brings the sights up, **R**
+  reloads, **V** moves the fire selector, **Page Up / Page Down** set the sights' range, **G** opens the fittings
+  screen, **hold Left Alt** on aim holds your breath. Guns from the creative tab come loaded.
+- **In the hands**: the gun is held in both arms at the shoulder. Aiming lines your eye up behind the real iron
+  sights (or the optic's lens), so the sight picture is the model itself. The bolt or slide cycles with each
+  shot, the trigger and selector move, a slide or bolt stays back on an empty magazine, the gun trails behind
+  the view as you turn, bobs as you walk and is lowered across the body at a run.
+- **Magazines are items** that remember their rounds. Reloading takes the fullest magazine from your pack and
+  puts the one you took off back in it, still holding what it had left; the left hand carries each one. With a
+  round still chambered the change is quick and leaves you one in the chamber (shown as `30+1`); from empty the
+  bolt has to be worked as well. Hold use on a magazine to thumb loose rounds into it, sneak + use to empty it.
+  The PKM takes a 100-round box: the cover opens, the box is changed and the belt laid in. The M590A1 has no
+  magazine: shells go into the tube one at a time (pull the trigger to stop loading) and the action is pumped
+  after every shot.
+- **Ballistics**: every bullet is flown by the server, not hitscan. It leaves at its muzzle velocity, loses a
+  fixed share of its speed for every metre of air, and falls under gravity, so at 300 m a 5.56 round is down to
+  about 560 m/s and half a metre low. Damage falls with speed; a hit on the head counts 1.8 times. Rifle bullets
+  take about 0.4 s to reach 300 m, so a moving target needs lead.
+- **Zeroing**: the sights can be set from 100 m upwards in 100 m steps (AK to 1000, M4 to 600, SVD to 1200, PKM
+  to 1500; the PSO-1 has its own drum to 1000). The barrel is raised by exactly what that round needs at that
+  range. The setting shows at the right when it changes.
+- **Cover**: bullets go through leaves, glass (which breaks), wool, wood and earth, losing speed for every
+  centimetre, and stop in stone and metal. A 7.62x54R goes through a full block of planks; the rifles through a
+  door or a trapdoor; pistol rounds and buckshot through very little. A hit at a shallow angle on something hard may
+  glance off. Water stops a bullet. A full-power rifle bullet can go through one body and hit the next.
+- **Recoil and steadiness**: each shot kicks the view up and a little sideways and the muzzle settles part of
+  the way back; a burst climbs, then wanders. Crouching, a foregrip, a suppressor and above all the PKM's bipod
+  (crouch and keep still: `BIPOD` shows) reduce it. On aim the sights drift with your breathing, more after a
+  run and less crouched; holding your breath steadies them for a few seconds. Fired without the sights, rounds
+  scatter, more on the move or in the air; four marks show by how much.
+- **Sights**: the red dot is a lit point in a tube you look through. The 4x sight and the PSO-1 give a
+  magnified picture: the 4x has a chevron with hold-over bars for 200 to 600 m worked out for the gun it is on,
+  the PSO-1 its chevrons, 10-mil lead marks and the stadiametric range-finder (stand a man between the line and
+  the curve and read his range).
+- **Fittings** (**G**): the gun turns on the bench with its figures beside it; click a sight, suppressor or grip
+  from your pack to fit it, click it again to take it off. A suppressor hides the flash and cuts the distance
+  the shot is heard at from about 420 blocks to 160.
+- **Sound and sight of a shot**: each gun has its own report close by and a duller one from far off, arriving
+  late by the speed of sound; bullets passing near you crack (or buzz, if slow); ricochets whine. Spent cases
+  are thrown clear and ring on the ground. The last three rounds of a rifle magazine and every fifth round of a
+  PKM belt are tracers, green for the Russian guns and red for the American.
+- **Targets**: anything with a body, including Steel Rain's drones (a shotgun is a fair answer to an FPV).
+  Vehicles' armour shrugs off small arms as before.
+- **Seen by others**: the gun is carried in both hands and shown with what is fitted to it; items in
+  inventories, on the ground and in frames are the 3D models too.
+
 ### Teams
 Every weapon remembers who placed or launched it. Air defence and jammers ignore things owned by
 you and by players on your scoreboard team (`/team`), and engage everything else.
@@ -277,6 +336,9 @@ It needs permission level 2. Vehicles can be spawned with `/summon steelrain:<na
 | Option | Default | Meaning |
 | --- | --- | --- |
 | `blockDamage` | true | Set to false and explosions hurt entities but never break blocks |
+| `gunDamage` | 1.0 | Multiplier for the damage of small-arms bullets |
+| `bulletPenetration` | true | Bullets go through soft and thin cover instead of stopping at the first block |
+| `gunsBreakGlass` | true | Bullets shatter glass they hit |
 | `debris` | true | Craters throw out falling blocks |
 | `explosionScale` | 1.0 | Crater and blast size |
 | `damageScale` | 1.0 | Damage to entities |
@@ -316,6 +378,10 @@ python3 tools/audit_models.py [model ...]   # check models for clipping, floatin
   when you take control. The Shahed, Reaper, Bayraktar, Orlan and Global Hawk each have their own engine. The
   jammer hums, a jammed video link hisses louder the worse it gets, and the fibre makes one of three snaps.
 
+- Small-arms sounds (each gun's report near and far, suppressed shots, magazines, bolts, the pump, cases on the
+  ground, the crack and whizz of passing bullets, ricochets) are synthesised by `tools/gen_gun_sounds.py`. A
+  recording of the same name dropped into `tools/sounds/` replaces any of them.
+
 ## On-screen displays
 The in-game displays are bare text over the world with no panels, and show only what you need at that moment:
 - **Driving:** speed and heading bottom right while moving. Fuel, battery, hull and engine state show for a few
@@ -353,6 +419,9 @@ on recon drones; and its recordings stand in for sounds Steel Rain does not have
 using `./gradlew runClient -PwithSbw`.
 
 ## Known limits
+- Small arms: the guns are textured meshes from `tools/gen_guns.py`, drawn by Steel Rain's own renderer. The
+  firer's arms hold the gun but the fingers are not modelled; other players see the gun held, without the
+  reload motions. Mobs do not use guns. There is no wind.
 - Aircraft and drones (Reaper, TB2, Global Hawk, Orlan-10, Shahed-136, both FPV drones and the Mavic) are
   textured meshes built with the same kit as the ground vehicles, in `tools/gen_aircraft.py`: smooth fuselage
   skins through a row of cross-sections, aerofoil-section wings, tails and propeller blades, turned sensor

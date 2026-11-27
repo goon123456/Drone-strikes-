@@ -31,7 +31,13 @@ public class SteelRain {
         NeoForge.EVENT_BUS.addListener(RegisterCommandsEvent.class, e -> SteelRainCommand.register(e.getDispatcher()));
         NeoForge.EVENT_BUS.addListener(ServerTickEvent.Post.class, e -> FeedManager.tick(e.getServer()));
         NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.event.tick.PlayerTickEvent.Post.class, e -> {
-            if (e.getEntity() instanceof ServerPlayer sp) com.steelrain.util.Gear.tickPlayer(sp);
+            if (e.getEntity() instanceof ServerPlayer sp) {
+                com.steelrain.util.Gear.tickPlayer(sp);
+                com.steelrain.gun.GunLogic.tick(sp);
+            }
+        });
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.event.tick.LevelTickEvent.Post.class, e -> {
+            if (e.getLevel() instanceof net.minecraft.server.level.ServerLevel level) com.steelrain.gun.Bullets.tick(level);
         });
         // Explosions cut fibre-optic cables that run close to them.
         NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.event.level.ExplosionEvent.Detonate.class, e -> {
@@ -40,7 +46,7 @@ public class SteelRain {
             }
         });
         NeoForge.EVENT_BUS.addListener(PlayerEvent.PlayerLoggedOutEvent.class, e -> {
-            if (e.getEntity() instanceof ServerPlayer sp) FeedManager.onLogout(sp);
+            if (e.getEntity() instanceof ServerPlayer sp) { FeedManager.onLogout(sp); com.steelrain.gun.GunLogic.forget(sp); }
         });
         NeoForge.EVENT_BUS.addListener(PlayerEvent.PlayerLoggedInEvent.class, e -> {
             if (e.getEntity() instanceof ServerPlayer sp) FeedManager.onLogin(sp);

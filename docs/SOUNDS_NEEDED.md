@@ -7,6 +7,12 @@ Name the files as below; a few takes of the same sound (`_1`, `_2`, `_3`) are we
 Already done (your drone pack): FPV and Mavic rotors, Shahed / Reaper / TB2 / Orlan engines, Global Hawk jet,
 jammer hum, video static, fibre snap.
 
+## Small arms (synthesised for now by `tools/gen_gun_sounds.py`; recordings welcome)
+`gun_ak74m_fire`, `gun_m4a1_fire`, `gun_svd_fire`, `gun_pkm_fire`, `gun_m17_fire`, `gun_m590_fire` (one shot, close),
+`gun_rifle_far`, `gun_heavy_far`, `gun_pistol_far`, `gun_suppressed`, `gun_pistol_suppressed`, `gun_mag_out`,
+`gun_mag_in`, `gun_bolt`, `gun_bolt_release`, `gun_dry`, `gun_selector`, `gun_pump`, `gun_shell_in`, `gun_round_in`,
+`gun_belt`, `gun_cover`, `gun_casing`, `bullet_crack`, `bullet_whizz`, `bullet_ricochet`.
+
 ## Explosions
 Each heard close up, far off and very far off (the game switches by distance).
 

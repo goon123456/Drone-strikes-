@@ -21,11 +21,25 @@ EVENTS = {
     "cable_snap": (["cable_snap_1", "cable_snap_2", "cable_snap_3"], None),
 }
 
+# small arms, made by gen_gun_sounds.py: event -> (attenuation distance, subtitle)
+for _gun in ("ak74m", "m4a1", "svd", "pkm", "m17", "m590"):
+    EVENTS[f"gun_{_gun}_fire"] = ([f"gun_{_gun}_fire"], None, "gun_fire")
+for _far in ("gun_rifle_far", "gun_heavy_far", "gun_pistol_far"):
+    EVENTS[_far] = ([_far], None, "gun_far")
+for _quiet in ("gun_suppressed", "gun_pistol_suppressed"):
+    EVENTS[_quiet] = ([_quiet], None, "gun_fire")
+for _mech in ("gun_mag_out", "gun_mag_in", "gun_bolt", "gun_bolt_release", "gun_dry", "gun_selector", "gun_pump", "gun_shell_in",
+              "gun_round_in", "gun_belt", "gun_cover", "gun_casing"):
+    EVENTS[_mech] = ([_mech], None, "gun_handling")
+for _pass in ("bullet_crack", "bullet_whizz", "bullet_ricochet"):
+    EVENTS[_pass] = ([_pass], None, "bullet_pass")
+
 
 def main():
     os.makedirs(f"{OUT}/sounds", exist_ok=True)
     out = {}
-    for event, (files, distance) in EVENTS.items():
+    for event, spec in EVENTS.items():
+        files, distance = spec[0], spec[1]
         sounds = []
         for f in files:
             shutil.copyfile(f"{SRC}/{f}.ogg", f"{OUT}/sounds/{f}.ogg")
@@ -33,7 +47,7 @@ def main():
             if distance:
                 entry["attenuation_distance"] = distance
             sounds.append(entry)
-        out[event] = {"subtitle": f"subtitles.steelrain.{event}", "sounds": sounds}
+        out[event] = {"subtitle": f"subtitles.steelrain.{spec[2] if len(spec) > 2 else event}", "sounds": sounds}
     with open(f"{OUT}/sounds.json", "w") as fh:
         json.dump(out, fh, indent=2)
 

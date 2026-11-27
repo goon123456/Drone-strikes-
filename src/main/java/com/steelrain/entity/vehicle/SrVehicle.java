@@ -592,7 +592,7 @@ public abstract class SrVehicle extends Entity implements OwnableEntity {
     public boolean hurt(DamageSource source, float amount) {
         if (level().isClientSide || isRemoved() || isInvulnerableTo(source)) return false;
         // The owner (or anyone in creative) packs it up by hitting it while sneaking, if nobody is aboard.
-        if (source.getEntity() instanceof Player p && p.isShiftKeyDown() && getPassengers().isEmpty()
+        if (!source.is(com.steelrain.gun.Bullets.BULLET) && source.getEntity() instanceof Player p && p.isShiftKeyDown() && getPassengers().isEmpty()
                 && (p.getAbilities().instabuild || p.getUUID().equals(owner))) {
             Containers.dropContents(level(), blockPosition(), inventory);
             ItemStack item = asItem();

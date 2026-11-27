@@ -162,5 +162,213 @@
         "name": "steelrain:cable_snap_3"
       }
     ]
+  },
+  "gun_ak74m_fire": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_ak74m_fire"
+      }
+    ]
+  },
+  "gun_m4a1_fire": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_m4a1_fire"
+      }
+    ]
+  },
+  "gun_svd_fire": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_svd_fire"
+      }
+    ]
+  },
+  "gun_pkm_fire": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_pkm_fire"
+      }
+    ]
+  },
+  "gun_m17_fire": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_m17_fire"
+      }
+    ]
+  },
+  "gun_m590_fire": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_m590_fire"
+      }
+    ]
+  },
+  "gun_rifle_far": {
+    "subtitle": "subtitles.steelrain.gun_far",
+    "sounds": [
+      {
+        "name": "steelrain:gun_rifle_far"
+      }
+    ]
+  },
+  "gun_heavy_far": {
+    "subtitle": "subtitles.steelrain.gun_far",
+    "sounds": [
+      {
+        "name": "steelrain:gun_heavy_far"
+      }
+    ]
+  },
+  "gun_pistol_far": {
+    "subtitle": "subtitles.steelrain.gun_far",
+    "sounds": [
+      {
+        "name": "steelrain:gun_pistol_far"
+      }
+    ]
+  },
+  "gun_suppressed": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_suppressed"
+      }
+    ]
+  },
+  "gun_pistol_suppressed": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_pistol_suppressed"
+      }
+    ]
+  },
+  "gun_mag_out": {
+    "subtitle": "subtitles.steelrain.gun_handling",
+    "sounds": [
+      {
+        "name": "steelrain:gun_mag_out"
+      }
+    ]
+  },
+  "gun_mag_in": {
+    "subtitle": "subtitles.steelrain.gun_handling",
+    "sounds": [
+      {
+        "name": "steelrain:gun_mag_in"
+      }
+    ]
+  },
+  "gun_bolt": {
+    "subtitle": "subtitles.steelrain.gun_handling",
+    "sounds": [
+      {
+        "name": "steelrain:gun_bolt"
+      }
+    ]
+  },
+  "gun_bolt_release": {
+    "subtitle": "subtitles.steelrain.gun_handling",
+    "sounds": [
+      {
+        "name": "steelrain:gun_bolt_release"
+      }
+    ]
+  },
+  "gun_dry": {
+    "subtitle": "subtitles.steelrain.gun_handling",
+    "sounds": [
+      {
+        "name": "steelrain:gun_dry"
+      }
+    ]
+  },
+  "gun_selector": {
+    "subtitle": "subtitles.steelrain.gun_handling",
+    "sounds": [
+      {
+        "name": "steelrain:gun_selector"
+      }
+    ]
+  },
+  "gun_pump": {
+    "subtitle": "subtitles.steelrain.gun_handling",
+    "sounds": [
+      {
+        "name": "steelrain:gun_pump"
+      }
+    ]
+  },
+  "gun_shell_in": {
+    "subtitle": "subtitles.steelrain.gun_handling",
+    "sounds": [
+      {
+        "name": "steelrain:gun_shell_in"
+      }
+    ]
+  },
+  "gun_round_in": {
+    "subtitle": "subtitles.steelrain.gun_handling",
+    "sounds": [
+      {
+        "name": "steelrain:gun_round_in"
+      }
+    ]
+  },
+  "gun_belt": {
+    "subtitle": "subtitles.steelrain.gun_handling",
+    "sounds": [
+      {
+        "name": "steelrain:gun_belt"
+      }
+    ]
+  },
+  "gun_cover": {
+    "subtitle": "subtitles.steelrain.gun_handling",
+    "sounds": [
+      {
+        "name": "steelrain:gun_cover"
+      }
+    ]
+  },
+  "gun_casing": {
+    "subtitle": "subtitles.steelrain.gun_handling",
+    "sounds": [
+      {
+        "name": "steelrain:gun_casing"
+      }
+    ]
+  },
+  "bullet_crack": {
+    "subtitle": "subtitles.steelrain.bullet_pass",
+    "sounds": [
+      {
+        "name": "steelrain:bullet_crack"
+      }
+    ]
+  },
+  "bullet_whizz": {
+    "subtitle": "subtitles.steelrain.bullet_pass",
+    "sounds": [
+      {
+        "name": "steelrain:bullet_whizz"
+      }
+    ]
+  },
+  "bullet_ricochet": {
+    "subtitle": "subtitles.steelrain.bullet_pass",
+    "sounds": [
+      {
+        "name": "steelrain:bullet_ricochet"
+      }
+    ]
   }
 }

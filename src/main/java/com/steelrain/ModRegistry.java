@@ -79,6 +79,12 @@ public final class ModRegistry {
     public static final Supplier<net.minecraft.sounds.SoundEvent> STATIC_MEDIUM = sound("static_medium");
     public static final Supplier<net.minecraft.sounds.SoundEvent> STATIC_HEAVY = sound("static_heavy");
     public static final Supplier<net.minecraft.sounds.SoundEvent> CABLE_SNAP = sound("cable_snap");
+    /** Small-arms sounds, made by tools/gen_gun_sounds.py and looked up by name. */
+    public static final String[] GUN_SOUNDS = {"gun_ak74m_fire", "gun_m4a1_fire", "gun_svd_fire", "gun_pkm_fire", "gun_m17_fire", "gun_m590_fire",
+            "gun_rifle_far", "gun_heavy_far", "gun_pistol_far", "gun_suppressed", "gun_pistol_suppressed",
+            "gun_mag_out", "gun_mag_in", "gun_bolt", "gun_bolt_release", "gun_dry", "gun_selector", "gun_pump", "gun_shell_in", "gun_round_in",
+            "gun_belt", "gun_cover", "bullet_crack", "bullet_whizz", "bullet_ricochet", "gun_casing"};
+    static { for (String name : GUN_SOUNDS) sound(name); }
 
     private static Supplier<net.minecraft.sounds.SoundEvent> sound(String name) {
         return SOUNDS.register(name, () -> net.minecraft.sounds.SoundEvent.createVariableRangeEvent(
@@ -123,6 +129,28 @@ public final class ModRegistry {
                     .networkSynchronized(ByteBufCodecs.VAR_INT)
                     .build());
 
+    /** Small arms: rounds in a magazine or in the one fitted to a gun (-1: none fitted), and the gun's own state. */
+    public static final Supplier<DataComponentType<Integer>> ROUNDS = intComponent("rounds");
+    public static final Supplier<DataComponentType<Integer>> FIRE_MODE = intComponent("fire_mode");
+    public static final Supplier<DataComponentType<Integer>> ZERO = intComponent("zero");
+    public static final Supplier<DataComponentType<Boolean>> CHAMBER = COMPONENTS.register("chamber",
+            () -> DataComponentType.<Boolean>builder()
+                    .persistent(com.mojang.serialization.Codec.BOOL)
+                    .networkSynchronized(ByteBufCodecs.BOOL)
+                    .build());
+    public static final Supplier<DataComponentType<List<Integer>>> PARTS = COMPONENTS.register("parts",
+            () -> DataComponentType.<List<Integer>>builder()
+                    .persistent(com.mojang.serialization.Codec.INT.listOf())
+                    .networkSynchronized(ByteBufCodecs.INT.apply(ByteBufCodecs.list()))
+                    .build());
+
+    private static Supplier<DataComponentType<Integer>> intComponent(String name) {
+        return COMPONENTS.register(name, () -> DataComponentType.<Integer>builder()
+                .persistent(com.mojang.serialization.Codec.INT)
+                .networkSynchronized(ByteBufCodecs.INT)
+                .build());
+    }
+
     // ---- components ----
     public static final DeferredItem<Item> CIRCUIT_BOARD = simple("circuit_board", 64);
     public static final DeferredItem<Item> ELECTRIC_MOTOR = simple("electric_motor", 64);
@@ -165,6 +193,25 @@ public final class ModRegistry {
             () -> new com.steelrain.item.JammerBackpackItem(new Item.Properties().stacksTo(1)));
     public static final DeferredItem<Item> ANTI_DRONE_GUN = ITEMS.register("anti_drone_gun",
             () -> new com.steelrain.item.AntiDroneGunItem(new Item.Properties().stacksTo(1)));
+
+    // ---- small arms: guns, their magazines, loose rounds and fittings ----
+    public static final Map<com.steelrain.gun.GunType, DeferredItem<Item>> GUNS = new EnumMap<>(com.steelrain.gun.GunType.class);
+    public static final Map<com.steelrain.gun.GunType, DeferredItem<Item>> MAGAZINES = new EnumMap<>(com.steelrain.gun.GunType.class);
+    public static final Map<com.steelrain.gun.Caliber, DeferredItem<Item>> AMMO = new EnumMap<>(com.steelrain.gun.Caliber.class);
+    public static final Map<com.steelrain.gun.Attachment, DeferredItem<Item>> ATTACHMENTS = new EnumMap<>(com.steelrain.gun.Attachment.class);
+    static {
+        for (com.steelrain.gun.GunType type : com.steelrain.gun.GunType.VALUES) {
+            GUNS.put(type, ITEMS.register(type.id, () -> new com.steelrain.gun.GunItem(type, new Item.Properties().stacksTo(1))));
+        }
+        for (com.steelrain.gun.GunType type : com.steelrain.gun.GunType.VALUES) {
+            if (type.magazineFed()) MAGAZINES.put(type, ITEMS.register(type.id + "_magazine",
+                    () -> new com.steelrain.gun.MagazineItem(type, new Item.Properties().stacksTo(1))));
+        }
+        for (com.steelrain.gun.Caliber c : com.steelrain.gun.Caliber.values()) AMMO.put(c, simple(c.ammoId, 64));
+        for (com.steelrain.gun.Attachment a : com.steelrain.gun.Attachment.VALUES) {
+            ATTACHMENTS.put(a, ITEMS.register(a.id, () -> new com.steelrain.gun.AttachmentItem(a, new Item.Properties().stacksTo(1))));
+        }
+    }
 
     // ---- vehicles and their upkeep ----
     public static final DeferredItem<Item> JERRYCAN = simple("jerrycan", 16);
@@ -338,7 +385,12 @@ public final class ModRegistry {
             .title(Component.translatable("itemGroup.steelrain"))
             .icon(() -> new ItemStack(TOMAHAWK_MISSILE.get()))
             .displayItems((params, out) -> {
-                ITEMS.getEntries().forEach(e -> out.accept(e.get()));
+                ITEMS.getEntries().forEach(e -> {
+                    // guns come loaded and magazines full from the creative tab
+                    if (e.get() instanceof com.steelrain.gun.GunItem g) out.accept(g.loadedStack());
+                    else if (e.get() instanceof com.steelrain.gun.MagazineItem m) out.accept(m.filled(m.gun.capacity));
+                    else out.accept(e.get());
+                });
             })
             .build());
 

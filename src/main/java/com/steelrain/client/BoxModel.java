@@ -61,6 +61,12 @@ public final class BoxModel {
             if (in == null) throw new java.io.FileNotFoundException(path);
             var root = com.google.gson.JsonParser.parseReader(new java.io.InputStreamReader(in, java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();
             if (root.has("track")) model.track = root.getAsJsonObject("track");
+            if (root.has("points")) {
+                for (var e : root.getAsJsonObject("points").entrySet()) {
+                    var a = e.getValue().getAsJsonArray();
+                    model.points.put(e.getKey(), new org.joml.Vector3f(a.get(0).getAsFloat(), a.get(1).getAsFloat(), a.get(2).getAsFloat()));
+                }
+            }
             for (var element : root.getAsJsonArray("bones")) {
                 var bone = element.getAsJsonObject();
                 String boneName = bone.get("name").getAsString();
@@ -84,6 +90,28 @@ public final class BoxModel {
         }
         model.current = model.root;
         return model;
+    }
+
+    /** Named places on the model (a gun's muzzle, sight line, grip...), in model space. */
+    public final Map<String, org.joml.Vector3f> points = new HashMap<>();
+    private static final org.joml.Vector3f ORIGIN = new org.joml.Vector3f();
+
+    public org.joml.Vector3f point(String name) { return points.getOrDefault(name, ORIGIN); }
+
+    /** Where a group pivots, in model space. */
+    public static org.joml.Vector3f pivotOf(Group g) { return new org.joml.Vector3f(g.ax, g.ay, g.az); }
+
+    /** Draws one group and what hangs from it, where it sits in the model, whether or not it is hidden. */
+    public void renderGroup(String name, PoseStack pose, VertexConsumer vc, int light) {
+        Group g = groups.get(name);
+        if (g == null) return;
+        boolean was = g.visible;
+        g.visible = true;
+        pose.pushPose();
+        pose.translate(g.ax - g.px, g.ay - g.py, g.az - g.pz);
+        render(g, pose, vc, light);
+        pose.popPose();
+        g.visible = was;
     }
 
     /** For tracked vehicles: one trip round the running gear, sampled evenly (links, length, y, z, rot). */

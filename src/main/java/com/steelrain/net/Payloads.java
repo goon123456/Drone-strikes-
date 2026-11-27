@@ -191,8 +191,69 @@ public final class Payloads {
         @Override public Type<Launch> type() { return TYPE; }
     }
 
+    /** Client -> server: what the fingers are doing on a held gun (trigger pulled, sights up). */
+    public record GunInput(boolean trigger, boolean aiming) implements CustomPacketPayload {
+        public static final Type<GunInput> TYPE = id("gun_input");
+        public static final StreamCodec<FriendlyByteBuf, GunInput> CODEC = StreamCodec.ofMember(GunInput::write, GunInput::new);
+        GunInput(FriendlyByteBuf b) { this(b.readBoolean(), b.readBoolean()); }
+        void write(FriendlyByteBuf b) { b.writeBoolean(trigger); b.writeBoolean(aiming); }
+        @Override public Type<GunInput> type() { return TYPE; }
+    }
+
+    /** Client -> server: reload, move the selector, change the zero, fit or remove an attachment. */
+    public record GunAction(int action, int arg) implements CustomPacketPayload {
+        public static final Type<GunAction> TYPE = id("gun_action");
+        public static final StreamCodec<FriendlyByteBuf, GunAction> CODEC = StreamCodec.ofMember(GunAction::write, GunAction::new);
+        GunAction(FriendlyByteBuf b) { this(b.readVarInt(), b.readInt()); }
+        void write(FriendlyByteBuf b) { b.writeVarInt(action); b.writeInt(arg); }
+        @Override public Type<GunAction> type() { return TYPE; }
+    }
+
+    /** Server -> client: a bullet left a gun. Clients fly their own copy for the tracer, flash, sound and recoil. */
+    public record GunShot(int shooter, int gun, int flags, net.minecraft.world.phys.Vec3 from, net.minecraft.world.phys.Vec3 velocity) implements CustomPacketPayload {
+        public static final int PRIMARY = 1, TRACER = 2, SUPPRESSED = 4;
+        public static final Type<GunShot> TYPE = id("gun_shot");
+        public static final StreamCodec<FriendlyByteBuf, GunShot> CODEC = StreamCodec.ofMember(GunShot::write, GunShot::new);
+        GunShot(FriendlyByteBuf b) { this(b.readVarInt(), b.readVarInt(), b.readVarInt(), b.readVec3(), b.readVec3()); }
+        void write(FriendlyByteBuf b) { b.writeVarInt(shooter); b.writeVarInt(gun); b.writeVarInt(flags); b.writeVec3(from); b.writeVec3(velocity); }
+        @Override public Type<GunShot> type() { return TYPE; }
+    }
+
+    /** Server -> client: someone started a reload, worked a pump, moved a selector or pulled a dead trigger. */
+    public record GunEvent(int entityId, int kind, int arg) implements CustomPacketPayload {
+        public static final Type<GunEvent> TYPE = id("gun_event");
+        public static final StreamCodec<FriendlyByteBuf, GunEvent> CODEC = StreamCodec.ofMember(GunEvent::write, GunEvent::new);
+        GunEvent(FriendlyByteBuf b) { this(b.readVarInt(), b.readVarInt(), b.readVarInt()); }
+        void write(FriendlyByteBuf b) { b.writeVarInt(entityId); b.writeVarInt(kind); b.writeVarInt(arg); }
+        @Override public Type<GunEvent> type() { return TYPE; }
+    }
+
+    /** Server -> client: one of your bullets hit somebody. */
+    public record GunHit(boolean head, boolean kill) implements CustomPacketPayload {
+        public static final Type<GunHit> TYPE = id("gun_hit");
+        public static final StreamCodec<FriendlyByteBuf, GunHit> CODEC = StreamCodec.ofMember(GunHit::write, GunHit::new);
+        GunHit(FriendlyByteBuf b) { this(b.readBoolean(), b.readBoolean()); }
+        void write(FriendlyByteBuf b) { b.writeBoolean(head); b.writeBoolean(kill); }
+        @Override public Type<GunHit> type() { return TYPE; }
+    }
+
     public static void register(RegisterPayloadHandlersEvent event) {
         PayloadRegistrar r = event.registrar("1");
+        r.playToServer(GunInput.TYPE, GunInput.CODEC, (p, ctx) -> {
+            if (ctx.player() instanceof ServerPlayer sp) com.steelrain.gun.GunLogic.input(sp, p.trigger(), p.aiming());
+        });
+        r.playToServer(GunAction.TYPE, GunAction.CODEC, (p, ctx) -> {
+            if (ctx.player() instanceof ServerPlayer sp) com.steelrain.gun.GunLogic.action(sp, p.action(), p.arg());
+        });
+        r.playToClient(GunShot.TYPE, GunShot.CODEC, (p, ctx) -> {
+            if (FMLEnvironment.dist.isClient()) com.steelrain.client.ClientHooks.onGunShot(p);
+        });
+        r.playToClient(GunEvent.TYPE, GunEvent.CODEC, (p, ctx) -> {
+            if (FMLEnvironment.dist.isClient()) com.steelrain.client.ClientHooks.onGunEvent(p);
+        });
+        r.playToClient(GunHit.TYPE, GunHit.CODEC, (p, ctx) -> {
+            if (FMLEnvironment.dist.isClient()) com.steelrain.client.ClientHooks.onGunHit(p);
+        });
         r.playToClient(Pilot.TYPE, Pilot.CODEC, (p, ctx) -> {
             if (FMLEnvironment.dist.isClient()) com.steelrain.client.ClientHooks.onPilot(p);
         });
