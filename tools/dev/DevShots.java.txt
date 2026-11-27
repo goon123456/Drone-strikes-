@@ -1,0 +1,94 @@
+package com.steelrain.dev;
+
+import com.steelrain.ModRegistry;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.Screenshot;
+import net.minecraft.client.gui.screens.TitleScreen;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.world.Difficulty;
+import net.minecraft.world.level.GameRules;
+import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.LevelSettings;
+import net.minecraft.world.level.WorldDataConfiguration;
+import net.minecraft.world.level.levelgen.WorldOptions;
+import net.minecraft.world.level.levelgen.presets.WorldPresets;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+
+import java.io.File;
+import java.nio.file.Files;
+import java.util.ArrayDeque;
+import java.util.Deque;
+
+/** Local test driver, not shipped: runs script files dropped into run/dev_script.txt. */
+@EventBusSubscriber(modid = ModRegistry.MODID, value = Dist.CLIENT)
+public final class DevShots {
+    private static final boolean ON = System.getenv("STEELRAIN_SHOTS") != null;
+    private static boolean started;
+    private static final Deque<String> LINES = new ArrayDeque<>();
+    private static int wait;
+
+    @SubscribeEvent
+    public static void tick(ClientTickEvent.Post e) {
+        if (!ON) return;
+        Minecraft mc = Minecraft.getInstance();
+        if (!started && mc.screen instanceof TitleScreen || (!started && mc.screen != null && mc.level == null && mc.getOverlay() == null && ++wait > 100)) {
+            started = true; wait = 0;
+            mc.options.onboardAccessibility = false;
+            mc.options.pauseOnLostFocus = false;
+            String name = "dev" + System.currentTimeMillis();
+            LevelSettings settings = new LevelSettings(name, GameType.CREATIVE, false, Difficulty.PEACEFUL, true, new GameRules(), WorldDataConfiguration.DEFAULT);
+            mc.createWorldOpenFlows().createFreshLevel(name, settings, new WorldOptions(1L, false, false),
+                    reg -> reg.registryOrThrow(Registries.WORLD_PRESET).getHolderOrThrow(WorldPresets.FLAT).value().createWorldDimensions(), mc.screen);
+            return;
+        }
+        if (mc.player == null || mc.level == null) return;
+        mc.options.tutorialStep = net.minecraft.client.tutorial.TutorialSteps.NONE;
+        mc.getTutorial().setStep(net.minecraft.client.tutorial.TutorialSteps.NONE);
+        try {
+            var f = net.minecraft.client.MouseHandler.class.getDeclaredField("mouseGrabbed");
+            f.setAccessible(true);
+            if (mc.screen == null) f.setBoolean(mc.mouseHandler, true);
+        } catch (Exception ex) { ex.printStackTrace(); }
+        if (wait > 0) { wait--; return; }
+        if (LINES.isEmpty()) {
+            File f = new File(mc.gameDirectory, "dev_script.txt");
+            if (f.exists()) {
+                try { LINES.addAll(Files.readAllLines(f.toPath())); } catch (Exception ex) { ex.printStackTrace(); }
+                f.delete();
+            }
+            return;
+        }
+        while (!LINES.isEmpty() && wait == 0) {
+            String line = LINES.poll().trim();
+            if (line.isEmpty() || line.startsWith("#")) continue;
+            String[] a = line.split(" ", 2);
+            String arg = a.length > 1 ? a[1] : "";
+            try {
+                switch (a[0]) {
+                    case "wait" -> wait = Integer.parseInt(arg);
+                    case "cmd" -> mc.player.connection.sendCommand(arg);
+                    case "shot" -> Screenshot.grab(mc.gameDirectory, arg + ".png", mc.getMainRenderTarget(), m -> { });
+                    case "use" -> mc.options.keyUse.setDown(arg.equals("down"));
+                    case "attack" -> mc.options.keyAttack.setDown(arg.equals("down"));
+                    case "reload" -> net.neoforged.neoforge.network.PacketDistributor.sendToServer(new com.steelrain.net.Payloads.GunAction(com.steelrain.gun.GunLogic.ACT_RELOAD, 0));
+                    case "look" -> { String[] v = arg.split(" "); mc.player.setYRot(Float.parseFloat(v[0])); mc.player.setXRot(Float.parseFloat(v[1])); }
+                    case "slot" -> mc.player.getInventory().selected = Integer.parseInt(arg);
+                    case "camera" -> mc.options.setCameraType(net.minecraft.client.CameraType.values()[Integer.parseInt(arg)]);
+                    case "screen" -> {
+                        if (arg.equals("inventory")) mc.setScreen(new net.minecraft.client.gui.screens.inventory.InventoryScreen(mc.player));
+                        else if (arg.equals("fit")) mc.setScreen(new com.steelrain.client.GunScreen());
+                        else mc.setScreen(null);
+                    }
+                    case "hud" -> mc.options.hideGui = arg.equals("off");
+                    case "quit" -> mc.stop();
+                    default -> System.out.println("dev: unknown " + line);
+                }
+            } catch (Exception ex) { ex.printStackTrace(); }
+        }
+    }
+
+    private DevShots() {}
+}
