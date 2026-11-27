@@ -40,8 +40,11 @@ public class LaptopScreen extends Screen {
 
     /** A plain plate: thin rule round a flat fill. No highlights, no corner marks. */
     private void plate(GuiGraphics g, int x, int y, int w, int h) {
-        g.fill(x, y, x + w, y + h, P_RULE);
-        g.fill(x + 1, y + 1, x + w - 1, y + h - 1, P_PLATE);
+        // a thick frame: a lit outer edge, a dark inner line, then the flat fill
+        g.fill(x, y, x + w, y + h, 0xFF2F6A3D);
+        g.fill(x + 2, y + 2, x + w - 2, y + h - 2, P_BG);
+        g.fill(x + 2, y + 2, x + w - 2, y + h - 2, P_PLATE);
+        g.fill(x + 1, y + 1, x + w - 1, y + 2, 0xFF0A1A10);
     }
 
     /** A section title in caps with a rule under it and an optional count on the right. */
