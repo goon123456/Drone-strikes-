@@ -227,6 +227,70 @@
       }
     ]
   },
+  "gun_m18_fire": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_m18_fire"
+      }
+    ]
+  },
+  "gun_m9_fire": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_m9_fire"
+      }
+    ]
+  },
+  "gun_hk416_fire": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_hk416_fire"
+      }
+    ]
+  },
+  "gun_g36_fire": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_g36_fire"
+      }
+    ]
+  },
+  "gun_scarh_fire": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_scarh_fire"
+      }
+    ]
+  },
+  "gun_m249_fire": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_m249_fire"
+      }
+    ]
+  },
+  "gun_m240_fire": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_m240_fire"
+      }
+    ]
+  },
+  "gun_m110_fire": {
+    "subtitle": "subtitles.steelrain.gun_fire",
+    "sounds": [
+      {
+        "name": "steelrain:gun_m110_fire"
+      }
+    ]
+  },
   "gun_rifle_far": {
     "subtitle": "subtitles.steelrain.gun_far",
     "sounds": [

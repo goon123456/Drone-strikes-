@@ -14,7 +14,8 @@ public enum Caliber {
     B50("12.7x99", "ammo_50", 853, 0.00050, 32f, 3.2f, 1),
     /** RPG-7 rockets: thrown out at 115 m/s, then the motor takes them to their flying speed. */
     PG7V("PG-7V HEAT", "rocket_pg7v", 115, 0.00010, 70f, 0f, 1, 295, 3.5f, 14f),
-    OG7V("OG-7V frag", "rocket_og7v", 115, 0.00010, 18f, 0f, 1, 250, 7.5f, 24f);
+    OG7V("OG-7V frag", "rocket_og7v", 115, 0.00010, 18f, 0f, 1, 250, 7.5f, 24f),
+    R76251("7.62x51", "ammo_76251", 838, 0.00105, 11.5f, 0.95f, 1);
 
     /** Gravity in blocks per tick squared (9.81 m/s2). */
     public static final double GRAVITY = 9.81 / 400.0;

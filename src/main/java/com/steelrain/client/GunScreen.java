@@ -96,15 +96,16 @@ public class GunScreen extends Screen {
         Ui.well(g, x, top + 14, w - 122, 122);
         // the gun, turning
         if (!dragging) spin += partialTick * 0.35f;
-        float len = switch (type) { case M17 -> 0.26f; case SVD, PKM -> 1.25f; case M590 -> 1.06f; case M107 -> 1.5f; case RPG7 -> 1.35f; default -> 0.98f; };
-        float mid = switch (type) { case M17 -> 0f; case SVD -> 0.19f; case PKM -> 0.22f; case AK74M -> 0.13f; case M590 -> 0.11f; case M107 -> 0.35f; case RPG7 -> 0.16f; default -> 0.08f; };
+        float[] ex = GunItemRenderer.extent(type);
+        float len = ex[0] + 0.03f;
+        float mid = ex[1];
         float scale = (type.pistol() ? 170f : 300f) / len;
         g.pose().pushPose();
         g.pose().translate(x + (w - 122) / 2f, top + 78, 150);
         g.pose().scale(scale, -scale, scale);
         g.pose().mulPose(Axis.XP.rotationDegrees(-12));
         g.pose().mulPose(Axis.YP.rotationDegrees(spin));
-        g.pose().translate(0, 0.03f, -mid);
+        g.pose().translate(0, -ex[2], -mid);
         com.mojang.blaze3d.platform.Lighting.setupForEntityInInventory();
         GunModels.render(stack, type, GunModels.REST, g.pose(), g.bufferSource(), 0xF000F0);
         g.flush();

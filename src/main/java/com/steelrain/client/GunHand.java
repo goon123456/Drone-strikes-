@@ -98,10 +98,10 @@ public final class GunHand {
             bp.magY = -down;
             bp.magZ = -0.05f * Mth.clamp(down / 0.2f, 0, 1);
             bp.magX = 0.05f * Mth.clamp((down - 0.11f) / 0.3f, 0, 1);
-            if (type == GunType.AK74M || type == GunType.SVD) bp.magRock = 0.30f * Mth.clamp(down / 0.11f, 0, 1) * (down < 0.2f ? 1 : 0.5f);
+            if (type.rocksMagazine()) bp.magRock = 0.30f * Mth.clamp(down / 0.11f, 0, 1) * (down < 0.2f ? 1 : 0.5f);
             float onMag = ramp(p, out - 0.12f, out) * (1 - ramp(p, in + 0.03f, in + 0.14f));
             Vector3f carried = new Vector3f(magAt).add(bp.magX, bp.magY, bp.magZ);
-            if (type == GunType.PKM) {
+            if (type.beltFed()) {
                 // belt-fed: the feed cover is lifted, what is left of the old belt is taken off the tray and goes
                 // away with its box, the new box is hung, its belt drawn up and laid in the tray, the cover is
                 // shut and the gun is cocked
@@ -121,7 +121,7 @@ public final class GunHand {
                 left.lerp(new Vector3f(model.point("charge")).add(0, -0.02f, -type.boltTravel() * bp.bolt), onBolt);
             } else {
                 left.lerp(carried, onMag);
-                if (empty && (type == GunType.AK74M || type == GunType.SVD)) {
+                if (empty && type.handRacked()) {
                     float onBolt = ramp(p, rack - 0.10f, rack - 0.02f) * (1 - ramp(p, rack + 0.07f, 0.98f));
                     bp.bolt = Math.max(bp.bolt, ramp(p, rack - 0.02f, rack + 0.03f) * (1 - ramp(p, rack + 0.03f, rack + 0.06f)));
                     Vector3f handle = new Vector3f(model.point("charge")).add(0, -0.02f, -type.boltTravel() * bp.bolt);
@@ -154,7 +154,8 @@ public final class GunHand {
         // ---- where the gun is: at the shoulder, or up so the eye looks along the sights
         Vector3f sight = GunModels.sight(stack, type);
         // the eye sits over the stock, never behind the butt
-        float relief = pistol ? 0.46f : optic != null ? 0.14f : type == GunType.M4A1 ? 0.17f : type == GunType.PKM ? 0.20f : type == GunType.RPG7 ? 0.22f : type == GunType.M107 ? 0.26f : 0.33f;
+        float butt = model.bounds()[2];
+        float relief = pistol ? 0.46f : optic != null ? 0.14f : type == GunType.RPG7 ? 0.22f : Mth.clamp(sight.z - (butt + 0.09f), 0.15f, 0.33f);
         Vector3f hip = pistol ? new Vector3f(0.105f, -0.115f, -0.44f) : type == GunType.RPG7 ? new Vector3f(0.135f, -0.085f, -0.30f)
                 : type == GunType.M107 ? new Vector3f(0.12f, -0.14f, -0.40f) : new Vector3f(0.115f, -0.128f, -0.34f);
         Vector3f aim = new Vector3f(sight.x, -sight.y, sight.z - relief);
@@ -192,9 +193,15 @@ public final class GunHand {
         // the launcher is tipped muzzle-up and across, so the rocket can be fed in from the front
         else if (type.action == GunType.Action.SINGLE) { pitch -= 16f * env; yaw += 26f * env; roll += 10f * env; at.add(-0.05f * env, -0.06f * env, 0.12f * env); }
         // the belt feeds from the right: the gun is swung across so its feed side and open cover face the firer
-        else if (type == GunType.PKM) { yaw -= 42f * env; roll += 12f * env; pitch -= 4f * env; at.add(-0.25f * env, 0.02f * env, -0.13f * env); }
+        else if (type.beltFed() && type.feedSide() < 0) { yaw -= 42f * env; roll += 12f * env; pitch -= 4f * env; at.add(-0.25f * env, 0.02f * env, -0.13f * env); }
+        else if (type.beltFed()) { yaw += 40f * env; roll -= 12f * env; pitch -= 4f * env; at.add(-0.12f * env, 0.03f * env, -0.10f * env); }
         else if (pistol) { pitch -= 24f * env; roll += 22f * env; at.add(-0.04f * env, 0.02f * env, 0.05f * env); }
         else { pitch -= 14f * env; roll += 32f * env; yaw += 6f * env; at.add(-0.02f * env, 0.03f * env, 0); }
+        // every reload starts with a small dip as the hand comes off, and ends by settling a touch past rest
+        if (p >= 0 && reloading) {
+            at.add(0, -0.014f * Mth.sin((float) Math.PI * Mth.clamp(p / 0.12f, 0, 1)) + 0.007f * Mth.sin((float) Math.PI * Mth.clamp((p - 0.90f) / 0.10f, 0, 1)), 0);
+            roll += 2.5f * Mth.sin((float) Math.PI * Mth.clamp((p - 0.90f) / 0.10f, 0, 1));
+        }
         // a dead trigger or the selector: a small twitch
         float click = Math.max(0, 1 - (now - Math.max(GunClient.dryAt, GunClient.selectorAt)) / 140f);
         roll += 1.5f * click;
@@ -221,7 +228,7 @@ public final class GunHand {
             Vector3f rightElbow = pistol ? new Vector3f(-0.10f, -0.22f, -0.50f) : new Vector3f(-0.16f, -0.30f, -0.42f);
             Vector3f leftElbow = pistol ? new Vector3f(0.30f, -0.22f, -0.50f) : new Vector3f(0.26f, -0.30f, -0.50f);
             arm(pose, buffers, light, player, true, new Vector3f(grip).add(-0.004f, 0.012f, 0.0f), rightElbow, size);
-            if (type == GunType.PKM) leftElbow.lerp(new Vector3f(-0.30f, -0.42f, -0.30f), env);     // reaching in from underneath
+            if (type.beltFed()) leftElbow.lerp(new Vector3f(-0.30f * -type.feedSide(), -0.42f, -0.30f), env);     // reaching in from underneath
             arm(pose, buffers, light, player, false, new Vector3f(left).add(0.006f, -0.028f, 0), leftElbow, size);
         }
 

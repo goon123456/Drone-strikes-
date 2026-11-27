@@ -222,7 +222,7 @@ public final class GunClient {
                 boolean empty = p.kind() == GunLogic.EV_RELOAD_EMPTY;
                 int total = p.arg();
                 if (mine) { anim = empty ? ANIM_RELOAD_EMPTY : ANIM_RELOAD; animAt = now; animMs = total * 50L; animHadRounds = GunItem.rounds(stack()) > 0; }
-                if (type == GunType.PKM) {
+                if (type.beltFed()) {
                     cue(p.entityId(), total * 0.08f, "gun_cover");
                     if (!mine || animHadRounds) cue(p.entityId(), total * 0.20f, "gun_belt");
                     cue(p.entityId(), total * type.magOutAt(), "gun_mag_out");
@@ -233,7 +233,7 @@ public final class GunClient {
                 } else {
                     cue(p.entityId(), total * type.magOutAt(), "gun_mag_out");
                     cue(p.entityId(), total * type.magInAt(empty), "gun_mag_in");
-                    if (empty) cue(p.entityId(), total * type.boltAt(), type == GunType.AK74M || type == GunType.SVD ? "gun_bolt" : "gun_bolt_release");
+                    if (empty) cue(p.entityId(), total * type.boltAt(), type.handRacked() ? "gun_bolt" : "gun_bolt_release");
                 }
             }
             case GunLogic.EV_SHELL -> {

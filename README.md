@@ -271,6 +271,14 @@ bullets that fly, drop and go through cover.
 | **M590A1** | 12 gauge | 8-shell tube, pump | safe / semi | 70 | 400 m/s | - |
 | **Barrett M107** | 12.7x99 | 10-round magazine | safe / semi | 90 | 853 m/s | 10x scope, bipod (built in) |
 | **RPG-7** | PG-7V / OG-7V rocket | one rocket at the muzzle | safe / fire | - | 115, then 295 m/s | - |
+| **M18** | 9x19 | 17-round magazine | safe / semi | 430 | 364 m/s | pistol suppressor |
+| **M9** | 9x19 | 15-round magazine | safe / semi | 400 | 375 m/s | pistol suppressor |
+| **HK416** | 5.56x45 | 30-round magazine | safe / semi / auto | 850 | 881 m/s | red dot, 4x, 10x, suppressor, foregrip |
+| **G36** | 5.56x45 | 30-round magazine | safe / semi / auto | 750 | 908 m/s | red dot, 4x, suppressor, foregrip |
+| **SCAR-H** | 7.62x51 | 20-round magazine | safe / semi / auto | 600 | 788 m/s | red dot, 4x, 10x, suppressor, foregrip |
+| **M249** | 5.56x45 | 200-round belt box | safe / auto | 800 | 917 m/s | red dot, 4x, bipod (built in) |
+| **M240** | 7.62x51 | 100-round belt can | safe / auto | 650 | 855 m/s | red dot, 4x, bipod (built in) |
+| **M110** | 7.62x51 | 20-round magazine | safe / semi | 300 | 788 m/s | red dot, 4x, 10x, suppressor |
 
 - **Keys** (all rebindable): **left click** is the trigger, **hold right click** brings the sights up, **R**
   reloads, **V** moves the fire selector, **Page Up / Page Down** set the sights' range, **G** opens the fittings
@@ -316,6 +324,9 @@ bullets that fly, drop and go through cover.
   late by the speed of sound; bullets passing near you crack (or buzz, if slow); ricochets whine. Spent cases
   are thrown clear and ring on the ground. The last three rounds of a rifle magazine and every fifth round of a
   PKM belt are tracers, green for the Russian guns and red for the American.
+- **M249 and M240** are belt-fed like the PKM and reload the same way (cover up, belt off, box changed, belt
+  laid in, cover down, cocked), but feed from the left, so the gun swings the other way to show it. A bar under
+  the round count shows how far through any reload you are.
 - **Barrett M107**: the .50 hits about four times as hard as a rifle, goes through three blocks of wood or a body
   and on into the next, and is the one small arm that hurts vehicles through their armour. It kicks very hard
   standing; crouch and keep still to rest it on its bipod. Sights go to 1800 m. The **10x Scope** (also fits the

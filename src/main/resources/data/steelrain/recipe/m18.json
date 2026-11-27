@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "II",
+    "SI"
+  ],
+  "key": {
+    "S": {
+      "item": "minecraft:sand"
+    },
+    "I": {
+      "item": "minecraft:iron_ingot"
+    }
+  },
+  "result": {
+    "id": "steelrain:m18",
+    "count": 1
+  }
+}

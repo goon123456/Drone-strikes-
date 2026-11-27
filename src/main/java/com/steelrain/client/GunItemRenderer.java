@@ -24,18 +24,10 @@ public class GunItemRenderer extends BlockEntityWithoutLevelRenderer {
         super(Minecraft.getInstance().getBlockEntityRenderDispatcher(), Minecraft.getInstance().getEntityModels());
     }
 
-    /** Length of each gun and where its middle is along the bore, to fit it in a slot. */
-    private static float[] extent(GunType t) {
-        return switch (t) {
-            case AK74M -> new float[]{0.96f, 0.13f, -0.04f};
-            case M4A1 -> new float[]{0.84f, 0.08f, -0.05f};
-            case SVD -> new float[]{1.23f, 0.19f, -0.04f};
-            case PKM -> new float[]{1.20f, 0.22f, -0.05f};
-            case M17 -> new float[]{0.24f, 0.0f, -0.05f};
-            case M590 -> new float[]{1.06f, 0.11f, -0.04f};
-            case M107 -> new float[]{1.46f, 0.35f, -0.03f};
-            case RPG7 -> new float[]{1.32f, 0.16f, -0.02f};
-        };
+    /** Length of a gun and where its middle is along the bore and in height, to fit it in a slot. */
+    static float[] extent(GunType t) {
+        float[] b = GunModels.gun(t).bounds();
+        return new float[]{b[5] - b[2], (b[5] + b[2]) / 2, (b[4] + b[1]) / 2};
     }
 
     @Override
@@ -77,8 +69,8 @@ public class GunItemRenderer extends BlockEntityWithoutLevelRenderer {
             }
             GunModels.render(stack, gun.type, GunModels.REST, pose, buffers, light);
         } else if (stack.getItem() instanceof MagazineItem mag) {
-            place(ctx, pose, mag.gun == GunType.PKM ? 3.6f : mag.gun == GunType.M17 ? 6.0f : 3.8f);
-            pose.translate(0, mag.gun == GunType.PKM ? 0.055 : mag.gun == GunType.M17 ? 0.06 : 0.1, mag.gun == GunType.AK74M ? 0.06 : 0);
+            place(ctx, pose, mag.gun.beltFed() ? 3.4f : mag.gun.pistol() ? 6.0f : mag.gun == GunType.M107 ? 3.2f : 3.8f);
+            pose.translate(0, mag.gun.beltFed() ? 0.06 : mag.gun.pistol() ? 0.06 : 0.1, mag.gun.rocksMagazine() ? 0.06 : 0);
             GunModels.renderMagazine(mag.gun, pose, buffers, light);
         } else if (stack.getItem() instanceof AttachmentItem att) {
             BoxModel m = GunModels.part(att.attachment);

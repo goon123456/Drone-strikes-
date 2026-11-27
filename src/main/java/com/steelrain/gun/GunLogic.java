@@ -191,7 +191,7 @@ public final class GunLogic {
         if (!player.onGround() && !player.isPassenger()) sigma += Math.toRadians(2.5);
         Vec3 eye = player.getEyePosition();
         double speed = cal.speed() * type.velocityFactor;
-        float damage = type == GunType.SVD ? 1.1f : 1f;
+        float damage = type == GunType.SVD || type == GunType.M110 ? 1.1f : 1f;
         for (int i = 0; i < cal.pellets; i++) {
             double spread = cal.pellets > 1 ? sigma + Math.toRadians(1.1) : sigma;
             float pitch = player.getXRot() - (float) lift + (float) Math.toDegrees(level.random.nextGaussian() * spread);

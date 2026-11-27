@@ -577,10 +577,10 @@ def tags():
 
 
 # ---------------------------------------------------------------- small arms
-GUN_ITEMS = ["ak74m", "m4a1", "svd", "pkm", "m17", "m590", "m107", "rpg7"]
-GUN_MAGS = ["ak74m", "m4a1", "svd", "pkm", "m17", "m107"]
+GUN_ITEMS = ["ak74m", "m4a1", "svd", "pkm", "m17", "m590", "m107", "rpg7", "m18", "m9", "hk416", "g36", "scarh", "m249", "m240", "m110"]
+GUN_MAGS = ["ak74m", "m4a1", "svd", "pkm", "m17", "m107", "m18", "m9", "hk416", "g36", "scarh", "m249", "m240", "m110"]
 GUN_PARTS = ["red_dot", "acog", "pso1", "suppressor", "pistol_suppressor", "foregrip", "scope_10x"]
-GUN_AMMO = ["ammo_545", "ammo_556", "ammo_762", "ammo_9mm", "ammo_12g", "ammo_50", "rocket_pg7v", "rocket_og7v"]
+GUN_AMMO = ["ammo_545", "ammo_556", "ammo_762", "ammo_9mm", "ammo_12g", "ammo_50", "rocket_pg7v", "rocket_og7v", "ammo_76251"]
 
 GUN_LANG = {
     "item.steelrain.ak74m": "AK-74M", "item.steelrain.m4a1": "M4A1", "item.steelrain.svd": "SVD", "item.steelrain.pkm": "PKM",
@@ -588,6 +588,14 @@ GUN_LANG = {
     "item.steelrain.m107_magazine": "M107 Magazine (10)", "item.steelrain.ammo_50": ".50 BMG Round",
     "item.steelrain.rocket_pg7v": "PG-7V Anti-Tank Rocket", "item.steelrain.rocket_og7v": "OG-7V Fragmentation Rocket",
     "item.steelrain.scope_10x": "10x Scope",
+    "item.steelrain.m18": "M18", "item.steelrain.m9": "M9", "item.steelrain.hk416": "HK416", "item.steelrain.g36": "G36",
+    "item.steelrain.scarh": "SCAR-H", "item.steelrain.m249": "M249", "item.steelrain.m240": "M240", "item.steelrain.m110": "M110",
+    "item.steelrain.m18_magazine": "M18 Magazine (17)", "item.steelrain.m9_magazine": "M9 Magazine (15)",
+    "item.steelrain.hk416_magazine": "HK416 Magazine (30)", "item.steelrain.g36_magazine": "G36 Magazine (30)",
+    "item.steelrain.scarh_magazine": "SCAR-H Magazine (20)", "item.steelrain.m249_magazine": "M249 Belt Box (200)",
+    "item.steelrain.m240_magazine": "M240 Belt Can (100)", "item.steelrain.m110_magazine": "M110 Magazine (20)",
+    "item.steelrain.ammo_76251": "7.62x51 Round",
+    "gui.steelrain.gun.reloading": "RELOADING",
     "tooltip.steelrain.scope_10x": "10x telescope with a mil-dot reticle and an elevation drum, 100 to 1800 m",
     "message.steelrain.gun_no_rockets": "No rockets",
     "message.steelrain.gun_backblast": "Backblast: there is a wall behind you",
@@ -687,6 +695,24 @@ def guns():
     shaped("m17", ["II", "KI"], {"K": K, "I": I})
     shaped("m590", ["III", "WII"], {"W": W, "I": I})
     shaped("m107", ["IIB", "KBB", " II"], {"K": K, "I": I, "B": B})
+    S_, L_ = MC + "sand", MC + "leather"
+    shaped("m18", ["II", "SI"], {"S": S_, "I": I})
+    shaped("m9", ["II", "LI"], {"L": L_, "I": I})
+    shaped("hk416", ["III", "KBI", " N "], {"K": K, "I": I, "B": B, "N": N})
+    shaped("g36", ["KKK", "IBI", " I "], {"K": K, "I": I, "B": B})
+    shaped("scarh", ["III", "SBI", " I "], {"S": S_, "I": I, "B": B})
+    shaped("m249", ["IIB", "KBI", " I "], {"K": K, "I": I, "B": B})
+    shaped("m240", ["IBB", "KBI", " I "], {"K": K, "I": I, "B": B})
+    shaped("m110", ["IIB", "SBI", " I "], {"S": S_, "I": I, "B": B})
+    shaped("m18_magazine", ["N", "N", "S"], {"N": N, "S": S_})
+    shaped("m9_magazine", ["N", "N", "L"], {"N": N, "L": L_})
+    shaped("hk416_magazine", ["NK", "N ", "N "], {"N": N, "K": K})
+    shaped("g36_magazine", ["NG", "N ", "N "], {"N": N, "G": G})
+    shaped("scarh_magazine", ["NS", "N ", "N "], {"N": N, "S": S_})
+    shaped("m249_magazine", ["NIN", "I I", "III"], {"N": N, "I": I})
+    shaped("m240_magazine", ["INI", "I I", "INI"], {"N": N, "I": I})
+    shaped("m110_magazine", ["NN", "NS"], {"N": N, "S": S_})
+    shaped("ammo_76251", ["I", "P", "N"], {"I": I, "P": P, "N": N}, 20)
     shaped("rpg7", ["IWI", " W "], {"W": W, "I": I})
     shaped("m107_magazine", ["II", "N ", "N "], {"N": N, "I": I})
     shaped("ammo_50", ["I", "P", "G"], {"I": I, "P": P, "G": MC + "gold_ingot"}, 10)

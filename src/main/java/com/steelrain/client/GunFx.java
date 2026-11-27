@@ -103,7 +103,7 @@ public final class GunFx {
             sound = "gun_" + type.id + "_fire";
             volume = 7f;
         } else {
-            sound = type.pistol() ? "gun_pistol_far" : cal == Caliber.R762 || cal == Caliber.G12 || cal == Caliber.B50 || cal.rocket() ? "gun_heavy_far" : "gun_rifle_far";
+            sound = type.pistol() ? "gun_pistol_far" : cal == Caliber.R762 || cal == Caliber.R76251 || cal == Caliber.G12 || cal == Caliber.B50 || cal.rocket() ? "gun_heavy_far" : "gun_rifle_far";
             volume = 28f;
         }
         REPORTS.add(new Report(mine ? now : now + (long) (d / 343.0 * 1000), p.from(), sound, volume, pitch));
@@ -133,13 +133,15 @@ public final class GunFx {
     private static void eject(Minecraft mc, Ejection ej) {
         Entity e = mc.level.getEntity(ej.shooter);
         if (e == null) return;
+        double vel0 = 0;
         Vec3 dir = e.getLookAngle(), right = sideways(dir);
-        if (ej.type == GunType.PKM) right = right.scale(-1);                       // the PKM throws its cases to the left
+        if (ej.type == GunType.PKM) right = right.scale(-1);
+        if (ej.type == GunType.M249 || ej.type == GunType.M240) vel0 = -0.06;                 // these drop theirs out underneath                       // the PKM throws its cases to the left
         var r = mc.level.random;
         Vec3 at = e.getEyePosition().add(dir.scale(ej.type.pistol() ? 0.5 : 0.42)).add(right.scale(0.2)).add(0, -0.13, 0);
-        Vec3 vel = right.scale(0.11 + r.nextDouble() * 0.05).add(0, 0.09 + r.nextDouble() * 0.05, 0).add(dir.scale(-0.03 + r.nextDouble() * 0.05))
+        Vec3 vel = right.scale(0.11 + r.nextDouble() * 0.05).add(0, vel0 != 0 ? vel0 : 0.09 + r.nextDouble() * 0.05, 0).add(dir.scale(-0.03 + r.nextDouble() * 0.05))
                 .add(e.getDeltaMovement());
-        float size = switch (ej.type.caliber) { case R762 -> 0.054f; case G12 -> 0.068f; case P9 -> 0.02f; case B50 -> 0.10f; default -> 0.042f; };
+        float size = switch (ej.type.caliber) { case R762, R76251 -> 0.054f; case G12 -> 0.068f; case P9 -> 0.02f; case B50 -> 0.10f; default -> 0.042f; };
         int colour = switch (ej.type.caliber) { case R545, R762 -> 0x5C6848; case G12 -> 0xA8201E; default -> 0xC8A04A; };
         Case c = new Case(at, vel, size, colour);
         c.turn = (r.nextFloat() - 0.5f) * 1.6f;
@@ -323,7 +325,7 @@ public final class GunFx {
     private static void flashQuads(PoseStack pose, VertexConsumer vc, GunType type, long seed, float strength) {
         if (strength <= 0) return;
         java.util.Random rnd = new java.util.Random(seed * 31 + type.ordinal());
-        float size = (type.pistol() ? 0.09f : type == GunType.M590 ? 0.2f : type == GunType.M107 || type == GunType.RPG7 ? 0.34f : type.caliber == Caliber.R762 ? 0.19f : 0.15f) * (0.8f + rnd.nextFloat() * 0.5f);
+        float size = (type.pistol() ? 0.09f : type == GunType.M590 ? 0.2f : type == GunType.M107 || type == GunType.RPG7 ? 0.34f : type.caliber == Caliber.R762 || type.caliber == Caliber.R76251 ? 0.19f : 0.15f) * (0.8f + rnd.nextFloat() * 0.5f);
         int petals = type == GunType.AK74M ? 4 : 3;
         float a = Mth.clamp(strength, 0, 1);
         pose.pushPose();

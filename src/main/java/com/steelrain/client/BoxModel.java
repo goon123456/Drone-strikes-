@@ -98,6 +98,26 @@ public final class BoxModel {
 
     public org.joml.Vector3f point(String name) { return points.getOrDefault(name, ORIGIN); }
 
+    private float[] bounds;
+
+    /** The box a loaded mesh fits in, parts at rest: min x, y, z then max x, y, z. */
+    public float[] bounds() {
+        if (bounds == null) {
+            float[] b = {1e9f, 1e9f, 1e9f, -1e9f, -1e9f, -1e9f};
+            for (Group g : groups.values()) {
+                for (float[] f : g.mesh) {
+                    for (int c = 0; c < 32; c += 8) {
+                        float x = f[c] + g.ax, y = f[c + 1] + g.ay, z = f[c + 2] + g.az;
+                        b[0] = Math.min(b[0], x); b[1] = Math.min(b[1], y); b[2] = Math.min(b[2], z);
+                        b[3] = Math.max(b[3], x); b[4] = Math.max(b[4], y); b[5] = Math.max(b[5], z);
+                    }
+                }
+            }
+            bounds = b;
+        }
+        return bounds;
+    }
+
     /** Where a group pivots, in model space. */
     public static org.joml.Vector3f pivotOf(Group g) { return new org.joml.Vector3f(g.ax, g.ay, g.az); }
 

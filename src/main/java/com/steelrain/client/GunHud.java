@@ -98,6 +98,15 @@ public final class GunHud {
             Ui.textRight(g, font, Component.translatable(type.action == GunType.Action.SINGLE ? "gui.steelrain.gun.rockets" : "gui.steelrain.gun.shells", loose).getString(), right, y + 27, loose == 0 ? Ui.AMBER : Ui.HUD_DIM, show);
         }
 
+        // how far through the reload the hands are
+        float progress = GunClient.reloading() ? GunClient.animProgress() : -1;
+        if (progress >= 0) {
+            int bw = 56;
+            Ui.textRight(g, font, Component.translatable("gui.steelrain.gun.reloading").getString(), right - bw - 5, y + 39, Ui.HUD_DIM, 1);
+            g.fill(right - bw - 1, y + 40, right + 1, y + 46, 0x90000000);
+            g.fill(right - bw, y + 41, right - bw + Math.round(bw * Mth.clamp(progress, 0, 1)), y + 45, Ui.AMBER);
+        }
+
         // the sights' range setting: shown when it changes and while aiming through adjustable sights
         float zshow = ZERO_INFO.update(List.of(type, zero, optic == null ? -1 : optic.ordinal()));
         if (GunItem.zeros(stack).length > 1) {

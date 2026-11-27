@@ -82,7 +82,7 @@ public final class GunModels {
         int rounds = GunItem.rounds(stack);
         float travel = type.boltTravel();
         // a slide or bolt stays back on an empty magazine
-        boolean lockedBack = (type == GunType.M17 || type == GunType.M4A1) && mag && rounds == 0 && !GunItem.chambered(stack);
+        boolean lockedBack = type.holdsOpen() && mag && rounds == 0 && !GunItem.chambered(stack);
         float bolt = Math.max(p.bolt, lockedBack ? 1f : 0f);
         set(m, "bolt", g -> { g.oz = -travel * bolt; });
         set(m, "charge", g -> g.oz = -0.06f * p.charge);
@@ -92,8 +92,8 @@ public final class GunModels {
             g.xRot = 0; g.oz = 0;
             switch (type) {
                 case AK74M, SVD -> g.xRot = mode == GunType.Mode.SAFE ? 0f : mode == GunType.Mode.AUTO ? 0.16f : 0.30f;
-                case M4A1, PKM, M107 -> g.xRot = mode == GunType.Mode.SAFE ? 0f : mode == GunType.Mode.SEMI ? -1.57f : -3.14f;
-                case M17 -> g.xRot = mode == GunType.Mode.SAFE ? -0.3f : 0f;
+                case M4A1, PKM, M107, HK416, G36, SCARH, M249, M240, M110 -> g.xRot = mode == GunType.Mode.SAFE ? 0f : mode == GunType.Mode.SEMI ? -1.57f : -3.14f;
+                case M17, M18, M9 -> g.xRot = mode == GunType.Mode.SAFE ? -0.3f : 0f;
                 case M590 -> g.oz = mode == GunType.Mode.SAFE ? 0f : 0.008f;
             }
         });
