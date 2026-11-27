@@ -127,7 +127,8 @@ public final class GunHand {
 
         // ---- where the gun is: at the shoulder, or up so the eye looks along the sights
         Vector3f sight = GunModels.sight(stack, type);
-        float relief = (pistol ? 0.46f : optic != null ? 0.14f : 0.33f);
+        // the eye sits over the stock, never behind the butt
+        float relief = pistol ? 0.46f : optic != null ? 0.14f : type == GunType.M4A1 ? 0.17f : type == GunType.PKM ? 0.20f : 0.33f;
         Vector3f hip = pistol ? new Vector3f(0.105f, -0.115f, -0.44f) : new Vector3f(0.115f, -0.128f, -0.34f);
         Vector3f aim = new Vector3f(sight.x, -sight.y, sight.z - relief);
         Vector3f at = new Vector3f(hip).lerp(aim, a);

@@ -419,7 +419,9 @@ on recon drones; and its recordings stand in for sounds Steel Rain does not have
 using `./gradlew runClient -PwithSbw`.
 
 ## Known limits
-- Small arms: the guns are textured meshes from `tools/gen_guns.py`, drawn by Steel Rain's own renderer. The
+- Small arms: the guns are textured meshes from `tools/gen_guns.py` (rounded receivers and handguards through
+  rows of cross-sections, grips, magazines and stock limbs swept along a path, pressed parts with rolled edges),
+  drawn by Steel Rain's own renderer. The
   firer's arms hold the gun but the fingers are not modelled; other players see the gun held, without the
   reload motions. Mobs do not use guns. There is no wind.
 - Aircraft and drones (Reaper, TB2, Global Hawk, Orlan-10, Shahed-136, both FPV drones and the Mavic) are
