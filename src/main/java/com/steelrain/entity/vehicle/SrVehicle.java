@@ -24,7 +24,6 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.OwnableEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.ChestMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
@@ -556,7 +555,7 @@ public abstract class SrVehicle extends Entity implements OwnableEntity {
         }
         if (player.isSecondaryUseActive()) {
             if (!level().isClientSide) {
-                player.openMenu(new net.minecraft.world.SimpleMenuProvider((id, inv, p) -> ChestMenu.threeRows(id, inv, inventoryFor(p)), getDisplayName()));
+                player.openMenu(new net.minecraft.world.SimpleMenuProvider((id, inv, p) -> new com.steelrain.block.SrStorageMenu(id, inv, inventoryFor(p)), getDisplayName()));
             }
             return InteractionResult.sidedSuccess(level().isClientSide);
         }
@@ -573,8 +572,14 @@ public abstract class SrVehicle extends Entity implements OwnableEntity {
     /** The inventory as a chest the player can use while standing next to the vehicle. */
     private SimpleContainer inventoryFor(Player player) {
         return new SimpleContainer(27) {
-            { for (int i = 0; i < 27; i++) setItem(i, inventory.getItem(i)); }
+            private boolean copying = true;
+            {
+                // setItem calls setChanged: do not write a half-copied container back over the vehicle.
+                for (int i = 0; i < 27; i++) setItem(i, inventory.getItem(i));
+                copying = false;
+            }
             @Override public void setChanged() {
+                if (copying) return;
                 for (int i = 0; i < 27; i++) inventory.setItem(i, getItem(i));
             }
             @Override public boolean stillValid(Player p) { return isAlive() && p.distanceToSqr(SrVehicle.this) < 8 * 8; }

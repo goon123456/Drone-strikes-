@@ -10,27 +10,37 @@ and tube artillery, defend your base with air defence and jammers, and fight on 
 0.8.9+ and Curios if they are installed (see below).
 **Licence:** GPL-3.0-only.
 
+**Download:** [Steel Rain 0.54.2 for NeoForge 1.21.1](dist/steelrain-1.21.1-0.54.2.jar).
+Replace your previous Steel Rain jar and use the same version on the client and server.
+
 The idea was inspired by the *Iron Drone* mod. All code, models and textures here are original.
 
 ## Interface
-Every screen and HUD shares one look, a rugged military tablet: dark panels, olive headers, amber for things to
-act on, green for ready, red for trouble, cyan for aircraft and recon. All of it is drawn in code, so it stays
-sharp at any GUI scale and fits small windows.
+Steel Rain's screens share a command-instrument style: charcoal panels, silver labels, green readiness,
+cyan sensor information, and amber/red warnings. Instruments stay at the edges of the driving and camera views;
+menus and container slots keep their normal Minecraft controls.
 
-- **Field Laptop**: a 3D laptop held in both hands. Switch to it and the lid swings open; its display shows the
-  clock, your grid and the link state. Right-click raises it to your eye and opens **Fire Control**: units down
-  the left with their state, rounds and battery; a live map with grid, range rings, unit icons, recon contacts and
-  the line of fire; the fire mission on the right.
-- **Vehicle dashboard** (driver and crew): seat, speed and heading, engine state, fuel, battery, damage, and
-  automatic mode or jamming where it applies.
-- **Gun sights**: compass tape and elevation scale for where the gun points, a marker that turns green when the
-  gun is laid where you look. Artillery adds charge, shell, breech state with a loading bar, and a range table;
-  air defence adds radar state, target box, lead diamond, rounds, belts and missiles.
-- **FPV and camera feeds**: battery and signal or cable meters, altitude, speed, distance home, zoom, REC / LIVE
-  tag and a jamming warning.
-- **Notices**: Steel Rain's status messages (linked, refuelled, out of range, busy...) appear as short coloured
-  notices under the crosshair instead of plain text.
-- **Launch sites** open a loading panel in the same style, with an energy gauge where they need power.
+- **Field Laptop**: the expanded, window-scaled Fire Control display has linked units, a wide tactical map,
+  mission controls, and **Overview**, **Targets**, **Weapons**, **ROE**, **Airspace** and **Logs** tabs. The
+  upper **ISR**, **BDA**, **Comms** and **System** keys open their readouts. Overview includes a terrain inset,
+  target trajectory, recon availability and selected-unit telemetry. The list is empty until equipment is linked.
+  **CAM** opens the existing aircraft camera view. The held laptop's small screen shows the real saved link
+  count, clock, holder's grid, elevation and weather.
+- **Driving dashboard**: persistent mobility and systems cards show speed, heading, seat, engine state, and
+  segmented fuel, battery and hull gauges. Low resources and damage get explicit warnings. Jammers and air
+  defence show their actual EW switch or automatic mode state. Key hints follow remapped bindings.
+- **Gun sights**: framed heading and weapon readouts, barrel alignment, elevation and ammunition status. Artillery
+  adds shell, charge, breech/loading progress and a range table; air defence adds radar search/track/lock,
+  target range, ammunition and the existing lead cue. The centre remains available for aiming.
+- **FPV and aircraft camera views**: sensor-style framing, heading, flight telemetry, zoom, battery and radio
+  link or remaining fibre cable where available. Mavic shows grenade state. Jamming retains its visual noise
+  and a signal warning. Camera labels describe viewing rather than claiming to record video.
+- **Launch-site loading**: separate ammunition, readiness, energy and inventory sections with tooltips and
+  the normal item-transfer controls. Empty stores and missing power are distinguished from ready equipment.
+- **Vehicle storage**: the mod's own cargo console presents the same 27-slot storage with distinct cargo,
+  player inventory and quick-access sections. Ordinary vanilla chests keep their normal screen.
+- **Notices**: brief, bounded system cards show linked, loaded, out-of-range and other mod messages without
+  covering the central reticle. The in-world instruments hide while a menu is open.
 
 ## Vehicles
 All twelve vehicles are Steel Rain's own: HIMARS, M109, 120 mm mortar, Tomahawk and Iskander launchers, ZU-23-2,
@@ -81,6 +91,9 @@ Ground Station, Orlan Catapult, Shahed Launch Rail) are placed full-size emplace
 3. Right-click the air with the laptop to open **Fire Control**:
    - left-click the map to pick a target, or type X / Z coordinates
    - right-drag pans the map, the scroll wheel zooms
+   - **MAP / HEIGHT** (or **H**) switches terrain/elevation; **GRID**, **RANGES** and **CONTACTS** toggle overlays
+   - map rail **U** centers the selected unit; **@** centers you; **X** clears the target
+   - **CLEAR TARGET** removes the designation; it does not cancel a weapon already in flight
    - the orange ring is maximum range, the red ring is minimum range
    - choose the number of rounds for HIMARS / M109 salvos, then press **LAUNCH**
 4. You must stay within 128 blocks of the launcher to command it.
@@ -439,15 +452,10 @@ python3 tools/audit_models.py [model ...]   # check models for clipping, floatin
   recording of the same name dropped into `tools/sounds/` replaces any of them.
 
 ## On-screen displays
-The in-game displays are bare text over the world with no panels, and show only what you need at that moment:
-- **Driving:** speed and heading bottom right while moving. Fuel, battery, hull and engine state show for a few
-  seconds after they change, then fade; warnings (no fuel, flooded, low fuel, heavy damage) stay up.
-- **Guns:** a compass tape at the top, the barrel's elevation and level-ground range by the crosshair, and the
-  breech, shell and charge bottom right. The range table is hidden until you press **Y**.
-- **Air defence:** compass, elevation, the radar contact under the compass, and rounds bottom right.
-- **Drones and aircraft feeds:** name and recording dot top left, altitude, speed and range top right, battery and
-  link bottom left.
-- **Messages:** short notices under the crosshair that fade after a couple of seconds.
+The instrument panels described in [Interface](#interface) use live game data, with the centre and vanilla hotbar
+kept clear for driving, aiming and camera use. HUDs hide while a menu is open. Controls shown in the panels follow
+your key bindings; the artillery range table defaults to **Y**. Camera views are labelled **LIVE** and do not
+claim to record video. Unit lists stay empty until equipment is linked.
 
 ## Model checks
 `tools/audit_models.py` checks every model for:

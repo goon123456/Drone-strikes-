@@ -316,6 +316,9 @@ public final class ModRegistry {
     public static final Supplier<MenuType<WeaponMenu>> WEAPON_MENU = MENUS.register("weapon",
             () -> IMenuTypeExtension.create((id, inv, buf) -> new WeaponMenu(id, inv, buf.readBlockPos())));
 
+    public static final Supplier<MenuType<com.steelrain.block.SrStorageMenu>> STORAGE_MENU = MENUS.register("vehicle_storage",
+            () -> IMenuTypeExtension.create((id, inv, buf) -> new com.steelrain.block.SrStorageMenu(id, inv)));
+
     // ---- entities ----
     private static final Map<String, MissileProfile> PROFILE_BY_NAME = new HashMap<>();
     private static final Map<String, DeferredHolder<EntityType<?>, EntityType<MissileEntity>>> TYPE_BY_NAME = new HashMap<>();
