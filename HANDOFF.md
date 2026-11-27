@@ -35,6 +35,13 @@ All of it is the small-arms system (README section "Small arms" is the user-faci
   Bones the game animates by name: `mag`, `bolt`, `trigger`, `selector`, `charge`, `cover`, `belt`, `bipod`,
   `irons`, `muzzle`, `frag`. Named points (`muzzle`, `sight`, `front`, `optic`, `under`, `grip`, `hand`, `mag`,
   `charge`, `cover`, `belt`) are read by the renderer. Use `body()`, `slab()`, `sweep()` for rounded shapes.
+  **`body()` sections are (z, centre y, FULL width, FULL height)**, not half sizes; `shell()` takes (z, top, bottom,
+  width) and is easier to get right. `B()` is (min corner, size). Getting this wrong left sights, rails and
+  hammers floating in 0.53.
+- **Check every model for floating parts** before shipping: `python3 tools/check_islands.py [names...]` (needs
+  scipy). It reports every part not joined to the main body, with its gap in mm; 0.54.0 ships with 0 islands
+  across all guns and fittings. The preview renders in `vehicle_kit.render()` leave striped holes on large curved
+  surfaces (e.g. the M320 and RPG tubes look see-through): that is the point-splat previewer, not the model.
 - **Regenerate only the gun assets** (do not run the whole of `gen_assets.py`: it rebakes every vehicle):
   `PYTHONPATH=tools python3 -c "import sys; sys.argv=['x']; import gen_assets as g; g.guns(); g.lang()"`
   After `tools/gen_gun_sounds.py`, run `git checkout -- tools/sounds src/main/resources/assets/steelrain/sounds`
