@@ -297,6 +297,24 @@ def item_icons():
     d.line([(5, 13), (10, 13)], fill=c((70, 74, 78)))
     icons["drone_grenade"] = outlined(img)
 
+    img, d = canvas()   # fragmentation grenade: a cross-hatched olive body with a spoon and ring
+    d.ellipse([4, 5, 11, 13], fill=c((74, 86, 54)))
+    for yy in (7, 9, 11):
+        d.line([(5, yy), (10, yy)], fill=c((48, 56, 34)))
+    for xx in (6, 8, 10):
+        d.line([(xx, 6), (xx, 12)], fill=c((48, 56, 34)))
+    d.rectangle([6, 3, 9, 5], fill=c((120, 124, 128)))          # fuse body
+    d.line([(9, 4), (12, 3)], fill=c((150, 154, 158)))          # spoon
+    d.ellipse([11, 2, 14, 5], outline=c((180, 184, 188)))       # pull ring
+    icons["frag_grenade"] = outlined(img)
+
+    img, d = canvas()   # smoke grenade: a tall grey cylinder with a green band and top ports
+    d.rectangle([5, 4, 10, 13], fill=c((78, 82, 86)))
+    d.rectangle([5, 8, 10, 10], fill=c((90, 130, 80)))         # colour band
+    d.rectangle([5, 2, 10, 4], fill=c((120, 124, 128)))        # top cap
+    d.point([(6, 3), (8, 3), (9, 3)], fill=c((50, 52, 56)))    # emission ports
+    icons["smoke_grenade"] = outlined(img)
+
     img, d = canvas()   # Orlan-10 from above
     g = (156, 160, 166)
     d.rectangle([7, 3, 8, 11], fill=c(g))
@@ -576,10 +594,285 @@ def tags():
     write(f"{D}/curios/entities/steelrain_player.json", {"entities": ["minecraft:player"], "slots": ["back"]})
 
 
+# ---------------------------------------------------------------- small arms
+RIFLES_V5 = ["akm", "ak12", "aug", "tavor", "qbz95", "l85", "f2000", "famas", "bren2", "qbz191",
+             "m14", "bm59", "fal", "g3", "hk417", "sg542",
+             "psl", "g28", "m39emr", "mk12", "qbu88",
+             "awm", "m24", "m40", "sv98", "trg42"]
+GL_ROUNDS = ["gl_he", "gl_smoke"]
+GUN_ITEMS = ["ak74m", "m4a1", "svd", "pkm", "m17", "m590", "m107", "rpg7", "m18", "m9", "hk416", "g36", "scarh", "m249", "m240", "m110",
+             "glock17", "glock19", "p99", "hk_usp", "five_seven", "m1911a1", "hi_power", "cz75", "p226", "p228"] + RIFLES_V5 + ["m320"]
+GUN_MAGS = ["ak74m", "m4a1", "svd", "pkm", "m17", "m107", "m18", "m9", "hk416", "g36", "scarh", "m249", "m240", "m110",
+            "glock17", "glock19", "p99", "hk_usp", "five_seven", "m1911a1", "hi_power", "cz75", "p226", "p228"] + RIFLES_V5
+GUN_PARTS = ["red_dot", "acog", "pso1", "suppressor", "pistol_suppressor", "foregrip", "scope_10x", "holo", "lpvo", "magnifier", "nv_scope",
+             "thermal_scope", "flashlight", "laser", "angled_grip", "bipod"]
+ROUND_NAMES = {"ammo_545": "5.45x39", "ammo_556": "5.56x45", "ammo_762": "7.62x54R", "ammo_9mm": "9x19", "ammo_50": ".50 BMG", "ammo_76251": "7.62x51",
+               "ammo_76239": "7.62x39", "ammo_58": "5.8x42", "ammo_338": ".338 Lapua", "ammo_57": "5.7x28", "ammo_45": ".45 ACP"}
+GUN_AMMO = ["ammo_545", "ammo_556", "ammo_762", "ammo_9mm", "ammo_12g", "ammo_50", "rocket_pg7v", "rocket_og7v", "ammo_76251", "ammo_76239", "ammo_58", "ammo_338", "ammo_57", "ammo_45", "gl_he", "gl_smoke"] + [r + k for r in ROUND_NAMES for k in ("_tracer", "_training")]
+
+GUN_LANG = {
+    "item.steelrain.ak74m": "AK-74M", "item.steelrain.m4a1": "M4A1", "item.steelrain.svd": "SVD", "item.steelrain.pkm": "PKM",
+    "item.steelrain.m17": "M17", "item.steelrain.m590": "M590A1", "item.steelrain.m107": "Barrett M107", "item.steelrain.rpg7": "RPG-7",
+    "item.steelrain.m107_magazine": "M107 Magazine (10)", "item.steelrain.ammo_50": ".50 BMG Round",
+    "item.steelrain.rocket_pg7v": "PG-7V Anti-Tank Rocket", "item.steelrain.rocket_og7v": "OG-7V Fragmentation Rocket",
+    "item.steelrain.scope_10x": "10x Scope",
+    "item.steelrain.m18": "M18", "item.steelrain.m9": "M9", "item.steelrain.hk416": "HK416", "item.steelrain.g36": "G36",
+    "item.steelrain.scarh": "SCAR-H", "item.steelrain.m249": "M249", "item.steelrain.m240": "M240", "item.steelrain.m110": "M110",
+    "item.steelrain.m18_magazine": "M18 Magazine (17)", "item.steelrain.m9_magazine": "M9 Magazine (15)",
+    "item.steelrain.hk416_magazine": "HK416 Magazine (30)", "item.steelrain.g36_magazine": "G36 Magazine (30)",
+    "item.steelrain.scarh_magazine": "SCAR-H Magazine (20)", "item.steelrain.m249_magazine": "M249 Belt Box (200)",
+    "item.steelrain.m240_magazine": "M240 Belt Can (100)", "item.steelrain.m110_magazine": "M110 Magazine (20)",
+    "item.steelrain.ammo_76251": "7.62x51 Round",
+    "gui.steelrain.gun.reloading": "RELOADING",
+    "item.steelrain.glock17": "Glock 17", "item.steelrain.glock19": "Glock 19", "item.steelrain.p99": "Walther P99", "item.steelrain.hk_usp": "HK USP",
+    "item.steelrain.five_seven": "FN Five-seveN", "item.steelrain.m1911a1": "M1911A1", "item.steelrain.hi_power": "Browning Hi-Power", "item.steelrain.cz75": "CZ 75",
+    "item.steelrain.p226": "SIG P226", "item.steelrain.p228": "SIG P228",
+    **{f"item.steelrain.{g}_magazine": n + " Magazine" for g, n in {"glock17": "Glock 17 (17)", "glock19": "Glock 19 (15)", "p99": "P99 (15)", "hk_usp": "USP (15)",
+        "five_seven": "Five-seveN (20)", "m1911a1": "1911 (7)", "hi_power": "Hi-Power (13)", "cz75": "CZ 75 (16)", "p226": "P226 (15)", "p228": "P228 (13)"}.items()},
+    "item.steelrain.ammo_76239": "7.62x39 Round", "item.steelrain.ammo_58": "5.8x42 Round", "item.steelrain.ammo_338": ".338 Lapua Round",
+    "item.steelrain.ammo_57": "5.7x28 Round", "item.steelrain.ammo_45": ".45 ACP Round",
+    "item.steelrain.akm": "AKM", "item.steelrain.ak12": "AK-12", "item.steelrain.aug": "Steyr AUG A1", "item.steelrain.tavor": "IWI Tavor X95",
+    "item.steelrain.qbz95": "QBZ-95", "item.steelrain.l85": "L85A2", "item.steelrain.f2000": "FN F2000", "item.steelrain.famas": "FAMAS F1",
+    "item.steelrain.bren2": "CZ BREN 2", "item.steelrain.qbz191": "QBZ-191",
+    "item.steelrain.m14": "M14", "item.steelrain.bm59": "Beretta BM59", "item.steelrain.fal": "FN FAL", "item.steelrain.g3": "HK G3",
+    "item.steelrain.hk417": "HK417", "item.steelrain.sg542": "SIG SG 542",
+    "item.steelrain.psl": "PSL", "item.steelrain.g28": "HK G28", "item.steelrain.m39emr": "M39 EMR", "item.steelrain.mk12": "Mk 12 SPR",
+    "item.steelrain.qbu88": "QBU-88",
+    "item.steelrain.awm": "AI AWM", "item.steelrain.m24": "M24 SWS", "item.steelrain.m40": "M40A5", "item.steelrain.sv98": "SV-98", "item.steelrain.trg42": "Sako TRG-42",
+    "item.steelrain.m320": "M320 Grenade Launcher", "item.steelrain.gl_he": "40mm HE Grenade", "item.steelrain.gl_smoke": "40mm Smoke Grenade",
+    "item.steelrain.frag_grenade": "Fragmentation Grenade", "item.steelrain.smoke_grenade": "Smoke Grenade",
+    "entity.steelrain.hand_grenade": "Grenade",
+    **{f"item.steelrain.{g}_magazine": n + " Magazine" for g, n in {"akm": "AKM (30)", "ak12": "AK-12 (30)", "aug": "AUG (30)", "tavor": "Tavor (30)",
+        "qbz95": "QBZ-95 (30)", "l85": "L85 (30)", "f2000": "F2000 (30)", "famas": "FAMAS (25)", "bren2": "BREN 2 (30)", "qbz191": "QBZ-191 (30)",
+        "m14": "M14 (20)", "bm59": "BM59 (20)", "fal": "FAL (20)", "g3": "G3 (20)", "hk417": "HK417 (20)", "sg542": "SG 542 (20)",
+        "psl": "PSL (10)", "g28": "G28 (20)", "m39emr": "M39 EMR (20)", "mk12": "Mk 12 (20)", "qbu88": "QBU-88 (10)",
+        "awm": "AWM (5)", "m24": "M24 (5)", "m40": "M40 (5)", "sv98": "SV-98 (10)", "trg42": "TRG-42 (5)"}.items()},
+    "gui.steelrain.gun.jammed": "JAMMED - RELOAD",
+    "message.steelrain.gun_jammed": "Weapon jammed: reload to clear it",
+    **{f"item.steelrain.{r}_tracer": f"{n} Tracer Round" for r, n in ROUND_NAMES.items()},
+    **{f"item.steelrain.{r}_training": f"{n} Training Round" for r, n in ROUND_NAMES.items()},
+    "gun.steelrain.kind.ball": "Ball", "gun.steelrain.kind.tracer": "Tracer", "gun.steelrain.kind.training": "Training",
+    "item.steelrain.holo": "Holographic Sight", "item.steelrain.lpvo": "1-6x Variable Scope", "item.steelrain.magnifier": "3x Flip Magnifier",
+    "item.steelrain.nv_scope": "Night Sight", "item.steelrain.thermal_scope": "Thermal Sight", "item.steelrain.flashlight": "Weapon Light",
+    "item.steelrain.laser": "Laser Pointer", "item.steelrain.angled_grip": "Angled Foregrip", "item.steelrain.bipod": "Clip-on Bipod",
+    "tooltip.steelrain.holo": "Unmagnified sight: a lit ring and dot in a wide window",
+    "tooltip.steelrain.lpvo": "1x to 6x; turn the power with the scroll wheel while aiming",
+    "tooltip.steelrain.magnifier": "Sits behind a red dot or holographic sight and makes it 3x; flips aside with its key",
+    "tooltip.steelrain.nv_scope": "4x night sight: sees in the dark, in green",
+    "tooltip.steelrain.thermal_scope": "3x thermal sight: living things in the open show as bright shapes",
+    "tooltip.steelrain.flashlight": "Lights what the gun points at, out to 14 blocks; switched with its key",
+    "tooltip.steelrain.laser": "A red spot where the gun points; steadier fire from the hip while it is on",
+    "tooltip.steelrain.angled_grip": "Sights come up quicker; a little less muzzle climb",
+    "tooltip.steelrain.bipod": "Crouch and keep still to rest the gun: far less kick and drift",
+    "gui.steelrain.part.red_dot": "Dot", "gui.steelrain.part.acog": "4x", "gui.steelrain.part.pso1": "PSO-1", "gui.steelrain.part.scope_10x": "10x",
+    "gui.steelrain.part.holo": "Holo", "gui.steelrain.part.lpvo": "1-6x", "gui.steelrain.part.nv_scope": "Night", "gui.steelrain.part.thermal_scope": "Thermal",
+    "gui.steelrain.part.magnifier": "3x Magnifier", "gui.steelrain.part.suppressor": "Suppressor", "gui.steelrain.part.pistol_suppressor": "Suppressor",
+    "gui.steelrain.part.foregrip": "Grip", "gui.steelrain.part.angled_grip": "Angled", "gui.steelrain.part.bipod": "Bipod",
+    "gui.steelrain.part.flashlight": "Light", "gui.steelrain.part.laser": "Laser",
+    "gui.steelrain.gun.slot.magnifier": "Magnifier", "gui.steelrain.gun.slot.side": "Side",
+    "key.steelrain.gun_magnifier": "Firearm: flip magnifier", "key.steelrain.gun_side": "Firearm: light or laser on/off",
+    "tooltip.steelrain.scope_10x": "10x telescope with a mil-dot reticle and an elevation drum, 100 to 1800 m",
+    "message.steelrain.gun_no_rockets": "No rockets",
+    "message.steelrain.gun_backblast": "Backblast: there is a wall behind you",
+    "gui.steelrain.gun.rockets": "ROCKETS %s",
+    "item.steelrain.ak74m_magazine": "AK-74 Magazine (30)", "item.steelrain.m4a1_magazine": "STANAG Magazine (30)",
+    "item.steelrain.svd_magazine": "SVD Magazine (10)", "item.steelrain.pkm_magazine": "PKM Belt Box (100)",
+    "item.steelrain.m17_magazine": "M17 Magazine (17)",
+    "item.steelrain.ammo_545": "5.45x39 Round", "item.steelrain.ammo_556": "5.56x45 Round", "item.steelrain.ammo_762": "7.62x54R Round",
+    "item.steelrain.ammo_9mm": "9x19 Round", "item.steelrain.ammo_12g": "12 Gauge Buckshot",
+    "item.steelrain.red_dot": "Red Dot Sight", "item.steelrain.acog": "4x Combat Sight", "item.steelrain.pso1": "PSO-1 Scope",
+    "item.steelrain.suppressor": "Rifle Suppressor", "item.steelrain.pistol_suppressor": "Pistol Suppressor",
+    "item.steelrain.foregrip": "Vertical Foregrip",
+    "tooltip.steelrain.red_dot": "Unmagnified sight with a lit aiming dot",
+    "tooltip.steelrain.acog": "4x sight; bars under the chevron give the hold for 200 to 600 m",
+    "tooltip.steelrain.pso1": "4x scope with range-finder and elevation drum, 100 to 1000 m",
+    "tooltip.steelrain.suppressor": "Hides the flash and quietens the report; a little less kick",
+    "tooltip.steelrain.pistol_suppressor": "Hides the flash and quietens the report",
+    "tooltip.steelrain.foregrip": "Steadier sights and less muzzle climb",
+    "tooltip.steelrain.attachment.use": "Hold the gun and press the fittings key to fit it",
+    "tooltip.steelrain.gun.calibre": "Calibre: %s",
+    "tooltip.steelrain.gun.loaded": "Loaded: %s / %s",
+    "tooltip.steelrain.gun.mode": "Selector: %s",
+    "tooltip.steelrain.gun.velocity": "Muzzle velocity: %s m/s",
+    "tooltip.steelrain.gun.rate": "Rate of fire: %s rounds/min",
+    "tooltip.steelrain.gun.accuracy": "Accuracy: %s MOA",
+    "tooltip.steelrain.gun.weight": "Weight: %s kg",
+    "tooltip.steelrain.gun.at300": "At 300 m: %s m/s after %s s",
+    "tooltip.steelrain.gun.more": "Hold Shift for ballistics",
+    "tooltip.steelrain.magazine.rounds": "%s / %s rounds of %s",
+    "tooltip.steelrain.magazine.fits": "Fits: %s",
+    "tooltip.steelrain.magazine.use": "Hold use to load rounds; sneak + use to empty",
+    "gun.steelrain.mode.safe": "Safe", "gun.steelrain.mode.semi": "Semi", "gun.steelrain.mode.auto": "Auto",
+    "message.steelrain.gun_safe": "Safety is on",
+    "message.steelrain.gun_no_magazine": "No magazine fitted",
+    "message.steelrain.gun_no_magazines": "No loaded magazine for this gun",
+    "message.steelrain.gun_no_ammo": "No shells",
+    "key.steelrain.gun_reload": "Firearm: reload",
+    "key.steelrain.gun_mode": "Firearm: fire selector",
+    "key.steelrain.gun_zero_up": "Firearm: sights up 100 m",
+    "key.steelrain.gun_zero_down": "Firearm: sights down 100 m",
+    "key.steelrain.gun_fit": "Firearm: fittings",
+    "key.steelrain.gun_breath": "Firearm: hold breath",
+    "gui.steelrain.gun.fittings": "Fittings",
+    "gui.steelrain.gun.zero": "ZERO %s M",
+    "gui.steelrain.gun.bipod": "BIPOD",
+    "gui.steelrain.gun.no_spare": "NO SPARE MAGAZINE",
+    "gui.steelrain.gun.shells": "SHELLS %s",
+    "gui.steelrain.gun.slot.optic": "Sight",
+    "gui.steelrain.gun.slot.muzzle": "Muzzle",
+    "gui.steelrain.gun.slot.under": "Handguard",
+    "gui.steelrain.gun.no_mount": "no mount on this gun",
+    "gui.steelrain.gun.fit_hint": "Click a fitting to take it from your pack; click it again to take it off. Drag to turn the gun.",
+    "gui.steelrain.gun.s_calibre": "Calibre", "gui.steelrain.gun.s_velocity": "Muzzle", "gui.steelrain.gun.s_rate": "Rate",
+    "gui.steelrain.gun.s_feed": "Feed", "gui.steelrain.gun.s_accuracy": "Group", "gui.steelrain.gun.s_weight": "Weight",
+    "gui.steelrain.gun.s_zero": "Zero", "gui.steelrain.gun.s_drop300": "Drop 300", "gui.steelrain.gun.s_v300": "V 300",
+    "death.attack.steelrain.bullet": "%1$s was shot",
+    "death.attack.steelrain.bullet.player": "%1$s was shot by %2$s",
+    "death.attack.steelrain.bullet.item": "%1$s was shot by %2$s with %3$s",
+    "subtitles.steelrain.gun_fire": "Gunshot", "subtitles.steelrain.gun_far": "Distant gunfire",
+    "subtitles.steelrain.gun_handling": "Gun handled", "subtitles.steelrain.bullet_pass": "Bullet passes",
+}
+
+
+def guns():
+    """Small arms: mesh and texture for every gun, magazine-bearing or not, every fitting and each kind of round;
+    item files that hand the drawing to GunItemRenderer; recipes; the bullet damage type."""
+    import gen_aircraft as GA
+    import gen_guns as GG
+    for name, (build, px) in GG.MODELS.items():
+        model = build()
+        tex, tw, th = VK.bake(model, name, px)
+        save(Image.fromarray(tex).convert("RGB"), f"{A}/textures/entity/gun/{name}.png")
+        out = GA.export(model, tw, th)
+        out["points"] = {k: [round(v, 4) for v in p] for k, p in model["points"].items()}
+        path = f"{A}/models/gun/{name}.json"
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w") as f:
+            json.dump(out, f, separators=(",", ":"))
+        # a small side view for the item's break particles
+        icon = VK.render(model, tex, math.radians(90), 0.0, 64, bg=(0, 0, 0)).resize((16, 16), Image.LANCZOS).convert("RGBA")
+        px_ = icon.load()
+        for yy in range(16):
+            for xx in range(16):
+                r, g_, b, _ = px_[xx, yy]
+                px_[xx, yy] = (r, g_, b, 0 if r + g_ + b < 12 else 255)
+        save(icon, f"{A}/textures/item/{name}.png")
+    for name in GUN_ITEMS + [m + "_magazine" for m in GUN_MAGS] + GUN_PARTS + GUN_AMMO:
+        tex = name[:-9] if name.endswith("_magazine") else name
+        write(f"{A}/models/item/{name}.json", {"parent": "minecraft:builtin/entity", "gui_light": "front",
+                                               "textures": {"particle": f"{MOD}:item/{tex}"}})
+    I, N, B, C, P = MC + "iron_ingot", MC + "iron_nugget", MC + "iron_block", MC + "copper_ingot", MC + "gunpowder"
+    K, W, G, R = MC + "black_dye", MC + "oak_planks", MC + "glass_pane", MC + "redstone"
+    shaped("ak74m", ["KII", "IBI", " I "], {"K": K, "I": I, "B": B})
+    shaped("m4a1", ["III", "KBI", " I "], {"K": K, "I": I, "B": B})
+    shaped("svd", ["III", "WBI", "W  "], {"W": W, "I": I, "B": B})
+    shaped("pkm", ["IIB", "WBI", " I "], {"W": W, "I": I, "B": B})
+    shaped("m17", ["II", "KI"], {"K": K, "I": I})
+    shaped("m590", ["III", "WII"], {"W": W, "I": I})
+    shaped("m107", ["IIB", "KBB", " II"], {"K": K, "I": I, "B": B})
+    S_, L_ = MC + "sand", MC + "leather"
+    shaped("m18", ["II", "SI"], {"S": S_, "I": I})
+    shaped("m9", ["II", "LI"], {"L": L_, "I": I})
+    shaped("hk416", ["III", "KBI", " N "], {"K": K, "I": I, "B": B, "N": N})
+    shaped("g36", ["KKK", "IBI", " I "], {"K": K, "I": I, "B": B})
+    shaped("scarh", ["III", "SBI", " I "], {"S": S_, "I": I, "B": B})
+    shaped("m249", ["IIB", "KBI", " I "], {"K": K, "I": I, "B": B})
+    shaped("m240", ["IBB", "KBI", " I "], {"K": K, "I": I, "B": B})
+    shaped("m110", ["IIB", "SBI", " I "], {"S": S_, "I": I, "B": B})
+    shaped("m18_magazine", ["N", "N", "S"], {"N": N, "S": S_})
+    shaped("m9_magazine", ["N", "N", "L"], {"N": N, "L": L_})
+    shaped("hk416_magazine", ["NK", "N ", "N "], {"N": N, "K": K})
+    shaped("g36_magazine", ["NG", "N ", "N "], {"N": N, "G": G})
+    shaped("scarh_magazine", ["NS", "N ", "N "], {"N": N, "S": S_})
+    shaped("m249_magazine", ["NIN", "I I", "III"], {"N": N, "I": I})
+    shaped("m240_magazine", ["INI", "I I", "INI"], {"N": N, "I": I})
+    shaped("m110_magazine", ["NN", "NS"], {"N": N, "S": S_})
+    shaped("ammo_76251", ["I", "P", "N"], {"I": I, "P": P, "N": N}, 20)
+    shaped("rpg7", ["IWI", " W "], {"W": W, "I": I})
+    shaped("m107_magazine", ["II", "N ", "N "], {"N": N, "I": I})
+    shaped("ammo_50", ["I", "P", "G"], {"I": I, "P": P, "G": MC + "gold_ingot"}, 10)
+    shaped("rocket_pg7v", [" C ", "ITI", " P "], {"C": C, "I": I, "T": MC + "tnt", "P": P}, 2)
+    shaped("rocket_og7v", [" N ", "ITI", " P "], {"N": N, "I": I, "T": MC + "tnt", "P": P}, 2)
+    shaped("scope_10x", ["GIG", "IRI", " I "], {"R": R, "I": I, "G": G})
+    for _g in ("glock17", "glock19", "p99", "hk_usp", "five_seven", "cz75", "p226", "p228"):
+        shaped(_g, ["II", "KI"], {"K": K, "I": I})
+    shaped("m1911a1", ["II", "WI"], {"W": W, "I": I})
+    shaped("hi_power", ["II", "WI"], {"W": W, "I": I})
+    for _g in ("glock17", "p99", "hk_usp", "cz75", "p226"):
+        shaped(_g + "_magazine", ["N", "N", "K"], {"N": N, "K": K})
+    for _g in ("glock19", "p228", "m1911a1", "hi_power"):
+        shaped(_g + "_magazine", ["N", "N"], {"N": N})
+    shaped("five_seven_magazine", ["NN", "N ", "N "], {"N": N})
+    shaped("ammo_76239", ["I", "P", "C"], {"I": I, "P": P, "C": C}, 20)
+    shaped("ammo_58", ["I", "P", "N"], {"I": I, "P": P, "N": N}, 20)
+    shaped("ammo_338", ["I", "P", "I"], {"I": I, "P": P}, 10)
+    shaped("ammo_57", ["N", "P", "C"], {"N": N, "P": P, "C": C}, 20)
+    shaped("ammo_45", ["N", "P", "C"], {"N": N, "P": P, "C": C}, 16)
+    # V5 assault rifles: wood-furniture AKs use planks, the modern/bullpup ones use polymer (K) + a sight bridge
+    shaped("akm", ["III", "WBI", " W "], {"W": W, "I": I, "B": B})
+    shaped("ak12", ["III", "KBI", " K "], {"K": K, "I": I, "B": B})
+    for _g in ("aug", "tavor", "qbz95", "l85", "f2000", "famas", "bren2", "qbz191"):
+        shaped(_g, ["IBI", "KIK", " K "], {"K": K, "I": I, "B": B})
+    for _g in ("m14", "bm59", "fal"):                                   # wood-furniture battle rifles
+        shaped(_g, ["III", "WBI", "WW "], {"W": W, "I": I, "B": B})
+    for _g in ("g3", "hk417", "sg542"):                                 # polymer/steel battle rifles
+        shaped(_g, ["III", "KBI", " K "], {"K": K, "I": I, "B": B})
+    shaped("psl", ["III", "WBI", " W "], {"W": W, "I": I, "B": B})       # marksman rifles (a scope lens R in the receiver)
+    shaped("m39emr", ["III", "KBI", "WW "], {"K": K, "I": I, "B": B, "W": W})
+    for _g in ("g28", "mk12", "qbu88"):
+        shaped(_g, ["IRI", "KBI", " K "], {"K": K, "I": I, "B": B, "R": R})
+    for _g in ("awm", "m24", "m40", "sv98", "trg42"):                   # bolt-action snipers (a heavy barrel: two ingots + scope lens)
+        shaped(_g, ["IRI", "IBI", "WK "], {"K": K, "I": I, "B": B, "R": R, "W": W})
+    for _g in RIFLES_V5:
+        shaped(_g + "_magazine", ["NK", "N ", "N "], {"N": N, "K": K})
+    # M320 grenade launcher and its 40mm rounds; hand grenades
+    shaped("m320", ["II", "KB"], {"K": K, "I": I, "B": B})
+    shaped("gl_he", [" I ", "ITI", " P "], {"I": I, "T": MC + "tnt", "P": P}, 2)
+    shaped("gl_smoke", [" N ", "ICI", " P "], {"N": N, "I": I, "C": C, "P": P}, 2)
+    shaped("frag_grenade", [" I ", "IPI", " I "], {"I": I, "P": P}, 2)
+    shaped("smoke_grenade", [" N ", "NPN", " N "], {"N": N, "P": P}, 2)
+
+    E_, T_, Q_ = MC + "ender_eye", MC + "torch", MC + "quartz"
+    shaped("holo", ["GRG", "III"], {"R": R, "I": I, "G": G})
+    shaped("lpvo", ["GIG", "IRI", "I  "], {"R": R, "I": I, "G": G})
+    shaped("magnifier", ["GIG", " N "], {"I": I, "G": G, "N": N})
+    shaped("nv_scope", ["GEG", "IRI", " I "], {"R": R, "I": I, "G": G, "E": E_})
+    shaped("thermal_scope", ["QEQ", "IRI", " I "], {"R": R, "I": I, "Q": Q_, "E": E_})
+    shaped("flashlight", ["NTG", " N "], {"N": N, "T": T_, "G": G})
+    shaped("laser", ["NRG", " N "], {"N": N, "R": R, "G": G})
+    shaped("angled_grip", ["II", " K"], {"I": I, "K": K})
+    shaped("bipod", [" N ", "I I", "I I"], {"I": I, "N": N})
+    for r in ROUND_NAMES:                                       # a round and red dye makes a tracer; with blue dye, a training round
+        write(f"{D}/recipe/{r}_tracer.json", {"type": "minecraft:crafting_shapeless", "category": "misc",
+            "ingredients": [{"item": f"{MOD}:{r}"}] * 8 + [{"item": MC + "red_dye"}], "result": {"id": f"{MOD}:{r}_tracer", "count": 8}})
+        write(f"{D}/recipe/{r}_training.json", {"type": "minecraft:crafting_shapeless", "category": "misc",
+            "ingredients": [{"item": f"{MOD}:{r}"}] * 8 + [{"item": MC + "blue_dye"}], "result": {"id": f"{MOD}:{r}_training", "count": 8}})
+    shaped("ak74m_magazine", ["N ", "NN", " N"], {"N": N})
+    shaped("m4a1_magazine", ["NN", "N ", "N "], {"N": N})
+    shaped("svd_magazine", ["NN", "NN"], {"N": N})
+    shaped("pkm_magazine", ["INI", "I I", "III"], {"N": N, "I": I})
+    shaped("m17_magazine", ["N", "N", "N"], {"N": N})
+    shaped("ammo_545", ["N", "P", "C"], {"N": N, "P": P, "C": C}, 20)
+    shaped("ammo_556", ["N", "P", "G"], {"N": N, "P": P, "G": MC + "gold_nugget"}, 20)
+    shaped("ammo_762", ["I", "P", "C"], {"I": I, "P": P, "C": C}, 20)
+    shaped("ammo_9mm", ["NP", "C "], {"N": N, "P": P, "C": C}, 24)
+    shaped("ammo_12g", ["N", "P", "R"], {"N": N, "P": P, "R": MC + "paper"}, 8)
+    shaped("red_dot", [" R ", "IGI"], {"R": R, "I": I, "G": G})
+    shaped("acog", ["GIG", " I "], {"I": I, "G": G})
+    shaped("pso1", ["GIG", "IRI"], {"R": R, "I": I, "G": G})
+    shaped("suppressor", ["I I", "I I"], {"I": I})
+    shaped("pistol_suppressor", ["N N", "N N"], {"N": N})
+    shaped("foregrip", ["I", "K", "K"], {"I": I, "K": K})
+    write(f"{D}/damage_type/bullet.json", {"exhaustion": 0.1, "message_id": "steelrain.bullet", "scaling": "never"})
+    for tag in ("no_knockback", "bypasses_cooldown", "is_projectile"):
+        write(f"{RES}/data/minecraft/tags/damage_type/{tag}.json", {"replace": False, "values": [f"{MOD}:bullet"]})
+
+
 # ---------------------------------------------------------------- lang
 def lang():
     L = {
         "itemGroup.steelrain": "Steel Rain",
+        **GUN_LANG,
         "key.categories.steelrain": "Steel Rain",
         "key.steelrain.exit_drone": "Leave drone camera",
         "item.steelrain.circuit_board": "Circuit Board",
@@ -1007,5 +1300,6 @@ if __name__ == "__main__":
     gen_sounds.main()
     vehicles()
     aircraft()
+    guns()
     block_textures(); block_models(); item_icons(); entity_textures(); recipes(); tags(); lang()
     print("assets generated")

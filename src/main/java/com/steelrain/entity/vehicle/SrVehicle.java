@@ -597,7 +597,7 @@ public abstract class SrVehicle extends Entity implements OwnableEntity {
     public boolean hurt(DamageSource source, float amount) {
         if (level().isClientSide || isRemoved() || isInvulnerableTo(source)) return false;
         // The owner (or anyone in creative) packs it up by hitting it while sneaking, if nobody is aboard.
-        if (source.getEntity() instanceof Player p && p.isShiftKeyDown() && getPassengers().isEmpty()
+        if (!source.is(com.steelrain.gun.Bullets.BULLET) && source.getEntity() instanceof Player p && p.isShiftKeyDown() && getPassengers().isEmpty()
                 && (p.getAbilities().instabuild || p.getUUID().equals(owner))) {
             Containers.dropContents(level(), blockPosition(), inventory);
             ItemStack item = asItem();
@@ -606,8 +606,9 @@ public abstract class SrVehicle extends Entity implements OwnableEntity {
             discard();
             return true;
         }
-        // Armour shrugs off small arms; explosions and heavy shells do the damage.
-        float dealt = source.is(DamageTypeTags.IS_EXPLOSION) ? amount : Math.max(0, amount * 0.4f - 3f);
+        // Armour shrugs off small arms; explosions and heavy shells do the damage. A bullet source already carries
+        // its calibre's armour bite (see Bullets), so it passes straight through without the generic reduction.
+        float dealt = (source.is(DamageTypeTags.IS_EXPLOSION) || source.is(com.steelrain.gun.Bullets.BULLET)) ? amount : Math.max(0, amount * 0.4f - 3f);
         if (dealt <= 0) return false;
         setHealth(health() - dealt);
         if (level() instanceof ServerLevel sl) {

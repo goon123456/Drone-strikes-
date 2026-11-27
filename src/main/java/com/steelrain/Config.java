@@ -41,6 +41,15 @@ public final class Config {
     public static final ModConfigSpec.IntValue AIR_DEFENCE_CEILING = B
             .comment("How far above itself (blocks) the Pantsir, Gepard and ZU-23-2 can reach. The Global Hawk cruises above this; only the Patriot can hit it.")
             .defineInRange("airDefenceCeiling", 100, 16, 512);
+    public static final ModConfigSpec.DoubleValue GUN_DAMAGE = B
+            .comment("Multiplier for the damage of small-arms bullets.")
+            .defineInRange("gunDamage", 1.0, 0.0, 10.0);
+    public static final ModConfigSpec.BooleanValue BULLET_PENETRATION = B
+            .comment("Bullets go through leaves, glass, wood and earth, losing speed, instead of stopping at the first block.")
+            .define("bulletPenetration", true);
+    public static final ModConfigSpec.BooleanValue GUNS_BREAK_GLASS = B
+            .comment("Bullets shatter glass blocks and panes they hit.")
+            .define("gunsBreakGlass", true);
     public static final ModConfigSpec.BooleanValue MARK_PLAYERS = B
             .comment("Recon drones show players on the laptop map. Turn off for PvP servers that want stealth.")
             .define("reconMarksPlayers", true);

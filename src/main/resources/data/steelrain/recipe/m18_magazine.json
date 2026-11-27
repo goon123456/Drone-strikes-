@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "N",
+    "N",
+    "S"
+  ],
+  "key": {
+    "N": {
+      "item": "minecraft:iron_nugget"
+    },
+    "S": {
+      "item": "minecraft:sand"
+    }
+  },
+  "result": {
+    "id": "steelrain:m18_magazine",
+    "count": 1
+  }
+}

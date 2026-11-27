@@ -77,6 +77,26 @@ SCREEN = _mat("screen", (28, 54, 40), "lamp")                    # a lit display
 SCREEN_LINE = _mat("screen_line", (110, 170, 110), "lamp")
 GREEN_LAMP = _mat("green_lamp", (90, 220, 90), "lamp")
 
+# small-arms finishes, painted at a much finer grain than vehicles
+GUN_STEEL = _mat("gun_steel", (44, 46, 50), "gunmetal")          # phosphated steel
+GUN_BLACK = _mat("gun_black", (30, 31, 34), "gunmetal")          # black paint over steel
+GUN_GREY = _mat("gun_grey", (62, 64, 68), "gunmetal")            # anodised aluminium
+GUN_BARE = _mat("gun_bare", (120, 122, 126), "gunmetal", wear=(170, 172, 176))   # bolts, bare steel
+GUN_ALU = _mat("gun_alu", (96, 98, 100), "gunmetal", wear=(150, 152, 154))        # aluminium magazine
+POLYMER = _mat("polymer", (28, 28, 30), "polymer")
+POLYMER_TAN = _mat("polymer_tan", (150, 126, 92), "polymer")
+POLYMER_PLUM = _mat("polymer_plum", (62, 38, 40), "polymer")
+BAKELITE = _mat("bakelite", (112, 52, 26), "polymer", mottle=(60, 26, 14))
+LAMINATE = _mat("laminate", (140, 84, 44), "laminate")           # laminated birch, varnished
+RUBBER_PAD = _mat("rubber_pad", (20, 20, 21), "polymer")
+LENS = _mat("lens", (54, 34, 70), "lens")                        # coated optic glass
+LENS_RED = _mat("lens_red", (120, 44, 36), "lens")
+CASE_BRASS = _mat("case_brass", (190, 150, 70), "gunmetal", wear=(230, 200, 120))
+CASE_STEEL = _mat("case_steel", (78, 88, 62), "gunmetal", wear=(110, 118, 96))    # lacquered steel cases
+BULLET = _mat("bullet", (176, 110, 70), "gunmetal", wear=(214, 150, 110))
+SHELL_RED = _mat("shell_red", (160, 30, 28), "polymer")
+AMMO_GREEN = _mat("ammo_green", (86, 92, 52), "gunmetal", wear=(128, 130, 104))   # painted ammunition can
+
 DUST = np.array([132, 120, 94], dtype=float)
 
 
@@ -962,6 +982,31 @@ def _mark(img, wm, kind, cu, cv, size, size2=None):
     elif kind.startswith("digits:"):
         # stencilled lettering: pale on dark paint, dark on a pale plate
         _text(img, kind[7:], cx, cy, max(4.0, 0.14 * k), (226, 226, 220) if img.mean() < 150 else (26, 26, 26))
+    elif kind.startswith("text:"):                          # fine engraved or painted lettering, `size` metres tall
+        tone = (206, 206, 200) if img.mean() < 150 else (26, 26, 26)
+        _text(img, kind[5:], cx, cy, max(5.0, size * k), size2 if isinstance(size2, tuple) else tone)
+    elif kind == "dot":                                     # a painted dot: selector marks, sight inserts
+        r = max(1.0, size * k / 2)
+        yy, xx = np.mgrid[0:hp, 0:wp]
+        img[np.hypot(xx + 0.5 - cx, yy + 0.5 - cy) <= r] = size2 if isinstance(size2, tuple) else (226, 226, 220)
+    elif kind == "grooves":                                 # cut grooves across a face: slide serrations, grip ribs
+        w2, h2 = size * k / 2, (size2 or size) * k / 2
+        step = max(2.0, k * 0.0034)
+        for i in range(int(2 * w2 / step)):
+            if i % 2 == 0:
+                rect(cx - w2 + i * step, cy - h2, cx - w2 + (i + 1) * step, cy + h2, None, 0.5)
+            else:
+                rect(cx - w2 + i * step, cy - h2, cx - w2 + i * step + 1, cy + h2, None, 1.3)
+    elif kind == "checker":                                 # chequering or stippling on a grip
+        w2, h2 = size * k / 2, (size2 or size) * k / 2
+        step = max(2, int(k * 0.004))
+        yy, xx = np.mgrid[0:hp, 0:wp]
+        m = (np.abs(xx - cx) < w2) & (np.abs(yy - cy) < h2) & ((((xx + yy) // step) + ((xx - yy) // step)) % 2 == 0)
+        img[m] = np.clip(img[m].astype(float) * 0.6, 0, 255).astype(np.uint8)
+    elif kind == "slot":                                    # a dark cut-out: vents, lightening cuts, ports
+        w2, h2 = size * k / 2, (size2 or size) * k / 2
+        rect(cx - w2, cy - h2, cx + w2, cy + h2, (10, 10, 11))
+        rect(cx - w2, cy + h2 - 1, cx + w2, cy + h2, None, 1.6)
     elif kind in ("hatch", "panel"):                        # an outlined door, hatch or access panel
         w2, h2 = size * k / 2, (size2 or size) * k / 2
         t = max(1.0, k * 0.012)
@@ -1129,6 +1174,37 @@ def paint(surf, wp, hp, seed):
         col[E < 0.01] *= 0.45
     elif kind == "flat":
         col += (g[..., None] - 0.5) * 9 + (fine[..., None] - 0.5) * 9
+    elif kind == "gunmetal":                                   # small-arms steel: fine grain, handling wear on every edge
+        tex = _hash(np.floor(X * 2600 + 9000), np.floor(Y * 2600 + 9000), np.floor(Z * 2600 + 9000), seed)
+        col *= (0.9 + 0.2 * vnoise(X, Y, Z, 0.035, seed + 1))[..., None]
+        col += (tex[..., None] - 0.5) * 9
+        rub = np.clip((0.0026 - E) / 0.0026, 0, 1) * (0.25 + 0.75 * vnoise(X, Y, Z, 0.011, seed + 2))
+        col = mix(col, spec.get("wear", (132, 134, 138)), rub * 0.8)
+        scratch = vnoise(X * 1.0, Y * 30, Z * 0.6, 0.02, seed + 12) > 0.84
+        col[scratch & (E > 0.003)] *= 1.16
+        col = mix(col, col * 0.7, np.clip((vnoise(X, Y, Z, 0.05, seed + 5) - 0.62) * 3, 0, 1) * 0.5)   # oil and carbon
+    elif kind == "polymer":                                    # moulded plastic: matt, stippled, soft edges
+        tex = _hash(np.floor(X * 1800 + 9000), np.floor(Y * 1800 + 9000), np.floor(Z * 1800 + 9000), seed + 3)
+        col *= (0.93 + 0.14 * vnoise(X, Y, Z, 0.04, seed + 1))[..., None]
+        col += (tex[..., None] - 0.5) * 11
+        if spec.get("mottle"):
+            col = mix(col, spec["mottle"], np.clip((vnoise(X, Y, Z, 0.012, seed + 6) - 0.45) * 3, 0, 1) * 0.6)
+        col = mix(col, col * 1.5 + 14, np.clip((0.0018 - E) / 0.0018, 0, 1) * 0.5)
+        col = mix(col, DUST, 0.1 * vnoise(X, Y, Z, 0.03, seed + 4))
+    elif kind == "laminate":                                   # laminated wood: dark glue lines along the grain, varnish
+        warp = vnoise(X, Y, Z * 0.15, 0.03, seed + 2) * 0.012
+        ply = ((Y + X * 0.35 + warp) / 0.0045) % 1
+        col *= (0.86 + 0.26 * vnoise(X, Y, Z * 0.08, 0.008, seed + 1))[..., None]
+        col[ply < 0.22] *= 0.62
+        col[(ply > 0.5) & (ply < 0.6)] *= 1.1
+        col = mix(col, (70, 40, 20), np.clip((vnoise(X, Y, Z * 0.2, 0.02, seed + 7) - 0.6) * 3, 0, 1) * 0.5)
+        col = mix(col, col * 1.25 + 10, np.clip(ny, 0, 1) * 0.35)                                   # varnish catches the light
+        col = mix(col, (52, 34, 20), np.clip((0.002 - E) / 0.002, 0, 1) * 0.5)
+    elif kind == "lens":                                       # coated glass: a deep tint with a bright reflection
+        r = np.hypot(U - 0.5, V - 0.5) * 2
+        col *= (0.55 + 0.6 * np.clip(1 - r, 0, 1))[..., None]
+        col = mix(col, (200, 210, 235), np.clip(1 - np.hypot(U - 0.34, V - 0.3) * 5, 0, 1) * 0.75)
+        col = mix(col, (8, 8, 10), np.clip((r - 0.86) * 12, 0, 1))
     elif kind == "carbon":                                     # woven carbon fibre: a fine twill check
         weave = (np.floor(um / 0.004) + np.floor(vm / 0.004)) % 4 < 2
         col[weave] *= 1.35

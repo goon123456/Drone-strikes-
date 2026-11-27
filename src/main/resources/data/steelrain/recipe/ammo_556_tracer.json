@@ -1,0 +1,37 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "steelrain:ammo_556"
+    },
+    {
+      "item": "steelrain:ammo_556"
+    },
+    {
+      "item": "steelrain:ammo_556"
+    },
+    {
+      "item": "steelrain:ammo_556"
+    },
+    {
+      "item": "steelrain:ammo_556"
+    },
+    {
+      "item": "steelrain:ammo_556"
+    },
+    {
+      "item": "steelrain:ammo_556"
+    },
+    {
+      "item": "steelrain:ammo_556"
+    },
+    {
+      "item": "minecraft:red_dye"
+    }
+  ],
+  "result": {
+    "id": "steelrain:ammo_556_tracer",
+    "count": 8
+  }
+}

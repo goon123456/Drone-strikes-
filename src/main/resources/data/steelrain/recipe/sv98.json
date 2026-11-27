@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "IRI",
+    "IBI",
+    "WK "
+  ],
+  "key": {
+    "K": {
+      "item": "minecraft:black_dye"
+    },
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "B": {
+      "item": "minecraft:iron_block"
+    },
+    "R": {
+      "item": "minecraft:redstone"
+    },
+    "W": {
+      "item": "minecraft:oak_planks"
+    }
+  },
+  "result": {
+    "id": "steelrain:sv98",
+    "count": 1
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "I",
+    "K",
+    "K"
+  ],
+  "key": {
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "K": {
+      "item": "minecraft:black_dye"
+    }
+  },
+  "result": {
+    "id": "steelrain:foregrip",
+    "count": 1
+  }
+}
