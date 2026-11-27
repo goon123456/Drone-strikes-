@@ -77,6 +77,7 @@ public final class ClientSetup {
     @SubscribeEvent
     public static void screens(net.neoforged.neoforge.client.event.RegisterMenuScreensEvent e) {
         e.register(ModRegistry.WEAPON_MENU.get(), WeaponScreen::new);
+        e.register(ModRegistry.STORAGE_MENU.get(), SrStorageScreen::new);
     }
 
     /** The Field Laptop is drawn as its 3D model, lid and all. */

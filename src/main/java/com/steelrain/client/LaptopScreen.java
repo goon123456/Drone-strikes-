@@ -6,9 +6,7 @@ import com.steelrain.net.Payloads;
 import com.steelrain.weapon.MissileProfile;
 import net.minecraft.Util;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.AbstractButton;
 import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.texture.DynamicTexture;
@@ -33,18 +31,17 @@ import java.util.Locale;
 public class LaptopScreen extends Screen {
     private static final ResourceLocation MAP_TEXTURE = ResourceLocation.fromNamespaceAndPath(ModRegistry.MODID, "laptop_map");
     private static final int[] SCALES = {1, 2, 4, 8, 16, 32, 64};
-    /** Printed field-manual palette: warm off-white ink, olive drab rules, one amber accent, muted alarms. */
-    private static final int P_BG = 0xFF030805, P_PLATE = 0xFF06100A, P_RULE = 0xFF1F4A2B, P_TEXT = 0xFF8DF29A,
-            P_DIM = 0xFF4F9A60, P_FAINT = 0xFF2A5A36, P_AMBER = 0xFFF5C451, P_GO = 0xFF8DF29A, P_RED = 0xFFFF5F52,
+    /** Command display palette: charcoal glass, silver text, green readiness and red fire controls. */
+    private static final int P_BG = 0xFF050A0B, P_PLATE = 0xFF0B1213, P_RULE = 0xFF30423D, P_TEXT = 0xFFDBE5DF,
+            P_DIM = 0xFF8BABA0, P_FAINT = 0xFF405A50, P_AMBER = 0xFFF5C451, P_GO = 0xFF8DF29A, P_RED = 0xFFFF5F52,
             P_CYAN = 0xFF6FE0F0, P_BEZEL = 0xFF101412, P_BEZEL_EDGE = 0xFF252B27;
 
-    /** A plain plate: thin rule round a flat fill. No highlights, no corner marks. */
+    /** Thin metal edge and a subtle glass highlight for each instrument panel. */
     private void plate(GuiGraphics g, int x, int y, int w, int h) {
-        // a thick frame: a lit outer edge, a dark inner line, then the flat fill
-        g.fill(x, y, x + w, y + h, 0xFF2F6A3D);
-        g.fill(x + 2, y + 2, x + w - 2, y + h - 2, P_BG);
-        g.fill(x + 2, y + 2, x + w - 2, y + h - 2, P_PLATE);
-        g.fill(x + 1, y + 1, x + w - 1, y + 2, 0xFF0A1A10);
+        g.fill(x, y, x + w, y + h, P_RULE);
+        g.fill(x + 1, y + 1, x + w - 1, y + h - 1, P_PLATE);
+        g.fillGradient(x + 1, y + 1, x + w - 1, y + 16, 0xFF17221F, P_PLATE);
+        g.fill(x + 2, y + 1, x + w - 2, y + 2, 0xFF43564C);
     }
 
     /** A section title in caps with a rule under it and an optional count on the right. */
@@ -56,11 +53,10 @@ public class LaptopScreen extends Screen {
 
     /** A readout: label, dotted leader, value. */
     private void field(GuiGraphics g, net.minecraft.client.gui.Font font, int x, int y, int w, Component label, Component value, int colour) {
-        String l = Ui.upper(label).getString();
+        String v = font.plainSubstrByWidth(value.getString(), Math.max(0, w * 2 / 3));
+        String l = font.plainSubstrByWidth(Ui.upper(label).getString(), Math.max(0, w - font.width(v) - 8));
         g.drawString(font, l, x, y, P_DIM, false);
-        int vx = x + w - font.width(value);
-        for (int dx = font.width(l) + 4; dx < vx - 4; dx += 4) g.fill(x + dx, y + 6, x + dx + 1, y + 7, P_FAINT);
-        g.drawString(font, value, vx, y, colour, false);
+        g.drawString(font, v, x + w - font.width(v), y, colour, false);
     }
 
     /** A status word as plain coloured text with a small square, no box. */
@@ -71,7 +67,11 @@ public class LaptopScreen extends Screen {
     }
 
     private static final int UNKNOWN = 0xFF181410;
-    private static final int LIST_W = 120, SIDE_W = 132, GAP = 5, CARD_H = 28, TOP_BAR = 14, FOOT = 27;
+    private static final int LIST_W = 210, SIDE_W = 228, GAP = 8, CARD_H = 36, TOP_BAR = 74;
+    private static final int CANVAS_W = 960, CANVAS_H = 530, MAIN_H = 254, DETAIL_Y = 369, DETAIL_H = 121;
+    private float uiScale;
+    private int viewportX, viewportY;
+    private String detailPage = "overview";
 
     private List<Payloads.Entry> entries;
     private int selected, listScroll;
@@ -79,7 +79,7 @@ public class LaptopScreen extends Screen {
     private int messageTicks;
 
     private double centreX, centreZ;
-    private int scaleIndex = 1;
+    private int scaleIndex;
     private boolean hasTarget;
     private int targetX, targetZ;
     private int count = 1;
@@ -93,16 +93,15 @@ public class LaptopScreen extends Screen {
     private Ui.TabletButton layerButton;
 
     private DynamicTexture mapTexture;
-    private int mapRes;
+    private int textureWidth, textureHeight;
     private boolean mapDirty = true;
     private int age;
     private boolean panning;
     private boolean settingBoxes;
-    private long openedAt = -1;
 
     private EditBox xBox, zBox;
     private Ui.TabletButton launchButton, cameraButton, recallButton, minusButton, plusButton;
-    private int left, top, w, h, map, mapLeft, mapTop, sideLeft;
+    private int left, top, w, h, mapWidth, mapHeight, mapLeft, mapTop, sideLeft;
 
     public LaptopScreen(Payloads.LaptopData data) {
         super(Component.translatable("item.steelrain.field_laptop"));
@@ -112,6 +111,7 @@ public class LaptopScreen extends Screen {
     public void update(Payloads.LaptopData data) {
         this.entries = data.entries();
         if (selected >= entries.size()) selected = Math.max(0, entries.size() - 1);
+        listScroll = Mth.clamp(listScroll, 0, Math.max(0, entries.size() - visibleCards()));
         data.message().ifPresent(m -> {
             message = m;
             messageTicks = 400;
@@ -131,48 +131,63 @@ public class LaptopScreen extends Screen {
     /** Status lights in the bezel: link, ammunition, a fire solution, and aircraft in the air. */
     private void drawLights(GuiGraphics g) {
         boolean link = false, ammo = false, air = false;
-        for (Payloads.Entry e : entries) {
-            if (!known(e)) continue;
-            if (e.reachable()) link = true;
-            if (e.ammo() > 0 || e.manual()) ammo = true;
-            if (e.aircraft() >= 0) air = true;
+        for (Payloads.Entry e : entries) if (known(e)) {
+            link |= e.reachable(); ammo |= e.ammo() > 0 || e.manual(); air |= e.aircraft() >= 0;
         }
         String[] names = {"LINK", "RDY", "FIX", "AIR", "PWR"};
         boolean[] on = {link, ammo, hasTarget, air, true};
-        int[] cols = {P_GO, P_GO, P_AMBER, P_CYAN, P_GO};
-        int x = left + w - 4, y = top + h + 15;
-        for (int i = names.length - 1; i >= 0; i--) {
-            x -= font.width(names[i]) + 14;
-            g.drawString(font, names[i], x + 9, y - 1, P_DIM, false);
-            g.fill(x, y, x + 5, y + 5, on[i] ? cols[i] : P_FAINT);
-            if (on[i]) g.fill(x - 1, y - 1, x + 6, y, (cols[i] & 0x00FFFFFF) | 0x50000000);
+        int x = 307;
+        for (int i = 0; i < names.length; i++) {
+            plate(g, x, 502, 68, 20);
+            g.fill(x + 8, 509, x + 16, 514, on[i] ? P_GO : P_FAINT);
+            g.drawString(font, names[i], x + 23, 508, P_DIM, false);
+            x += 68;
         }
     }
 
-    /** A hardware key in the bezel: a dark square with a bevel and a green legend, lit when pressed. */
-    private static final class BezelKey extends AbstractButton {
-        private final Runnable press;
-
-        BezelKey(int x, int y, int w, int h, Component text, Runnable press) {
-            super(x, y, w, h, text);
-            this.press = press;
+    /** All display controls share the same geometry for rendering, pointer input and keyboard focus. */
+    private final class DisplayButton extends Ui.TabletButton {
+        private final java.util.function.BooleanSupplier lit;
+        private final boolean danger;
+        DisplayButton(int x, int y, int w, int h, Component text, boolean danger,
+                      java.util.function.BooleanSupplier lit, Runnable press) {
+            super(x, y, w, h, text, danger, press);
+            this.danger = danger;
+            this.lit = lit;
         }
-
-        @Override public void onPress() { press.run(); }
-
-        @Override
-        protected void renderWidget(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-            var font = net.minecraft.client.Minecraft.getInstance().font;
-            boolean hot = isHoveredOrFocused();
-            g.fill(getX(), getY(), getX() + width, getY() + height, 0xFF000000);
-            g.fill(getX(), getY(), getX() + width, getY() + height - 1, hot ? 0xFF3A5A40 : 0xFF2A3430);
-            g.fill(getX() + 1, getY() + 1, getX() + width - 1, getY() + height - 1, hot ? 0xFF1A2A1E : 0xFF141A16);
-            int c = hot ? P_TEXT : P_DIM;
-            g.drawString(font, getMessage(), getX() + (width - font.width(getMessage())) / 2, getY() + (height - 8) / 2, c, false);
+        @Override protected void renderWidget(GuiGraphics g, int mx, int my, float partialTick) {
+            int x = getX(), y = getY(), w = getWidth(), h = getHeight();
+            boolean on = lit.getAsBoolean(), hot = active && isHoveredOrFocused();
+            int edge = !active ? P_RULE : danger ? P_RED : on || hot ? P_GO : P_RULE;
+            g.fill(x, y, x + w, y + h, edge);
+            g.fillGradient(x + 1, y + 1, x + w - 1, y + h - 1,
+                    !active ? 0xFF141B1C : danger ? 0xFF421417 : on || hot ? 0xFF193725 : 0xFF17201F,
+                    danger && active ? 0xFF1E090C : P_BG);
+            if (on || hot) g.fill(x + 2, y + h - 2, x + w - 2, y + h - 1, edge);
+            if (danger && active) {
+                for (int i = 3; i < 14; i += 4) {
+                    g.fill(x + i, y + 3, x + i + 2, y + h - 3, 0xFF712528);
+                    g.fill(x + w - i - 2, y + 3, x + w - i, y + h - 3, 0xFF712528);
+                }
+            }
+            String label = font.plainSubstrByWidth(Ui.upper(getMessage()).getString(), w - 8);
+            g.drawString(font, label, x + (w - font.width(label)) / 2, y + (h - 8) / 2,
+                    !active ? P_FAINT : on ? P_GO : P_TEXT, false);
         }
+    }
 
-        @Override
-        protected void updateWidgetNarration(NarrationElementOutput out) { defaultButtonNarrationText(out); }
+    private DisplayButton button(int x, int y, int w, int h, Component text, boolean danger,
+                                 java.util.function.BooleanSupplier lit, Runnable press) {
+        DisplayButton key = addRenderableWidget(new DisplayButton(x, y, w, h, text, danger, lit, press));
+        return key;
+    }
+
+    private DisplayButton button(int x, int y, int w, int h, String text, Runnable press) {
+        return button(x, y, w, h, Component.literal(text), false, () -> false, press);
+    }
+
+    private void pageButton(int x, int y, int w, int h, String label, String page) {
+        button(x, y, w, h, Component.literal(label), false, () -> detailPage.equals(page), () -> detailPage = page);
     }
 
     private int scale() { return SCALES[scaleIndex]; }
@@ -218,60 +233,78 @@ public class LaptopScreen extends Screen {
 
     @Override
     protected void init() {
-        if (openedAt < 0) openedAt = Util.getMillis();
-        w = Math.min(width - 12, 470);
-        h = Math.min(height - 46, 316);
-        left = (width - w) / 2;
-        top = (height - h) / 2;
-        map = Math.max(96, Math.min(w - LIST_W - SIDE_W - GAP * 4, h - TOP_BAR - FOOT - GAP * 2 - 2));
-        mapLeft = left + GAP + LIST_W + GAP + (w - LIST_W - SIDE_W - GAP * 4 - map) / 2;
-        mapTop = top + TOP_BAR + GAP + 1;
-        sideLeft = left + w - GAP - SIDE_W;
-        if (mapTexture == null || mapRes != map) {
+        // Work in one logical space, independent of Minecraft's GUI scale and window aspect ratio.
+        w = CANVAS_W; h = CANVAS_H; left = 0; top = 0;
+        uiScale = Math.min((width - 8f) / w, (height - 8f) / h);
+        viewportX = Math.round((width - w * uiScale) / 2);
+        viewportY = Math.round((height - h * uiScale) / 2);
+        mapLeft = GAP + LIST_W + GAP;
+        mapTop = TOP_BAR + GAP;
+        sideLeft = w - GAP - SIDE_W;
+        mapWidth = sideLeft - GAP - 22 - mapLeft;
+        mapHeight = MAIN_H;
+        listScroll = Mth.clamp(listScroll, 0, Math.max(0, entries.size() - visibleCards()));
+        if (mapTexture == null || textureWidth != mapWidth || textureHeight != mapHeight) {
             if (mapTexture != null) minecraft.getTextureManager().release(MAP_TEXTURE);
-            mapRes = map;
-            mapTexture = new DynamicTexture(map, map, false);
+            textureWidth = mapWidth; textureHeight = mapHeight;
+            mapTexture = new DynamicTexture(mapWidth, mapHeight, false);
             minecraft.getTextureManager().register(MAP_TEXTURE, mapTexture);
             mapDirty = true;
             if (minecraft.player != null && centreX == 0 && centreZ == 0) {
-                centreX = minecraft.player.getX();
-                centreZ = minecraft.player.getZ();
+                centreX = minecraft.player.getX(); centreZ = minecraft.player.getZ();
             }
         }
-        int sx = sideLeft + 6, sy = mapTop + 70;
-        xBox = new EditBox(font, sx + 12, sy + 4, 46, 10, Component.literal("X"));
-        zBox = new EditBox(font, sx + 74, sy + 4, 46, 10, Component.literal("Z"));
+        int sx = sideLeft + 10, sy = mapTop + 63;
+        xBox = new EditBox(font, sx + 16, sy + 5, 78, 12, Component.literal("Target X"));
+        zBox = new EditBox(font, sx + 120, sy + 5, 78, 12, Component.literal("Target Z"));
         for (EditBox box : new EditBox[]{xBox, zBox}) {
-            box.setBordered(false);
-            box.setTextColor(P_TEXT);
-            box.setMaxLength(9);
-            box.setFilter(s -> s.matches("-?\\d*"));
-            box.setResponder(s -> boxesChanged());
+            box.setBordered(false); box.setTextColor(P_TEXT); box.setMaxLength(9);
+            box.setFilter(v -> v.matches("-?\\d*"));
+            box.setResponder(v -> boxesChanged());
             addRenderableWidget(box);
         }
         if (hasTarget) setBoxes();
-        int kx = left + 4, ky = top + h + 12;
-        addRenderableWidget(new BezelKey(kx, ky, 58, 12, Component.literal("<< UNIT"), () -> stepUnit(-1)));
-        addRenderableWidget(new BezelKey(kx + 62, ky, 58, 12, Component.literal("UNIT >>"), () -> stepUnit(1)));
-        int by = top + h - FOOT - GAP - 1;
-        launchButton = addRenderableWidget(new Ui.TabletButton(sx, by - 22, SIDE_W - 12, 20, Component.translatable("gui.steelrain.launch"), true, this::launch));
-        cameraButton = addRenderableWidget(new Ui.TabletButton(sx, by - 40, (SIDE_W - 14) / 2, 14, Component.translatable("gui.steelrain.camera"), false,
-                () -> order(Payloads.AircraftOrder.CAMERA)));
-        recallButton = addRenderableWidget(new Ui.TabletButton(sx + (SIDE_W - 14) / 2 + 2, by - 40, (SIDE_W - 14) / 2, 14, Component.translatable("gui.steelrain.recall"), false,
-                () -> order(Payloads.AircraftOrder.RECALL)));
-        minusButton = addRenderableWidget(new Ui.TabletButton(sx + 52, by - 40, 14, 14, Component.literal("-"), false, () -> count = Math.max(1, count - 1)));
-        plusButton = addRenderableWidget(new Ui.TabletButton(sx + SIDE_W - 26, by - 40, 14, 14, Component.literal("+"), false, () -> count = Math.min(32, count + 1)));
-        layerButton = addRenderableWidget(new Ui.TabletButton(left + w / 2 - 44, top + 1, 88, 12, t("layer_topo"), false, this::toggleLayer));
-        int zx = mapLeft + map - 15, zy = mapTop + map - 15;
-        addRenderableWidget(new Ui.TabletButton(zx, zy - 32, 13, 13, Component.literal("+"), false, () -> zoom(-1)));
-        addRenderableWidget(new Ui.TabletButton(zx, zy - 17, 13, 13, Component.literal("-"), false, () -> zoom(1)));
-        addRenderableWidget(new Ui.TabletButton(zx, zy, 13, 13, Component.literal("◎"), false, () -> {
-            if (minecraft.player != null) {
-                centreX = minecraft.player.getX();
-                centreZ = minecraft.player.getZ();
-                mapDirty = true;
-            }
-        }));
+        pageButton(246, 7, 90, 33, "FIRE CONTROL", "overview");
+        pageButton(342, 7, 66, 33, "ISR", "recon");
+        pageButton(414, 7, 66, 33, "BDA", "bda");
+        pageButton(486, 7, 66, 33, "COMMS", "comms");
+        pageButton(558, 7, 66, 33, "SYSTEM", "system");
+        layerButton = button(234, 50, 94, 20, t("layer_topo"), false, () -> heightMode, this::toggleLayer);
+        button(334, 50, 68, 20, Component.literal("GRID"), false, () -> showGrid, () -> showGrid = !showGrid);
+        button(408, 50, 76, 20, Component.literal("RANGES"), false, () -> showRanges, () -> showRanges = !showRanges);
+        button(490, 50, 90, 20, Component.literal("CONTACTS"), false, () -> showContacts, () -> showContacts = !showContacts);
+        int rail = mapLeft + mapWidth + 4;
+        button(rail, mapTop + 24, 18, 26, "U", () -> centreOnUnit());
+        button(rail, mapTop + 57, 18, 26, "+", () -> zoom(-1));
+        button(rail, mapTop + 89, 18, 26, "-", () -> zoom(1));
+        button(rail, mapTop + 121, 18, 26, "@", () -> {
+            if (minecraft.player != null) { centreX = minecraft.player.getX(); centreZ = minecraft.player.getZ(); mapDirty = true; }
+        });
+        button(rail, mapTop + 153, 18, 26, "X", () -> { hasTarget = false; xBox.setValue(""); zBox.setValue(""); });
+        int by = mapTop + MAIN_H;
+        launchButton = button(sx, by - 35, SIDE_W - 20, 26, t("launch"), true, () -> false, this::launch);
+        cameraButton = button(sx, by - 58, 100, 18, t("camera"), false, () -> false, () -> order(Payloads.AircraftOrder.CAMERA));
+        recallButton = button(sx + 108, by - 58, 100, 18, t("recall"), false, () -> false, () -> order(Payloads.AircraftOrder.RECALL));
+        minusButton = button(sx + 105, by - 58, 24, 18, "-", () -> count = Math.max(1, count - 1));
+        plusButton = button(sx + 184, by - 58, 24, 18, "+", () -> count = Math.min(32, count + 1));
+        String[] tabs = {"OVERVIEW", "TARGETS", "WEAPONS", "ROE", "AIRSPACE", "LOGS"};
+        String[] pages = {"overview", "targets", "weapons", "roe", "airspace", "logs"};
+        for (int i = 0; i < tabs.length; i++) pageButton(8 + i * 91, 342, 85, 19, tabs[i], pages[i]);
+        button(14, 502, 90, 20, "<< UNIT", () -> stepUnit(-1));
+        button(112, 502, 90, 20, "UNIT >>", () -> stepUnit(1));
+        button(728, 502, 112, 20, Component.literal("CLEAR TARGET"), true, () -> false,
+                () -> { hasTarget = false; xBox.setValue(""); zBox.setValue(""); });
+        button(850, 502, 96, 20, "SHUTDOWN", this::onClose);
+        updateControls();
+    }
+
+    private void centreOnUnit() {
+        Payloads.Entry e = current();
+        if (e != null && known(e)) {
+            centreX = e.aircraft() >= 0 ? e.ax() : e.pos().getX();
+            centreZ = e.aircraft() >= 0 ? e.az() : e.pos().getZ();
+            mapDirty = true;
+        }
     }
 
     private void zoom(int by) {
@@ -315,15 +348,20 @@ public class LaptopScreen extends Screen {
         if (messageTicks > 0) messageTicks--;
         if (age % 20 == 0) PacketDistributor.sendToServer(new Payloads.LaptopRefresh());
         if (age % 40 == 0) mapDirty = true;
+        updateControls();
+    }
+
+    private void updateControls() {
         Payloads.Entry e = current();
         boolean ok = e != null && known(e);
-        layerButton.setMessage(Component.literal(Ui.upper(t(heightMode ? "layer_height" : "layer_topo")).getString() + "  1:" + scale()));
+        layerButton.setMessage(Component.literal((heightMode ? "HEIGHT" : "MAP") + " 1:" + scale()));
         launchButton.active = ok && hasTarget && e.reachable();
-        boolean airborne = e != null && e.aircraft() >= 0 && e.reachable();
-        launchButton.setMessage(Component.translatable(airborne ? "gui.steelrain.retask" : ok && e.manual() ? "gui.steelrain.solution" : "gui.steelrain.launch"));
+        boolean airborne = ok && e.aircraft() >= 0 && e.reachable();
+        launchButton.setMessage(t(airborne ? "retask" : ok && e.manual() ? "solution" : "launch"));
         cameraButton.visible = recallButton.visible = ok && e.station();
         minusButton.visible = plusButton.visible = ok && !e.station() && !e.manual();
         cameraButton.active = recallButton.active = airborne;
+        xBox.setEditable(ok); zBox.setEditable(ok);
     }
 
     // ------------------------------------------------------------------ map
@@ -336,14 +374,14 @@ public class LaptopScreen extends Screen {
         NativeImage img = mapTexture.getPixels();
         if (level == null || img == null) return;
         int s = scale();
-        int x0 = Mth.floor(centreX) - map / 2 * s, z0 = Mth.floor(centreZ) - map / 2 * s;
+        int x0 = Mth.floor(centreX) - mapWidth / 2 * s, z0 = Mth.floor(centreZ) - mapHeight / 2 * s;
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
         // heights first: the shading and contour lines need each cell's neighbours
-        if (heights.length != map * map) heights = new int[map * map];
+        if (heights.length != mapWidth * mapHeight) heights = new int[mapWidth * mapHeight];
         heightMin = Integer.MAX_VALUE;
         heightMax = Integer.MIN_VALUE;
-        for (int pz = 0; pz < map; pz++) {
-            for (int px = 0; px < map; px++) {
+        for (int pz = 0; pz < mapHeight; pz++) {
+            for (int px = 0; px < mapWidth; px++) {
                 int x = x0 + px * s, z = z0 + pz * s;
                 int y = NO_HEIGHT;
                 if (level.hasChunk(x >> 4, z >> 4)) {
@@ -351,20 +389,20 @@ public class LaptopScreen extends Screen {
                     heightMin = Math.min(heightMin, y);
                     heightMax = Math.max(heightMax, y);
                 }
-                heights[pz * map + px] = y;
+                heights[pz * mapWidth + px] = y;
             }
         }
         int sea = level.getSeaLevel();
-        for (int pz = 0; pz < map; pz++) {
-            for (int px = 0; px < map; px++) {
+        for (int pz = 0; pz < mapHeight; pz++) {
+            for (int px = 0; px < mapWidth; px++) {
                 int x = x0 + px * s, z = z0 + pz * s;
-                int y = heights[pz * map + px];
+                int y = heights[pz * mapWidth + px];
                 int colour = ReconClient.colour(x, z); // what recon drones have seen
                 if (colour == 0) colour = UNKNOWN;
                 if (y != NO_HEIGHT) {
-                    int north = pz > 0 && heights[(pz - 1) * map + px] != NO_HEIGHT ? heights[(pz - 1) * map + px] : y;
+                    int north = pz > 0 && heights[(pz - 1) * mapWidth + px] != NO_HEIGHT ? heights[(pz - 1) * mapWidth + px] : y;
                     if (heightMode) {
-                        colour = heightColour(level, pos, x, z, y, north, px > 0 && heights[pz * map + px - 1] != NO_HEIGHT ? heights[pz * map + px - 1] : y, sea);
+                        colour = heightColour(level, pos, x, z, y, north, px > 0 && heights[pz * mapWidth + px - 1] != NO_HEIGHT ? heights[pz * mapWidth + px - 1] : y, sea);
                     } else {
                         BlockState state = level.getBlockState(pos.set(x, y, z));
                         MapColor mc = state.getMapColor(level, pos);
@@ -415,14 +453,14 @@ public class LaptopScreen extends Screen {
     }
 
     private boolean overMap(double mx, double my) {
-        return mx >= mapLeft && mx < mapLeft + map && my >= mapTop && my < mapTop + map;
+        return mx >= mapLeft && mx < mapLeft + mapWidth && my >= mapTop && my < mapTop + mapHeight;
     }
 
     /** Screen position of a world point on the map, or null when it is off the map. */
     private int[] onMap(double wx, double wz, int margin) {
-        int px = (int) Math.floor((wx - centreX) / scale()) + map / 2;
-        int pz = (int) Math.floor((wz - centreZ) / scale()) + map / 2;
-        if (px < margin || pz < margin || px >= map - margin || pz >= map - margin) return null;
+        int px = (int) Math.floor((wx - centreX) / scale()) + mapWidth / 2;
+        int pz = (int) Math.floor((wz - centreZ) / scale()) + mapHeight / 2;
+        if (px < margin || pz < margin || px >= mapWidth - margin || pz >= mapHeight - margin) return null;
         return new int[]{mapLeft + px, mapTop + pz};
     }
 
@@ -451,106 +489,119 @@ public class LaptopScreen extends Screen {
         for (int i = 0; i < steps; i++) {
             if (dashed && (i / 3) % 2 == 1) continue;
             double a = i * Math.PI * 2 / steps;
-            int px = (int) Math.floor((wx - centreX) / scale() + Math.cos(a) * r) + map / 2;
-            int pz = (int) Math.floor((wz - centreZ) / scale() + Math.sin(a) * r) + map / 2;
-            if (px < 0 || pz < 0 || px >= map || pz >= map) continue;
+            int px = (int) Math.floor((wx - centreX) / scale() + Math.cos(a) * r) + mapWidth / 2;
+            int pz = (int) Math.floor((wz - centreZ) / scale() + Math.sin(a) * r) + mapHeight / 2;
+            if (px < 0 || pz < 0 || px >= mapWidth || pz >= mapHeight) continue;
             g.fill(mapLeft + px, mapTop + pz, mapLeft + px + 1, mapTop + pz + 1, colour);
         }
     }
 
     private void line(GuiGraphics g, double ax, double az, double bx, double bz, int colour) {
-        double x0 = (ax - centreX) / scale() + map / 2.0, z0 = (az - centreZ) / scale() + map / 2.0;
-        double x1 = (bx - centreX) / scale() + map / 2.0, z1 = (bz - centreZ) / scale() + map / 2.0;
-        int steps = (int) Math.max(1, Math.hypot(x1 - x0, z1 - z0));
+        double x0 = (ax - centreX) / scale() + mapWidth / 2.0, z0 = (az - centreZ) / scale() + mapHeight / 2.0;
+        double x1 = (bx - centreX) / scale() + mapWidth / 2.0, z1 = (bz - centreZ) / scale() + mapHeight / 2.0;
+        // Clip first: a target can be far beyond the chart, but drawing the visible segment must stay cheap.
+        double dx = x1 - x0, dz = z1 - z0, from = 0, to = 1;
+        if (dx == 0) {
+            if (x0 < 0 || x0 >= mapWidth) return;
+        } else {
+            double enter = -x0 / dx, exit = (mapWidth - 1 - x0) / dx;
+            from = Math.max(from, Math.min(enter, exit));
+            to = Math.min(to, Math.max(enter, exit));
+        }
+        if (dz == 0) {
+            if (z0 < 0 || z0 >= mapHeight) return;
+        } else {
+            double enter = -z0 / dz, exit = (mapHeight - 1 - z0) / dz;
+            from = Math.max(from, Math.min(enter, exit));
+            to = Math.min(to, Math.max(enter, exit));
+        }
+        if (from > to) return;
+        double startX = x0 + dx * from, startZ = z0 + dz * from;
+        double endX = x0 + dx * to, endZ = z0 + dz * to;
+        int steps = (int) Math.max(1, Math.hypot(endX - startX, endZ - startZ));
         for (int i = 0; i <= steps; i++) {
             if ((i / 3) % 2 == 1) continue;
-            int px = (int) Math.floor(Mth.lerp((double) i / steps, x0, x1)), pz = (int) Math.floor(Mth.lerp((double) i / steps, z0, z1));
-            if (px < 0 || pz < 0 || px >= map || pz >= map) continue;
+            int px = (int) Math.floor(Mth.lerp((double) i / steps, startX, endX)), pz = (int) Math.floor(Mth.lerp((double) i / steps, startZ, endZ));
+            if (px < 0 || pz < 0 || px >= mapWidth || pz >= mapHeight) continue;
             g.fill(mapLeft + px, mapTop + pz, mapLeft + px + 1, mapTop + pz + 1, colour);
         }
     }
 
     /** Grid lines every round number of blocks, labelled along the top and left edges. */
     private void grid(GuiGraphics g) {
-        int span = map * scale();
+        int spanX = mapWidth * scale(), spanZ = mapHeight * scale();
         int step = 16;
-        while (span / step > 6) step *= 2;
-        double x0 = centreX - map / 2.0 * scale(), z0 = centreZ - map / 2.0 * scale();
-        for (int gx = (int) Math.ceil(x0 / step) * step; gx < x0 + span; gx += step) {
-            int px = mapLeft + (int) ((gx - x0) / scale());
-            g.fill(px, mapTop, px + 1, mapTop + map, 0x30FFFFFF);
-            g.drawString(font, Integer.toString(gx), px + 2, mapTop + 2, 0xA0DCE6EA, false);
+        while (Math.max(spanX, spanZ) / step > 10) step *= 2;
+        double x0 = centreX - mapWidth / 2.0 * scale(), z0 = centreZ - mapHeight / 2.0 * scale();
+        if (showGrid) {
+            for (int gx = (int) Math.ceil(x0 / step) * step; gx < x0 + spanX; gx += step) {
+                int px = mapLeft + (int) ((gx - x0) / scale());
+                g.fill(px, mapTop, px + 1, mapTop + mapHeight, 0x285CC1D8);
+                g.drawString(font, Integer.toString(gx), px + 2, mapTop + 2, 0xFF9CAFB7, false);
+            }
+            for (int gz = (int) Math.ceil(z0 / step) * step; gz < z0 + spanZ; gz += step) {
+                int pz = mapTop + (int) ((gz - z0) / scale());
+                g.fill(mapLeft, pz, mapLeft + mapWidth, pz + 1, 0x285CC1D8);
+                if (pz > mapTop + 10) g.drawString(font, Integer.toString(gz), mapLeft + 2, pz + 2, 0xFF9CAFB7, false);
+            }
         }
-        for (int gz = (int) Math.ceil(z0 / step) * step; gz < z0 + span; gz += step) {
-            int pz = mapTop + (int) ((gz - z0) / scale());
-            g.fill(mapLeft, pz, mapLeft + map, pz + 1, 0x30FFFFFF);
-            if (pz > mapTop + 10) g.drawString(font, Integer.toString(gz), mapLeft + 2, pz + 2, 0xA0DCE6EA, false);
-        }
-        // scale bar, bottom left
-        int bar = step / scale(), bx = mapLeft + 5, by = mapTop + map - 7;
-        g.fill(bx - 2, by - 10, bx + bar + 2 + font.width(step + " m") + 4, by + 4, 0xA0000000);
-        g.fill(bx, by, bx + bar, by + 2, P_TEXT);
-        g.fill(bx, by - 3, bx + 1, by + 2, P_TEXT); g.fill(bx + bar - 1, by - 3, bx + bar, by + 2, P_TEXT);
-        g.drawString(font, step + " m", bx + bar + 4, by - 6, P_TEXT, false);
+        int bar = step / scale(), bx = mapLeft + 8, by = mapTop + mapHeight - 9;
+        g.fill(bx - 3, by - 11, bx + bar + 4 + font.width(step + " m"), by + 4, 0xC000080D);
+        g.fill(bx, by, bx + bar, by + 2, 0xFFD8E7E9);
+        g.fill(bx, by - 3, bx + 1, by + 2, 0xFFD8E7E9);
+        g.fill(bx + bar - 1, by - 3, bx + bar, by + 2, 0xFFD8E7E9);
+        g.drawString(font, step + " m", bx + bar + 4, by - 6, 0xFFD8E7E9, false);
     }
 
     // ------------------------------------------------------------------ input
 
     @Override
     public boolean mouseClicked(double mx, double my, int button) {
-        if (overMap(mx, my)) {
+        double x = (mx - viewportX) / uiScale, y = (my - viewportY) / uiScale;
+        if (super.mouseClicked(x, y, button)) return true;
+        if (overMap(x, y)) {
             if (button == 0) {
-                targetX = Mth.floor(centreX + (mx - mapLeft - map / 2.0) * scale());
-                targetZ = Mth.floor(centreZ + (my - mapTop - map / 2.0) * scale());
-                hasTarget = true;
-                setBoxes();
-            } else {
-                panning = true;
-            }
+                targetX = Mth.floor(centreX + (x - mapLeft - mapWidth / 2.0) * scale());
+                targetZ = Mth.floor(centreZ + (y - mapTop - mapHeight / 2.0) * scale());
+                hasTarget = true; setBoxes(); updateControls();
+            } else if (button == 1 || button == 2) panning = true;
             return true;
         }
-        int lx = left + GAP, ly = mapTop + 14;
-        if (mx >= lx && mx < lx + LIST_W && my >= ly) {
-            int row = (int) ((my - ly) / CARD_H) + listScroll;
-            if (row >= 0 && row < entries.size()) {
-                selected = row;
-                return true;
-            }
+        int lx = left + GAP, ly = mapTop + 20;
+        if (button == 0 && x >= lx && x < lx + LIST_W && y >= ly && y < ly + visibleCards() * CARD_H) {
+            int row = (int) ((y - ly) / CARD_H) + listScroll;
+            if (row < entries.size()) { selected = row; updateControls(); return true; }
         }
-        return super.mouseClicked(mx, my, button);
+        return false;
     }
 
     @Override
     public boolean mouseReleased(double mx, double my, int button) {
         panning = false;
-        return super.mouseReleased(mx, my, button);
+        return super.mouseReleased((mx - viewportX) / uiScale, (my - viewportY) / uiScale, button);
     }
 
     @Override
     public boolean mouseDragged(double mx, double my, int button, double dx, double dy) {
         if (panning) {
-            centreX -= dx * scale();
-            centreZ -= dy * scale();
-            mapDirty = true;
-            return true;
+            centreX -= dx / uiScale * scale(); centreZ -= dy / uiScale * scale();
+            mapDirty = true; return true;
         }
-        return super.mouseDragged(mx, my, button, dx, dy);
+        return super.mouseDragged((mx - viewportX) / uiScale, (my - viewportY) / uiScale, button, dx / uiScale, dy / uiScale);
     }
 
     @Override
     public boolean mouseScrolled(double mx, double my, double sx, double sy) {
-        if (overMap(mx, my)) {
-            zoom(sy > 0 ? -1 : 1);
-            return true;
-        }
-        if (mx < left + GAP + LIST_W) {
+        double x = (mx - viewportX) / uiScale, y = (my - viewportY) / uiScale;
+        if (overMap(x, y)) { zoom(sy > 0 ? -1 : 1); return true; }
+        if (x >= left + GAP && x < left + GAP + LIST_W && y >= mapTop && y < mapTop + MAIN_H) {
             listScroll = Mth.clamp(listScroll - (int) Math.signum(sy), 0, Math.max(0, entries.size() - visibleCards()));
             return true;
         }
-        return super.mouseScrolled(mx, my, sx, sy);
+        return super.mouseScrolled(x, y, sx, sy);
     }
 
-    private int visibleCards() { return Math.max(1, (map - 14) / CARD_H); }
+    private int visibleCards() { return Math.max(1, (MAIN_H - 24) / CARD_H); }
 
     // ------------------------------------------------------------------ drawing
 
@@ -587,103 +638,106 @@ public class LaptopScreen extends Screen {
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         if (mapDirty) rebuildMap();
-        // opening: the display zooms up as the laptop comes to the eye
-        float open = Mth.clamp((Util.getMillis() - openedAt) / 260f, 0f, 1f);
-        float ease = 1 - (1 - open) * (1 - open) * (1 - open);
-        boolean anim = open < 1;
-        if (anim) {
-            g.pose().pushPose();
-            g.pose().translate(width / 2f, height / 2f, 0);
-            g.pose().scale(0.82f + 0.18f * ease, 0.82f + 0.18f * ease, 1);
-            g.pose().translate(-width / 2f, -height / 2f, 0);
-        }
+        updateControls();
         renderBackground(g, mouseX, mouseY, partialTick);
-        // tablet body: thick rubber bezel and the screen inside it
-        g.fill(left - 8, top - 8, left + w + 8, top + h + 30, P_BEZEL_EDGE);
-        g.fill(left - 7, top - 7, left + w + 7, top + h + 29, P_BEZEL);
-        g.fill(left - 2, top - 2, left + w + 2, top + h + 2, 0xFF000000);
-        g.fill(left, top, left + w, top + h, Ui.BG);
+        int mx = Mth.floor((mouseX - viewportX) / uiScale), my = Mth.floor((mouseY - viewportY) / uiScale);
+        g.pose().pushPose();
+        g.pose().translate(viewportX, viewportY, 0);
+        g.pose().scale(uiScale, uiScale, 1);
+        g.fill(-3, -3, w + 3, h + 3, P_BEZEL_EDGE);
+        g.fill(0, 0, w, h, P_BG);
         drawTopBar(g);
         drawUnits(g);
-        drawMap(g, mouseX, mouseY);
+        drawMap(g, mx, my);
         drawMission(g);
+        drawDetails(g);
         drawFooter(g);
         drawLights(g);
-        for (var r : renderables) r.render(g, mouseX, mouseY, partialTick);
-        if (anim) {
-            g.fill(left, top, left + w, top + h, ((int) ((1 - ease) * 200) << 24) | 0x0A0E10);
-            g.pose().popPose();
-        }
+        for (var r : renderables) r.render(g, mx, my, partialTick);
+        g.pose().popPose();
     }
 
     private void drawTopBar(GuiGraphics g) {
-        g.fill(left, top, left + w, top + TOP_BAR, P_BG);
-        g.fill(left, top + TOP_BAR - 1, left + w, top + TOP_BAR, P_RULE);
-        g.drawString(font, Ui.upper(Component.translatable("gui.steelrain.laptop_title")), left + 6, top + 3, P_TEXT, false);
-        g.drawString(font, "STEEL RAIN C2", left + 6 + font.width(Ui.upper(Component.translatable("gui.steelrain.laptop_title"))) + 8, top + 3, P_FAINT, false);
-        if (minecraft.player != null && minecraft.level != null) {
-            long t = (minecraft.level.getDayTime() + 6000) % 24000;
-            String clock = String.format("%02d:%02d", t / 1000, (t % 1000) * 60 / 1000);
-            String own = "GRID " + Mth.floor(minecraft.player.getX()) + " " + Mth.floor(minecraft.player.getZ());
-            g.drawString(font, clock, left + w - 6 - font.width(clock), top + 3, P_AMBER, false);
-            g.drawString(font, own, left + w - 14 - font.width(clock) - font.width(own), top + 3, P_DIM, false);
-            String ct = "CT " + contactCount;
-            g.drawString(font, ct, left + w - 14 - font.width(clock) - font.width(own) - 12 - font.width(ct), top + 3, contactCount > 0 ? P_AMBER : P_DIM, false);
+        g.fillGradient(0, 0, w, 44, 0xFF141D1D, P_BG);
+        g.fill(0, 43, w, 44, P_RULE);
+        Ui.brackets(g, 12, 9, 27, 25, 8, P_GO);
+        Ui.icon(g, 22, 17, Ui.ICON_PLANE, P_TEXT);
+        g.pose().pushPose();
+        g.pose().translate(50, 8, 0);
+        g.pose().scale(1.65f, 1.65f, 1);
+        g.drawString(font, "FIRE CONTROL", 0, 0, P_TEXT, false);
+        g.pose().popPose();
+        g.drawString(font, "STEEL RAIN / COMMAND SYSTEM", 50, 28, P_DIM, false);
+        int reachable = 0;
+        for (Payloads.Entry e : entries) if (known(e) && e.reachable()) reachable++;
+        Ui.icon(g, 656, 12, Ui.ICON_SIGNAL, reachable > 0 ? P_GO : P_AMBER);
+        g.drawString(font, "LINK: " + (reachable > 0 ? "ONLINE" : "STANDBY"), 672, 11, reachable > 0 ? P_GO : P_DIM, false);
+        g.drawString(font, "UNITS: " + reachable + "/" + entries.size(), 672, 26, P_DIM, false);
+        if (minecraft.level != null) {
+            long time = (minecraft.level.getDayTime() + 6000) % 24000;
+            String clock = String.format(Locale.ROOT, "%02d:%02d:%02d", time / 1000, time % 1000 * 60 / 1000, time % 1000 * 3600 / 1000 % 60);
+            g.drawString(font, clock, w - 12 - font.width(clock), 10, P_TEXT, false);
         }
+        String grid = minecraft.player == null ? "GRID -- --" : "GRID " + Mth.floor(minecraft.player.getX()) + " " + Mth.floor(minecraft.player.getZ());
+        g.drawString(font, "CT " + contactCount + " | " + grid, w - 12 - font.width("CT " + contactCount + " | " + grid), 27, P_DIM, false);
+        plate(g, 8, 49, 218, 22);
+        g.drawString(font, "AO: STEEL RAIN C2", 16, 56, P_GO, false);
+        String weather = minecraft.level == null ? "--" : minecraft.level.isThundering() ? "STORM" : minecraft.level.isRaining() ? "RAIN" : "CLEAR";
+        String wx = "WX: " + weather + " | " + (minecraft.level != null && minecraft.level.isDay() ? "DAY" : "NIGHT");
+        g.drawString(font, wx, w - 12 - font.width(wx), 56, P_DIM, false);
     }
 
     private void drawUnits(GuiGraphics g) {
-        int x = left + GAP, y = mapTop;
-        plate(g, x, y - 1, LIST_W, map + 2);
-        header(g, font, x + 1, y, LIST_W - 2, Component.translatable("gui.steelrain.units"), Component.literal(Integer.toString(entries.size())));
-        int ly = y + 14;
+        int x = GAP, y = mapTop;
+        plate(g, x, y, LIST_W, MAIN_H);
+        header(g, font, x + 3, y + 3, LIST_W - 6, t("units"), Component.literal("[" + entries.size() + "]"));
+        int ly = y + 20, shown = visibleCards();
         if (entries.isEmpty()) {
-            g.drawString(font, Ui.upper(Component.translatable("gui.steelrain.no_links")).getString(), x + 6, ly + 6, P_DIM, false);
-            return;
+            Ui.icon(g, x + 94, y + 80, Ui.ICON_SIGNAL, P_FAINT);
+            g.drawString(font, Ui.upper(t("no_links")), x + 13, y + 105, P_DIM, false);
+            g.drawString(font, "HOLD TABLET + RIGHT-CLICK", x + 13, y + 126, P_FAINT, false);
+            g.drawString(font, "A LAUNCHER TO LINK", x + 13, y + 139, P_FAINT, false);
         }
-        int shown = visibleCards();
         for (int i = listScroll; i < entries.size() && i < listScroll + shown; i++) {
             Payloads.Entry e = entries.get(i);
             int cy = ly + (i - listScroll) * CARD_H;
             boolean sel = i == selected;
-            if (sel) g.fill(x + 3, cy + 1, x + LIST_W - 3, cy + CARD_H - 2, 0xFF0F2415);
-            if (sel) g.fill(x + 3, cy + 1, x + 5, cy + CARD_H - 2, P_AMBER);
-            g.fill(x + 3, cy + CARD_H - 1, x + LIST_W - 3, cy + CARD_H, P_RULE);
-            int colour = statusColour(e);
-            Ui.icon(g, x + 8, cy + 4, iconFor(e), sel ? P_AMBER : P_TEXT);
-            Component name = known(e) ? Component.translatable(e.name()) : Component.translatable("gui.steelrain.offline");
-            g.drawString(font, font.plainSubstrByWidth(name.getString(), LIST_W - 28), x + 18, cy + 4, sel ? P_TEXT : 0xFFC8D2D8, false);
-            // second line: status dot + text, then rounds and energy gauges
-            g.fill(x + 8, cy + 16, x + 12, cy + 20, colour);
-            String st = status(e).getString();
-            g.drawString(font, font.plainSubstrByWidth(st, 50), x + 15, cy + 14, colour, false);
+            g.fill(x + 6, cy, x + LIST_W - 6, cy + CARD_H - 3, sel ? P_GO : P_RULE);
+            g.fillGradient(x + 7, cy + 1, x + LIST_W - 7, cy + CARD_H - 4, sel ? 0xFF153321 : 0xFF151E1D, P_BG);
+            Ui.icon(g, x + 15, cy + 10, iconFor(e), sel ? P_GO : P_TEXT);
+            String name = known(e) ? Component.translatable(e.name()).getString() : t("offline").getString();
+            g.drawString(font, font.plainSubstrByWidth(String.format(Locale.ROOT, "%02d  %s", i + 1, name), LIST_W - 60), x + 33, cy + 5, sel ? P_GO : P_TEXT, false);
+            g.drawString(font, font.plainSubstrByWidth(Ui.upper(status(e)).getString(), 90), x + 33, cy + 19, statusColour(e), false);
             if (known(e)) {
-                String rounds = e.ammo() + (e.second() ? "+" + e.ammo2() : "");
-                g.drawString(font, rounds, x + LIST_W - 8 - font.width(rounds), cy + 14, P_DIM, false);
+                String ammo = e.station() ? "AIR" : "RDS " + (e.ammo() + (e.second() ? e.ammo2() : 0));
+                g.drawString(font, ammo, x + LIST_W - 18 - font.width(ammo), cy + 19, P_DIM, false);
             }
+            Ui.icon(g, x + LIST_W - 18, cy + 5, Ui.ICON_SIGNAL, e.reachable() ? P_GO : P_FAINT);
         }
         if (entries.size() > shown) {
-            int track = map - 16, knob = Math.max(8, track * shown / entries.size());
+            int track = shown * CARD_H, knob = Math.max(8, track * shown / entries.size());
             int ky = ly + (track - knob) * listScroll / Math.max(1, entries.size() - shown);
-            g.fill(x + LIST_W - 3, ly, x + LIST_W - 2, ly + track, 0xFF2A353C);
-            g.fill(x + LIST_W - 3, ky, x + LIST_W - 2, ky + knob, P_AMBER);
+            g.fill(x + LIST_W - 4, ly, x + LIST_W - 2, ly + track, P_RULE);
+            g.fill(x + LIST_W - 4, ky, x + LIST_W - 2, ky + knob, P_GO);
         }
+        g.drawString(font, "LINKED ASSETS / " + entries.size() + " TOTAL", x + 10, y + MAIN_H - 13, P_FAINT, false);
     }
 
     private int contactCount;
+    private boolean showGrid = true, showRanges = true, showContacts = true;
 
     private void drawMap(GuiGraphics g, int mouseX, int mouseY) {
         int mx = mapLeft, my = mapTop;
-        Ui.well(g, mx, my, map, map);
+        Ui.well(g, mx, my, mapWidth, mapHeight);
         // the terrain is printed in muted tones, so the coloured markers stand out from it
-        com.mojang.blaze3d.systems.RenderSystem.setShaderColor(0.40f, 0.95f, 0.52f, 1f);
-        g.blit(MAP_TEXTURE, mx, my, 0, 0f, 0f, map, map, map, map);
         com.mojang.blaze3d.systems.RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
-        g.enableScissor(mx, my, mx + map, my + map);
+        g.blit(MAP_TEXTURE, mx, my, 0, 0f, 0f, mapWidth, mapHeight, mapWidth, mapHeight);
+        com.mojang.blaze3d.systems.RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
+        scissor(g, mx, my, mx + mapWidth, my + mapHeight);
         grid(g);
         Payloads.Entry cur = current();
         boolean curType = cur != null && known(cur);
-        if (curType) {
+        if (curType && showRanges) {
             double cx = cur.pos().getX() + 0.5, cz = cur.pos().getZ() + 0.5;
             ring(g, cx, cz, cur.maxRange(), 0xD0F2B33D, false);
             ring(g, cx, cz, cur.minRange(), 0xC0E5534B, true);
@@ -693,7 +747,7 @@ public class LaptopScreen extends Screen {
         double sx = 0, sz = 0, sr = 0;
         if (curType) { sx = cur.pos().getX() + 0.5; sz = cur.pos().getZ() + 0.5; sr = Math.max(1, cur.maxRange()); }
         else if (minecraft.player != null) { sx = minecraft.player.getX(); sz = minecraft.player.getZ(); sr = 96; }
-        if (sr > 0) {
+        if (sr > 0 && showRanges) {
             double turn = (Util.getMillis() % 4000) / 4000.0 * 360;
             for (int k = 0; k < 28; k++) {
                 double a = Math.toRadians(turn - k * 1.25);
@@ -709,9 +763,10 @@ public class LaptopScreen extends Screen {
         int contacts = 0;
         for (ReconClient.Report report : ReconClient.fresh()) {
             Payloads.Markers mk = report.markers();
-            ring(g, mk.x() + 0.5, mk.z() + 0.5, mk.radius(), 0xA04FC3F7, true);
+            if (showRanges) ring(g, mk.x() + 0.5, mk.z() + 0.5, mk.radius(), 0xA04FC3F7, true);
             int[] d = mk.data();
             contacts += d.length / 3;
+            if (!showContacts) continue;
             for (int i = 0; i + 2 < d.length; i += 3) {
                 int colour = switch (d[i + 2]) {
                     case 0 -> 0xFFFF4040;   // hostile mob
@@ -721,14 +776,24 @@ public class LaptopScreen extends Screen {
                     case 5 -> 0xFFFFF040;   // enemy jammer
                     default -> 0xFFFF9020;  // enemy weapon system
                 };
-                dot(g, d[i] + 0.5, d[i + 1] + 0.5, colour, d[i + 2] >= 4 ? 2 : 1);
+                int[] marker = onMap(d[i] + 0.5, d[i + 1] + 0.5, 5);
+                if (marker != null) {
+                    int radius = d[i + 2] >= 4 ? 5 : 4;
+                    for (int edge = -radius; edge <= radius; edge++) {
+                        int dy = radius - Math.abs(edge);
+                        g.fill(marker[0] + edge, marker[1] - dy, marker[0] + edge + 1, marker[1] - dy + 1, colour);
+                        g.fill(marker[0] + edge, marker[1] + dy, marker[0] + edge + 1, marker[1] + dy + 1, colour);
+                    }
+                    g.fill(marker[0] - 1, marker[1], marker[0] + 2, marker[1] + 1, colour);
+                    g.fill(marker[0], marker[1] - 1, marker[0] + 1, marker[1] + 2, colour);
+                }
             }
             dot(g, mk.x() + 0.5, mk.z() + 0.5, P_CYAN, 1);
         }
         for (int i = 0; i < entries.size(); i++) {
             Payloads.Entry e = entries.get(i);
             if (!known(e)) continue;
-            unitIcon(g, e, e.pos().getX() + 0.5, e.pos().getZ() + 0.5, i == selected ? P_AMBER : e.reachable() ? P_GO : P_RED);
+            unitIcon(g, e, e.pos().getX() + 0.5, e.pos().getZ() + 0.5, i == selected ? P_CYAN : e.reachable() ? 0xFF4EA8D8 : P_RED);
             if (e.aircraft() >= 0) unitIcon(g, e, e.ax() + 0.5, e.az() + 0.5, P_CYAN);
         }
         if (minecraft.player != null) {
@@ -751,24 +816,31 @@ public class LaptopScreen extends Screen {
             }
         }
         if (overMap(mouseX, mouseY)) {
-            int hx = Mth.floor(centreX + (mouseX - mx - map / 2.0) * scale());
-            int hz = Mth.floor(centreZ + (mouseY - my - map / 2.0) * scale());
-            g.fill(mouseX, my, mouseX + 1, my + map, 0x40FFFFFF);
-            g.fill(mx, mouseY, mx + map, mouseY + 1, 0x40FFFFFF);
-            int hy = heights.length == map * map ? heights[(mouseY - my) * map + (mouseX - mx)] : NO_HEIGHT;
-            String c = hx + " " + hz + (hy != NO_HEIGHT ? "  Y " + hy : "");
-            int tx = Math.min(mouseX + 6, mx + map - font.width(c) - 4), ty = Math.max(mouseY - 12, my + 2);
-            g.fill(tx - 2, ty - 2, tx + font.width(c) + 2, ty + 9, 0xD0000000);
-            g.drawString(font, c, tx, ty, P_TEXT, false);
+            int hx = Mth.floor(centreX + (mouseX - mx - mapWidth / 2.0) * scale());
+            int hz = Mth.floor(centreZ + (mouseY - my - mapHeight / 2.0) * scale());
+            g.fill(mouseX, my, mouseX + 1, my + mapHeight, 0x40FFFFFF);
+            g.fill(mx, mouseY, mx + mapWidth, mouseY + 1, 0x40FFFFFF);
+            int hy = heights.length == mapWidth * mapHeight ? heights[(mouseY - my) * mapWidth + (mouseX - mx)] : NO_HEIGHT;
+            String c = hx + " " + hz + " | Y " + (hy == NO_HEIGHT ? "--" : hy);
+            double fromX = curType ? cur.pos().getX() : centreX, fromZ = curType ? cur.pos().getZ() : centreZ;
+            double dx = hx - fromX, dz = hz - fromZ;
+            String distance = "DIST " + (int) Math.hypot(dx, dz) + " m";
+            String bearing = String.format(Locale.ROOT, "BRG %05.1f DEG", (Math.toDegrees(Math.atan2(dx, -dz)) + 360) % 360);
+            int bw = Math.max(font.width(c), Math.max(font.width(distance), font.width(bearing))) + 8;
+            int tx = Mth.clamp(mouseX + 12, mx + 4, mx + mapWidth - bw - 4);
+            int ty = Mth.clamp(mouseY + 12, my + 14, my + mapHeight - 43);
+            g.fill(tx - 1, ty - 1, tx + bw + 1, ty + 39, P_RULE);
+            g.fill(tx, ty, tx + bw, ty + 38, 0xED030A0C);
+            g.drawString(font, c, tx + 4, ty + 4, P_GO, false);
+            g.drawString(font, distance, tx + 4, ty + 16, P_TEXT, false);
+            g.drawString(font, bearing, tx + 4, ty + 28, P_DIM, false);
         }
         g.disableScissor();
         // the scope's readout, top left
         contactCount = contacts;
-        g.fill(mx - 1, my - 1, mx + map + 1, my, P_RULE);
-        g.fill(mx - 1, my + map, mx + map + 1, my + map + 1, P_RULE);
-        if (heightMode && heightMin <= heightMax && map >= 150) heightLegend(g, mx + map - 74, my + map - 16);
-        String zoom = "1:" + scale();
-        g.drawString(font, zoom, mx + map + 3, mapTop + map - 60, P_DIM, false);
+        g.fill(mx - 1, my - 1, mx + mapWidth + 1, my, P_RULE);
+        g.fill(mx - 1, my + mapHeight, mx + mapWidth + 1, my + mapHeight + 1, P_RULE);
+        if (heightMode && minecraft.level != null && heightMin <= heightMax && mapWidth >= 150) heightLegend(g, mx + mapWidth - 74, my + mapHeight - 16);
     }
 
     /** A colour ramp with the lowest and highest ground in view. */
@@ -790,105 +862,47 @@ public class LaptopScreen extends Screen {
     }
 
     private void drawMission(GuiGraphics g) {
-        int x = sideLeft, y = mapTop;
-        plate(g, x, y - 1, SIDE_W, h - TOP_BAR - FOOT - GAP * 2);
+        int x = sideLeft, y = mapTop, ix = x + 10, iw = SIDE_W - 20;
+        plate(g, x, y, SIDE_W, MAIN_H);
+        header(g, font, x + 3, y + 3, SIDE_W - 6, t("mission"), Component.literal("///"));
         Payloads.Entry cur = current();
         boolean ok = cur != null && known(cur);
-        header(g, font, x + 1, y, SIDE_W - 2, Component.translatable("gui.steelrain.mission"), null);
-        int ix = x + 6, iw = SIDE_W - 12;
-        if (!ok) {
-            g.drawString(font, Ui.upper(Component.translatable("gui.steelrain.select_unit")).getString(), ix, y + 18, P_DIM, false);
-            return;
-        }
-        // the unit: name, state, what it carries and where it is
-        g.drawString(font, font.plainSubstrByWidth(Component.translatable(cur.name()).getString(), iw), ix, y + 16, P_TEXT, false);
-        chip(g, font, ix, y + 27, status(cur), statusColour(cur));
-        field(g, font, ix, y + 41, iw, t("f_range"), Component.literal(cur.minRange() + "-" + cur.maxRange() + " m"), P_TEXT);
-        String rounds = cur.ammo() + (cur.second() ? " + " + cur.ammo2() : "");
-        field(g, font, ix, y + 52, iw, Component.translatable("gui.steelrain.f_rounds"), Component.literal(rounds),
-                cur.ammo() > 0 || cur.manual() ? P_TEXT : P_RED);
-        int ux = cur.aircraft() >= 0 ? cur.ax() : cur.pos().getX(), uz = cur.aircraft() >= 0 ? cur.az() : cur.pos().getZ();
-        int uy = groundAt(ux, uz);
-        String from = minecraft.player == null ? "" : " \u00B7 " + (int) Math.sqrt(minecraft.player.distanceToSqr(ux + 0.5, minecraft.player.getY(), uz + 0.5)) + " m";
-        field(g, font, ix, y + 63, iw, t("f_grid"), Component.literal(ux + ", " + uz), P_TEXT);
-        field(g, font, ix, y + 73, iw, t("f_height"), Component.literal((uy == NO_HEIGHT ? "--" : "Y " + uy) + from), P_TEXT);
-        field(g, font, ix, y + 84, iw, t("f_energy"), Component.literal(cur.fuel() + " k"), cur.fuel() > 200 ? P_TEXT : P_AMBER);
-        Ui.gauge(g, ix, y + 95, iw, 3, Math.min(1, cur.fuel() / 1000.0), cur.fuel() > 200 ? P_CYAN : P_AMBER, 24);
-        if (cur.busy() > 0) field(g, font, ix, y + 103, iw, t("f_reload"), Component.literal(String.format(Locale.ROOT, "%.1f s", cur.busy() / 20.0)), P_AMBER);
-        else field(g, font, ix, y + 103, iw, t("f_reload"), t("f_ready"), P_GO);
-
-        // engagement envelope: the band the unit can hit, with the target marked on it when one is set
-        int dist = -1;
-        if (hasTarget) {
-            double ddx = targetX + 0.5 - (cur.pos().getX() + 0.5), ddz = targetZ + 0.5 - (cur.pos().getZ() + 0.5);
-            dist = (int) Math.sqrt(ddx * ddx + ddz * ddz);
-        }
-        g.drawString(font, Ui.upper(t("f_envelope")), ix, y + 116, P_DIM, false);
-        envelope(g, ix, y + 127, iw, cur, dist);
-
-        // target entry
-        int ty = y + 146;
+        g.drawString(font, "MISSION", ix, y + 26, P_DIM, false);
+        String mode = !ok ? "AWAITING UNIT" : cur.manual() ? "FIRE SOLUTION" : cur.station() ? "AIRCRAFT TASKING" : "PRECISION STRIKE";
+        g.drawString(font, mode, ix + 64, y + 26, ok ? P_TEXT : P_FAINT, false);
+        g.fill(ix, y + 42, ix + iw, y + 43, P_RULE);
+        g.drawString(font, "TARGET GRID", ix, y + 49, P_DIM, false);
+        int ty = y + 63;
+        Ui.well(g, ix + 12, ty, 86, 20); Ui.well(g, ix + 116, ty, 86, 20);
         g.drawString(font, "X", ix, ty + 5, P_DIM, false);
-        Ui.well(g, ix + 10, ty + 2, 50, 12);
-        g.drawString(font, "Z", ix + 64, ty + 5, P_DIM, false);
-        Ui.well(g, ix + 72, ty + 2, 50, 12);
-        int floorY = top + h - FOOT - GAP - 1 - 44;   // the buttons start here
-        if (hasTarget) {
-            double dx = targetX + 0.5 - (cur.pos().getX() + 0.5), dz = targetZ + 0.5 - (cur.pos().getZ() + 0.5);
-            int bearing = (int) Math.round((Math.toDegrees(Math.atan2(dx, -dz)) + 360) % 360);
-            boolean inRange = dist >= cur.minRange() && dist <= cur.maxRange();
-            MissileProfile prof = profileFor(cur);
-            int row = ty + 18;
-            field(g, font, ix, row, iw, t("f_distance"), Component.literal(dist + " m"), inRange ? P_TEXT : P_RED); row += 10;
-            field(g, font, ix, row, iw, t("f_bearing"), Component.literal(String.format("%03d\u00B0 %s", bearing, compassPoint(bearing))), P_TEXT); row += 10;
-            if (prof != null) {
-                int ticks = Math.max(20, (int) (dist / prof.speed()));
-                field(g, font, ix, row, iw, t("f_flight"), Component.literal(String.format(Locale.ROOT, "%d:%02d", ticks / 1200, ticks / 20 % 60)), P_TEXT); row += 10;
-            }
-            int groundY = groundAt(targetX, targetZ), ownY = groundAt(cur.pos().getX(), cur.pos().getZ());
-            if (groundY != NO_HEIGHT) {
-                String d = ownY != NO_HEIGHT ? String.format(" (%+d)", groundY - ownY) : "";
-                field(g, font, ix, row, iw, t("f_elev"), Component.literal("Y " + groundY + d), P_TEXT); row += 10;
-            } else {
-                field(g, font, ix, row, iw, t("f_elev"), Component.literal("--"), P_FAINT); row += 10;
-            }
-            if (prof != null && prof.blastPower() > 0) {
-                field(g, font, ix, row, iw, t("f_blast"), Component.literal((int) prof.damageRadius() + " m"), P_TEXT); row += 10;
-            }
-            if (prof != null && prof.spread() > 0 && row + 10 < floorY - 30) {
-                field(g, font, ix, row, iw, t("f_error"), Component.literal("\u00B1" + String.format(Locale.ROOT, "%.1f m", prof.spread())), P_TEXT); row += 10;
-            }
-            chip(g, font, ix, row + 1, Component.translatable(inRange ? "gui.steelrain.in_range" : dist < cur.minRange() ? "gui.steelrain.too_close_short" : "gui.steelrain.out_of_range"),
-                    inRange ? P_GO : P_RED);
-            row += 14;
-            if (floorY - row >= 26) profile(g, ix, row, iw, floorY - row - 2, cur, prof, dist);
-        } else {
-            g.drawString(font, Ui.upper(Component.translatable("gui.steelrain.pick_target")).getString(), ix, ty + 20, P_DIM, false);
+        g.drawString(font, "Z", ix + 104, ty + 5, P_DIM, false);
+        if (!hasTarget) g.drawString(font, "SELECT MAP OR ENTER COORDINATES", ix, y + 90, P_FAINT, false);
+        else {
+            int gy = groundAt(targetX, targetZ);
+            g.drawString(font, "FIX " + targetX + " " + targetZ + " | Y " + (gy == NO_HEIGHT ? "--" : gy), ix, y + 90, P_GO, false);
         }
-        if (!cur.station() && !cur.manual()) {
-            int by = top + h - FOOT - GAP - 1 - 40;
-            g.drawString(font, Ui.upper(Component.translatable("gui.steelrain.rounds")), ix, by + 3, P_DIM, false);
-            String n = Integer.toString(count);
-            int cx = (ix + 52 + 14 + ix + iw - 26) / 2;
-            g.drawString(font, n, cx - font.width(n) / 2, by + 3, P_AMBER, false);
+        g.fill(ix, y + 106, ix + iw, y + 107, P_RULE);
+        g.drawString(font, "WEAPON", ix, y + 115, P_DIM, false);
+        String name = ok ? Component.translatable(cur.name()).getString() : t("select_unit").getString();
+        g.drawString(font, font.plainSubstrByWidth(name.toUpperCase(Locale.ROOT), iw), ix, y + 129, P_TEXT, false);
+        if (ok) {
+            Ui.icon(g, ix + 4, y + 151, iconFor(cur), P_DIM);
+            field(g, font, ix + 23, y + 148, iw - 23, t("f_range"), Component.literal(cur.minRange() + " - " + cur.maxRange() + " m"), P_TEXT);
+            int dist = targetDistance(cur);
+            field(g, font, ix + 23, y + 162, iw - 23, t("f_distance"), Component.literal(dist < 0 ? "--" : dist + " m"),
+                    dist >= cur.minRange() && dist <= cur.maxRange() ? P_GO : P_AMBER);
+            field(g, font, ix, y + 179, iw, t("f_reload"), Ui.upper(status(cur)), statusColour(cur));
+            if (!cur.station() && !cur.manual()) {
+                g.drawString(font, Ui.upper(t("rounds")), ix, y + MAIN_H - 52, P_DIM, false);
+                g.drawString(font, Integer.toString(count), ix + 148, y + MAIN_H - 52, P_TEXT, false);
+            }
+        } else {
+            g.drawString(font, "LINK A UNIT TO PLAN A MISSION", ix, y + 159, P_FAINT, false);
         }
     }
 
-    /** The band from the unit's minimum to maximum range, with the target's distance marked on it. */
-    private void envelope(GuiGraphics g, int x, int y, int w, Payloads.Entry cur, int dist) {
-        int max = Math.max(1, cur.maxRange());
-        Ui.well(g, x, y, w, 6);
-        int x1 = x + (int) Math.round(w * Math.min(1.0, cur.minRange() / (double) max));
-        g.fill(x1, y, x + w, y + 6, Ui.fade(P_CYAN, 0.45f));
-        g.fill(x1, y - 2, x1 + 1, y + 8, P_AMBER);
-        if (dist >= 0) {
-            int mx = x + (int) Math.round(w * Math.min(dist, max) / (double) max);
-            boolean in = dist >= cur.minRange() && dist <= cur.maxRange();
-            g.fill(mx - 1, y - 3, mx + 2, y + 9, in ? P_GO : P_RED);
-        }
-        g.drawString(font, "0", x, y + 9, P_FAINT, false);
-        String top = max + " m";
-        g.drawString(font, top, x + w - font.width(top), y + 9, P_FAINT, false);
+    private int targetDistance(Payloads.Entry e) {
+        return hasTarget ? (int) Math.hypot((double) targetX - e.pos().getX(), (double) targetZ - e.pos().getZ()) : -1;
     }
 
     private static String compassPoint(int deg) {
@@ -909,7 +923,7 @@ public class LaptopScreen extends Screen {
      */
     private void profile(GuiGraphics g, int x, int y, int w, int hgt, Payloads.Entry cur, MissileProfile prof, int dist) {
         Ui.well(g, x, y, w, hgt);
-        g.enableScissor(x, y, x + w, y + hgt);
+        scissor(g, x, y, x + w, y + hgt);
         double ax = cur.pos().getX() + 0.5, az = cur.pos().getZ() + 0.5;
         int n = w;
         int[] ground = new int[n];
@@ -926,16 +940,14 @@ public class LaptopScreen extends Screen {
             case CRUISE -> prof.cruiseAltitude();
             default -> 0;
         };
-        int top = (int) (hi + apex * (prof != null && prof.mode() == MissileProfile.FlightMode.CRUISE ? 1 : 1) + 6), bottom = lo - 4;
+        int top = (int) (hi + apex + 6), bottom = lo - 4;
         if (top - bottom < 20) top = bottom + 20;
         double sy = (hgt - 4) / (double) (top - bottom);
-        int prevPy = -1;
         for (int i = 0; i < n; i++) {
             if (ground[i] == NO_HEIGHT) continue;
             int py = y + hgt - 2 - (int) ((ground[i] - bottom) * sy);
             g.fill(x + i, py, x + i + 1, y + hgt, i % 2 == 0 ? 0xFF3C4A32 : 0xFF343F2C);
             g.fill(x + i, py, x + i + 1, py + 1, 0xFF8FA06A);
-            prevPy = py;
         }
         // path
         if (prof != null) {
@@ -963,52 +975,182 @@ public class LaptopScreen extends Screen {
         g.drawString(font, Ui.upper(t("profile")), x + 4, y + 2, P_FAINT, false);
     }
 
+    /** Scissors are in GUI coordinates; GuiGraphics 1.21 does not apply the pose to them. */
+    private void scissor(GuiGraphics g, int x, int y, int right, int bottom) {
+        g.enableScissor(viewportX + Mth.floor(x * uiScale), viewportY + Mth.floor(y * uiScale),
+                viewportX + Mth.ceil(right * uiScale), viewportY + Mth.ceil(bottom * uiScale));
+    }
+
+    private void detailHeader(GuiGraphics g, int x, int width, String title, String tag) {
+        plate(g, x, DETAIL_Y, width, DETAIL_H);
+        header(g, font, x + 3, DETAIL_Y + 3, width - 6, Component.literal(title), Component.literal(tag));
+    }
+
+    private void detailField(GuiGraphics g, int x, int y, int width, String label, String value, int colour) {
+        field(g, font, x, y, width, Component.literal(label), Component.literal(value), colour);
+    }
+
+    private void drawDetails(GuiGraphics g) {
+        if (!detailPage.equals("overview")) {
+            drawDetailPage(g);
+            return;
+        }
+        int y = DETAIL_Y + 24;
+        detailHeader(g, 8, 232, "AO OVERVIEW", "LIVE");
+        g.blit(MAP_TEXTURE, 17, y, 84, 76, 0f, 0f, mapWidth, mapHeight, mapWidth, mapHeight);
+        Ui.brackets(g, 17, y, 84, 76, 5, P_DIM);
+        if (hasTarget) {
+            double px = (targetX - centreX) / scale() + mapWidth / 2.0;
+            double pz = (targetZ - centreZ) / scale() + mapHeight / 2.0;
+            if (px >= 0 && pz >= 0 && px < mapWidth && pz < mapHeight)
+                Ui.brackets(g, 17 + (int) (px * 84 / mapWidth) - 3, y + (int) (pz * 76 / mapHeight) - 3, 7, 7, 3, P_RED);
+        }
+        detailField(g, 109, y, 121, "GRID X", hasTarget ? "" + targetX : "--", P_TEXT);
+        detailField(g, 109, y + 15, 121, "GRID Z", hasTarget ? "" + targetZ : "--", P_TEXT);
+        int ground = hasTarget ? groundAt(targetX, targetZ) : NO_HEIGHT;
+        detailField(g, 109, y + 30, 121, "ELEV", ground == NO_HEIGHT ? "--" : ground + " m", P_TEXT);
+        detailField(g, 109, y + 45, 121, "SPAN", mapWidth * scale() + " m", P_DIM);
+        detailField(g, 109, y + 60, 121, "CONTACTS", "" + contactCount, contactCount > 0 ? P_AMBER : P_GO);
+        g.drawString(font, "LOADED + RECON TERRAIN", 17, DETAIL_Y + 107, P_FAINT, false);
+
+        Payloads.Entry cur = current();
+        boolean ok = cur != null && known(cur);
+        detailHeader(g, 248, 232, "FIRE SOLUTION", hasTarget ? "FIX" : "NO FIX");
+        if (ok && hasTarget) {
+            int dist = targetDistance(cur);
+            int bearing = (int) Math.round((Math.toDegrees(Math.atan2((double) targetX - cur.pos().getX(), (double) cur.pos().getZ() - targetZ)) + 360) % 360);
+            detailField(g, 258, y, 212, "DIST", dist + " m", P_TEXT);
+            detailField(g, 258, y + 14, 212, "BRG", String.format(Locale.ROOT, "%03d DEG / %s", bearing, compassPoint(bearing)), P_TEXT);
+            MissileProfile prof = profileFor(cur);
+            profile(g, 258, y + 30, 212, 48, cur, prof, dist);
+            boolean inRange = dist >= cur.minRange() && dist <= cur.maxRange();
+            g.drawString(font, Ui.upper(t(inRange ? "in_range" : "out_of_range")), 258, DETAIL_Y + 107, inRange ? P_GO : P_RED, false);
+        } else {
+            Ui.brackets(g, 318, y + 9, 80, 47, 12, P_FAINT);
+            g.drawString(font, "AWAITING TARGET FIX", 258, DETAIL_Y + 93, P_DIM, false);
+            g.drawString(font, "CLICK MAP TO DESIGNATE", 258, DETAIL_Y + 107, P_FAINT, false);
+        }
+
+        detailHeader(g, 488, 232, "RECON / CAMERA", "ISR");
+        int reports = 0;
+        for (ReconClient.Report ignored : ReconClient.fresh()) reports++;
+        Ui.brackets(g, 499, y, 210, 73, 12, reports > 0 ? P_DIM : P_FAINT);
+        Ui.icon(g, 599, y + 13, Ui.ICON_DRONE, reports > 0 ? P_CYAN : P_FAINT);
+        String state = reports > 0 ? reports + " LIVE RECON REPORT(S)" : "NO RECON REPORTS";
+        g.drawString(font, state, 604 - font.width(state) / 2, y + 35, reports > 0 ? P_CYAN : P_DIM, false);
+        String hint = ok && cur.station() && cur.aircraft() >= 0 ? "CAMERA OPENS AIRCRAFT VIEW" : "SELECT AN AIRBORNE STATION";
+        g.drawString(font, hint, 604 - font.width(hint) / 2, y + 53, P_FAINT, false);
+        g.drawString(font, "CONTACTS " + contactCount + " | REPORT TTL 3 s", 499, DETAIL_Y + 107, P_DIM, false);
+
+        detailHeader(g, 728, 224, "PLATFORM", ok ? String.format(Locale.ROOT, "%02d", selected + 1) : "--");
+        if (ok) {
+            String name = Component.translatable(cur.name()).getString();
+            g.drawString(font, font.plainSubstrByWidth(name.toUpperCase(Locale.ROOT), 202), 738, y, P_TEXT, false);
+            detailField(g, 738, y + 16, 204, "STATE", Ui.upper(status(cur)).getString(), statusColour(cur));
+            detailField(g, 738, y + 30, 204, "GRID", (cur.aircraft() >= 0 ? cur.ax() : cur.pos().getX()) + " " + (cur.aircraft() >= 0 ? cur.az() : cur.pos().getZ()), P_TEXT);
+            detailField(g, 738, y + 44, 204, "ROUNDS", "" + (cur.ammo() + (cur.second() ? cur.ammo2() : 0)), P_TEXT);
+            detailField(g, 738, y + 58, 204, "ENERGY", cur.fuel() + " k", cur.fuel() > 200 ? P_GO : P_AMBER);
+            Ui.gauge(g, 738, y + 76, 204, 4, cur.fuel() / 1000.0, P_GO, 25);
+            g.drawString(font, "DATALINK: " + (cur.reachable() ? "CONNECTED" : "LOST"), 738, DETAIL_Y + 107, cur.reachable() ? P_GO : P_RED, false);
+        } else {
+            Ui.icon(g, 828, y + 19, Ui.ICON_PLANE, P_FAINT);
+            g.drawString(font, "NO UNIT SELECTED", 738, y + 55, P_DIM, false);
+            g.drawString(font, "AWAITING DATALINK", 738, DETAIL_Y + 107, P_FAINT, false);
+        }
+    }
+
+    private void drawDetailPage(GuiGraphics g) {
+        String title = switch (detailPage) {
+            case "targets", "recon" -> "RECON CONTACTS";
+            case "bda" -> "BATTLE DAMAGE ASSESSMENT";
+            case "weapons" -> "LINKED WEAPONS / AMMUNITION";
+            case "roe" -> "ENGAGEMENT / OPERATOR NOTES";
+            case "airspace" -> "AIRSPACE / AIRCRAFT TELEMETRY";
+            case "logs" -> "EVENT LOG";
+            case "comms" -> "COMMUNICATIONS / UNIT DATALINKS";
+            default -> "SYSTEM / DISPLAY STATUS";
+        };
+        detailHeader(g, 8, w - 16, title, detailPage.equals("logs") ? LOG.size() + " EVENTS" : "STEEL RAIN C2");
+        int y = DETAIL_Y + 24;
+        if (detailPage.equals("logs")) {
+            String[] lines = LOG.toArray(new String[0]);
+            if (lines.length == 0) g.drawString(font, "NO RECENT EVENTS. FIRE ORDERS AND SERVER MESSAGES APPEAR HERE.", 20, y, P_DIM, false);
+            for (int i = 0; i < Math.min(6, lines.length); i++)
+                g.drawString(font, font.plainSubstrByWidth(lines[lines.length - 1 - i], w - 42), 20, y + i * 14, i == 0 ? P_TEXT : P_DIM, false);
+        } else if (detailPage.equals("targets") || detailPage.equals("recon")) {
+            int index = 0;
+            for (ReconClient.Report report : ReconClient.fresh()) {
+                int[] data = report.markers().data();
+                for (int i = 0; i + 2 < data.length && index < 15; i += 3) {
+                    String kind = switch (data[i + 2]) {
+                        case 0 -> "HOSTILE MOB"; case 1 -> "NEUTRAL"; case 2 -> "ENEMY PLAYER";
+                        case 3 -> "FRIENDLY"; case 5 -> "JAMMER"; default -> "WEAPON SYSTEM";
+                    };
+                    int x = 20 + index / 5 * 310, row = y + index % 5 * 16;
+                    g.fill(x, row + 2, x + 4, row + 6, data[i + 2] == 3 ? P_CYAN : P_AMBER);
+                    String text = kind + " | " + data[i] + " " + data[i + 1];
+                    g.drawString(font, font.plainSubstrByWidth(text, 294), x + 9, row, P_TEXT, false);
+                    index++;
+                }
+            }
+            if (index == 0) {
+                g.drawString(font, "NO FRESH CONTACTS. LAUNCH A RECON AIRCRAFT TO SURVEY THE AREA.", 20, y + 8, P_DIM, false);
+                g.drawString(font, "REPORTS EXPIRE AFTER 3 SECONDS. REMEMBERED TERRAIN REMAINS ON THE MAP.", 20, y + 28, P_FAINT, false);
+            }
+        } else if (detailPage.equals("weapons") || detailPage.equals("comms") || detailPage.equals("airspace")) {
+            int index = 0;
+            for (Payloads.Entry e : entries) {
+                if (detailPage.equals("airspace") && e.aircraft() < 0) continue;
+                int x = 20 + index / 4 * 468, row = y + index % 4 * 21;
+                String name = known(e) ? Component.translatable(e.name()).getString() : "OFFLINE UNIT";
+                String value = detailPage.equals("weapons") ? "RDS " + (e.ammo() + (e.second() ? e.ammo2() : 0)) + " | " + e.minRange() + "-" + e.maxRange() + " m"
+                        : detailPage.equals("airspace") ? "GRID " + e.ax() + " " + e.az() : e.pos().getX() + " " + e.pos().getZ() + " | " + (e.reachable() ? "LINK OK" : "NO SIGNAL");
+                g.drawString(font, font.plainSubstrByWidth(name, 200), x, row, P_TEXT, false);
+                g.drawString(font, font.plainSubstrByWidth(value, 238), x + 210, row, statusColour(e), false);
+                index++;
+                if (index >= 8) break;
+            }
+            if (index == 0) g.drawString(font, detailPage.equals("airspace") ? "NO LINKED AIRCRAFT IN THE AIR." : "NO LINKED UNITS.", 20, y + 8, P_DIM, false);
+        } else if (detailPage.equals("roe")) {
+            g.drawString(font, "1  DESIGNATE A TARGET USING THE MAP OR THE X / Z COORDINATE FIELDS.", 20, y, P_TEXT, false);
+            g.drawString(font, "2  VERIFY RANGE, AMMUNITION, LINK AND LINE OF FIRE BEFORE ISSUING AN ORDER.", 20, y + 19, P_TEXT, false);
+            g.drawString(font, "3  MANUAL GUNS RECEIVE A SOLUTION; THE OPERATOR FIRES THE WEAPON.", 20, y + 38, P_DIM, false);
+            g.drawString(font, "CLEAR TARGET REMOVES THE DESIGNATION. IT DOES NOT CANCEL A WEAPON ALREADY IN FLIGHT.", 20, y + 63, P_AMBER, false);
+        } else if (detailPage.equals("bda")) {
+            g.drawString(font, "NO DAMAGE ASSESSMENT TELEMETRY AVAILABLE.", 20, y + 8, P_DIM, false);
+            g.drawString(font, "USE AN AIRBORNE STATION'S CAMERA TO INSPECT THE TARGET AREA AFTER IMPACT.", 20, y + 29, P_TEXT, false);
+            g.drawString(font, "THE RECON CONTACTS TAB SHOWS CURRENT DETECTIONS, NOT CONFIRMED DAMAGE.", 20, y + 50, P_FAINT, false);
+        } else {
+            detailField(g, 20, y, 278, "DISPLAY", "ONLINE", P_GO);
+            detailField(g, 20, y + 20, 278, "MAP", mapWidth + " x " + mapHeight, P_TEXT);
+            detailField(g, 20, y + 40, 278, "SCALE", "1:" + scale(), P_TEXT);
+            detailField(g, 336, y, 278, "LAYER", heightMode ? "ELEVATION" : "TERRAIN", P_TEXT);
+            detailField(g, 336, y + 20, 278, "REFRESH", "1 s / TERRAIN 2 s", P_DIM);
+            detailField(g, 336, y + 40, 278, "CONTACT TTL", "3 s", P_DIM);
+            g.drawString(font, "MAP: CLICK TO DESIGNATE", 650, y, P_TEXT, false);
+            g.drawString(font, "RIGHT-DRAG TO PAN / SCROLL TO ZOOM", 650, y + 20, P_DIM, false);
+            g.drawString(font, "H: TOGGLE TERRAIN / ELEVATION", 650, y + 40, P_DIM, false);
+            g.drawString(font, "ESC: CLOSE DISPLAY", 650, y + 60, P_DIM, false);
+        }
+    }
+
     private void drawFooter(GuiGraphics g) {
-        int y = top + h - FOOT;
-        g.fill(left, y, left + w, top + h, P_BG);
-        g.fill(left, y, left + w, y + 1, P_RULE);
-        // status chips, right to left
-        int rx = left + w - 5;
-        int reachable = 0, known = 0, rounds = 0;
-        for (Payloads.Entry e : entries) if (known(e)) { known++; if (e.reachable()) reachable++; if (!e.station()) rounds += e.ammo() + (e.second() ? e.ammo2() : 0); }
-        String wx = "CLEAR";
-        boolean day = true;
-        if (minecraft.level != null) {
-            wx = minecraft.level.isThundering() ? "STORM" : minecraft.level.isRaining() ? "RAIN" : "CLEAR";
-            day = minecraft.level.isDay();
+        g.fill(8, 365, w - 8, 366, P_RULE);
+        int reachable = 0, rounds = 0;
+        for (Payloads.Entry e : entries) if (known(e)) {
+            if (e.reachable()) reachable++;
+            if (!e.station()) rounds += e.ammo() + (e.second() ? e.ammo2() : 0);
         }
         int ping = 0;
         if (minecraft.getConnection() != null && minecraft.player != null) {
             var info = minecraft.getConnection().getPlayerInfo(minecraft.player.getUUID());
             if (info != null) ping = info.getLatency();
         }
-        String[] labels = {"LINK", "RDS", "WX", day ? "DAY" : "NIGHT", "PING"};
-        String[] values = {reachable + "/" + entries.size(), Integer.toString(rounds), wx, "", ping + " ms"};
-        int[] cols = {entries.isEmpty() || reachable == entries.size() ? P_GO : reachable == 0 ? P_RED : P_AMBER,
-                rounds > 0 ? P_TEXT : P_RED, wx.equals("CLEAR") ? P_TEXT : P_AMBER, day ? P_AMBER : P_CYAN, ping < 100 ? P_TEXT : ping < 250 ? P_AMBER : P_RED};
-        for (int i = labels.length - 1; i >= 0; i--) {
-            String text = values[i].isEmpty() ? labels[i] : labels[i] + " " + values[i];
-            String value = values[i];
-            if (value.isEmpty()) {
-                rx -= font.width(labels[i]) + 10;
-                g.drawString(font, labels[i], rx, y + 4, cols[i], false);
-            } else {
-                rx -= font.width(labels[i]) + 3 + font.width(value) + 10;
-                g.drawString(font, labels[i], rx, y + 4, P_DIM, false);
-                g.drawString(font, value, rx + font.width(labels[i]) + 3, y + 4, cols[i], false);
-            }
-            g.fill(rx - 5, y + 4, rx - 4, y + 12, P_RULE);
-        }
-        // event log, two lines at the left; a fresh message shows brighter
-        int lx = left + 6, lw = rx - lx - 8;
-        String[] last = LOG.toArray(new String[0]);
-        for (int i = 0; i < 2; i++) {
-            int idx = last.length - 1 - i;
-            int ly = y + 15 - i * 10 + (i == 0 ? 0 : -3);
-            if (idx < 0) break;
-            boolean fresh = i == 0 && messageTicks > 0;
-            if (fresh) Ui.icon(g, lx, ly, Ui.ICON_WARN, P_AMBER);
-            g.drawString(font, font.plainSubstrByWidth(last[idx], lw - (fresh ? 10 : 0)), lx + (fresh ? 10 : 0), ly, fresh ? P_AMBER : i == 0 ? P_DIM : P_FAINT, false);
+        String status = "LINK " + reachable + "/" + entries.size() + " | RDS " + rounds + " | CT " + contactCount + " | PING " + ping + " ms";
+        g.drawString(font, status, w - 12 - font.width(status), 348, P_GO, false);
+        if (messageTicks > 0 && !message.getString().isEmpty()) {
+            g.fill(8, 477, w - 8, 491, 0xF01B2118);
+            g.drawString(font, font.plainSubstrByWidth(message.getString(), w - 32), 16, 480, P_AMBER, false);
         }
     }
 

@@ -71,3 +71,10 @@ dependencies {
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
 }
+
+// NeoForge resolves ${file.jarVersion} in mods.toml from this manifest attribute.
+tasks.named('jar', Jar).configure {
+    manifest {
+        attributes('Implementation-Title': 'Steel Rain', 'Implementation-Version': project.version)
+    }
+}

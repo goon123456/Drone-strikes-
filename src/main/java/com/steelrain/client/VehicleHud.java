@@ -7,6 +7,7 @@ import com.steelrain.entity.vehicle.SrGun;
 import com.steelrain.entity.vehicle.SrVehicle;
 import net.minecraft.Util;
 import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -20,24 +21,23 @@ import net.neoforged.neoforge.client.event.ClientChatReceivedEvent;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.Locale;
 
-/**
- * The vehicle dashboard (seat, speed and heading, engine, fuel, battery, damage, and what the vehicle is doing) and
- * Steel Rain's status messages shown as short notices in the same style instead of plain action-bar text.
- */
+/** Driver/passenger instruments and brief system notices, using the tablet's command-display language. */
 @EventBusSubscriber(modid = ModRegistry.MODID, value = Dist.CLIENT)
 public final class VehicleHud {
     private record Notice(Component text, int colour, long at) {}
 
     private static final Deque<Notice> NOTICES = new ArrayDeque<>();
-    private static final long NOTICE_MS = 2600;
+    private static final long NOTICE_MS = 3200;
+    private static SrVehicle lastVehicle;
     private static double speedShown;
-
-    // ------------------------------------------------------------------ notices
+    private static long sampledAt;
 
     @SubscribeEvent
     public static void message(ClientChatReceivedEvent.System e) {
-        if (!e.isOverlay() || !(e.getMessage().getContents() instanceof TranslatableContents t) || !t.getKey().startsWith("message.steelrain.")) return;
+        if (!e.isOverlay() || !(e.getMessage().getContents() instanceof TranslatableContents t)
+                || !t.getKey().startsWith("message.steelrain.")) return;
         e.setCanceled(true);
         String key = t.getKey();
         int colour = key.matches(".*(no_|too_|not_|full|refused|busy|moving|unknown|_off).*") ? Ui.RED
@@ -45,94 +45,159 @@ public final class VehicleHud {
         if (key.endsWith("unlinked")) colour = Ui.AMBER;
         NOTICES.removeIf(n -> n.text().getString().equals(e.getMessage().getString()));
         NOTICES.addLast(new Notice(e.getMessage(), colour, Util.getMillis()));
-        while (NOTICES.size() > 3) NOTICES.removeFirst();
+        while (NOTICES.size() > 2) NOTICES.removeFirst();
     }
 
-    /** Notices sit just below the crosshair as bare coloured text, fading out after a couple of seconds. */
-    private static void notices(GuiGraphics g, Font font) {
+    /** Camera notices temporarily replace its title row; gun notices use the reserved gap below the compass. */
+    private static void notices(GuiGraphics g, Font font, int y, boolean latestOnly, boolean replaceTitle) {
         long now = Util.getMillis();
         NOTICES.removeIf(n -> now - n.at() > NOTICE_MS);
-        int y = g.guiHeight() / 2 + 24;
+        if (latestOnly) {
+            Notice latest = NOTICES.peekLast();
+            if (latest != null) {
+                int width = replaceTitle ? g.guiWidth() - 18 : Math.min(260, g.guiWidth() - 24);
+                drawNotice(g, font, latest, (g.guiWidth() - width) / 2, y, width, now, replaceTitle);
+            }
+            return;
+        }
+        int width = Math.min(260, g.guiWidth() - 24), x = (g.guiWidth() - width) / 2;
         for (Notice n : NOTICES) {
-            float age = (now - n.at()) / (float) NOTICE_MS;
-            Ui.textCentre(g, font, n.text().getString(), g.guiWidth() / 2, y, n.colour() == Ui.GREEN ? Ui.HUD_TEXT : n.colour(), Mth.clamp((1 - age) * 4, 0, 1));
-            y += 11;
+            drawNotice(g, font, n, x, y, width, now, false);
+            y += 16;
         }
     }
 
-    // ------------------------------------------------------------------ dashboard
+    private static void drawNotice(GuiGraphics g, Font font, Notice notice, int x, int y, int width, long now, boolean replaceTitle) {
+        // A replacement title stays opaque until expiry so the underlying title never bleeds through the message.
+        float alpha = replaceTitle ? 1 : Mth.clamp((NOTICE_MS - (now - notice.at())) / 500f, 0, 1);
+        if (alpha < 0.04f) return;
+        g.fill(x, y, x + width, y + 13, replaceTitle ? 0xFF0A1410 : Ui.fade(0xEC081110, alpha));
+        g.fill(x, y, x + 2, y + 13, Ui.fade(notice.colour(), alpha));
+        g.fill(x + 2, y + 12, x + width, y + 13, Ui.fade(0xFF354C41, alpha));
+        String text = font.plainSubstrByWidth(notice.text().getString(), width - 14);
+        Ui.text(g, font, text, x + 7, y + 3, notice.colour() == Ui.GREEN ? Ui.TEXT : notice.colour(), alpha);
+    }
 
-    private static final Ui.Fader DETAILS = new Ui.Fader();
-    private static SrVehicle lastVehicle;
-
-    /**
-     * Bottom right, bare text. Speed is always there while moving and warnings (no fuel, flooded, low fuel, heavy
-     * damage) stay up while they last; everything else shows for a few seconds after it changes, then fades away.
-     */
     static void render(GuiGraphics g, DeltaTracker delta) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || mc.options.hideGui) return;
-        notices(g, mc.font);
-        if (!(mc.player.getVehicle() instanceof SrVehicle v)) { lastVehicle = null; return; }
-        if (v != lastVehicle) { lastVehicle = v; DETAILS.wake(); }
-        boolean gunner = (v instanceof SrGun gun && gun.isGunner(mc.player)) || (v instanceof SrAirDefence ad && ad.isGunner(mc.player));
-        if (gunner) return;                                 // the gun sight shows what the gunner needs
+        if (mc.player == null || mc.options.hideGui || mc.screen != null) return;
+        SrVehicle v = mc.player.getVehicle() instanceof SrVehicle vehicle ? vehicle : null;
+        boolean gunner = (v instanceof SrGun gun && gun.isGunner(mc.player))
+                || (v instanceof SrAirDefence ad && ad.isGunner(mc.player));
+        boolean camera = FpvClient.viewing();
+        // These slots are shared with the gun/drone HUDs; none covers their live telemetry or the reticle.
+        notices(g, mc.font, camera ? 9 : gunner ? 68 : v != null ? 8 : 50, camera || gunner, camera);
+        if (v == null) { lastVehicle = null; return; }
+        if (gunner || camera) return; // Dedicated sights have their own instruments.
+
+        long now = Util.getMillis();
+        double moved = Math.hypot(v.getX() - v.xo, v.getZ() - v.zo) * 72;
+        if (v != lastVehicle) {
+            lastVehicle = v;
+            speedShown = moved;
+            sampledAt = now;
+        }
+        // Time-based smoothing behaves consistently at different frame rates.
+        double blend = 1 - Math.exp(-Math.min(250, now - sampledAt) / 150.0);
+        speedShown += (moved - speedShown) * blend;
+        sampledAt = now;
+
+        int panelWidth = Math.min(156, (g.guiWidth() - 44) / 2);
+        int panelHeight = 122, y = g.guiHeight() - 52 - panelHeight;
+        mobility(g, mc, v, 8, y, panelWidth, panelHeight);
+        resources(g, mc, v, g.guiWidth() - panelWidth - 8, y, panelWidth, panelHeight);
+    }
+
+    private static void mobility(GuiGraphics g, Minecraft mc, SrVehicle v, int x, int y, int width, int height) {
         Font font = mc.font;
         int seat = v.seatOf(mc.player);
+        String role = seat == 0 && v.drivable() ? "DRIVER" : "CREW";
+        Ui.instrument(g, font, x, y, width, height, "MOBILITY", role);
+        g.drawString(font, font.plainSubstrByWidth(Ui.upper(v.getName()).getString(), width - 14), x + 7, y + 21, Ui.TEXT, false);
+
+        if (v.drivable()) {
+            String speed = Long.toString(Math.round(speedShown));
+            g.pose().pushPose();
+            g.pose().translate(x + 7, y + 34, 0);
+            g.pose().scale(2f, 2f, 1);
+            g.drawString(font, speed, 0, 0, Ui.TEXT, false);
+            g.pose().popPose();
+            g.drawString(font, "km/h", x + 7, y + 53, Ui.DIM, false);
+        } else {
+            g.drawString(font, "EMPLACED", x + 7, y + 40, Ui.DIM, false);
+        }
+        double heading = Mth.positiveModulo(v.getYRot() + 180, 360);
+        String degrees = String.format(Locale.ROOT, "%03d", Math.round(heading) % 360);
+        int hx = x + width - 42;
+        g.pose().pushPose();
+        g.pose().translate(hx, y + 36, 0);
+        g.pose().scale(1.5f, 1.5f, 1);
+        g.drawString(font, degrees, 0, 0, Ui.CYAN, false);
+        g.pose().popPose();
+        g.drawString(font, "HDG " + compassPoint(heading), hx - 2, y + 53, Ui.DIM, false);
+        g.fill(x + 6, y + 65, x + width - 6, y + 66, Ui.EDGE);
+
+        String engine = !v.drivable() ? "STATIC" : v.flooded() ? "FLOODED" : v.fuel() <= 0 ? "NO FUEL" : v.engineRunning() ? "RUNNING" : "OFF";
+        int engineColour = v.drivable() && (v.flooded() || v.fuel() <= 0) ? Ui.RED : v.engineRunning() ? Ui.GREEN : Ui.DIM;
+        Ui.readout(g, font, x + 7, y + 71, width - 14, "ENGINE", engine, engineColour);
+        Ui.readout(g, font, x + 7, y + 84, width - 14, "SEAT", seat < 0 ? "SYNCING" : (seat + 1) + " / " + v.seats().length, Ui.TEXT);
+        hint(g, font, x + 7, y + 98, width - 14, ClientSetup.SWITCH_SEAT, "SEAT");
+        hint(g, font, x + 7, y + 110, width - 14, mc.options.keyShift, "EXIT");
+    }
+
+    private static void resources(GuiGraphics g, Minecraft mc, SrVehicle v, int x, int y, int width, int height) {
+        Font font = mc.font;
         double fuel = v.tankLitres() > 0 ? v.fuel() / v.tankLitres() : 1;
         double battery = v.batteryFe() > 0 ? (double) v.energy() / v.batteryFe() : 1;
-        double hp = v.health() / v.maxHealth();
-        String engine = !v.drivable() ? "static" : v.flooded() ? "flooded" : v.fuel() <= 0 ? "no_fuel" : v.engineRunning() ? "running" : "off";
-        boolean jamming = v instanceof Jammer j && j.switchedOn(), auto = v instanceof SrAirDefence ad && ad.auto();
-        float a = DETAILS.update(java.util.List.of(seat, engine, (int) (fuel * 10), (int) (battery * 10), (int) Math.round(hp * 100), jamming, auto));
-
-        int right = g.guiWidth() - 10, y = g.guiHeight() - 12;
-        // speed, the one big number
-        if (v.drivable()) {
-            double moved = Math.sqrt(Mth.square(v.getX() - v.xo) + Mth.square(v.getZ() - v.zo)) * 20 * 3.6;
-            speedShown += (moved - speedShown) * 0.2;
-            float sa = Math.max(a, (float) Mth.clamp((speedShown - 0.5) / 2, 0, 1));
-            Ui.textRight(g, font, "km/h", right, y, Ui.HUD_DIM, sa);
-            Ui.bigRight(g, font, Long.toString(Math.round(speedShown)), right - font.width("km/h") - 4, y - 4, Ui.HUD_TEXT, sa);
-            double heading = (v.getYRot() + 180 + 360) % 360;
-            y -= 12;
-            Ui.textRight(g, font, String.format("%03d %s", Math.round(heading) % 360, compassPoint(heading)), right, y, Ui.HUD_DIM, sa);
-            y -= 14;
-        }
-        // warnings stay up; the rest fades
-        String warn = switch (engine) {
-            case "flooded" -> Component.translatable("hud.steelrain.engine_flooded").getString();
-            case "no_fuel" -> Component.translatable("hud.steelrain.engine_no_fuel").getString();
-            default -> null;
-        };
-        if (warn != null) { Ui.textRight(g, font, warn, right, y, Ui.blink() ? Ui.RED : 0xFFB04040, 1); y -= 10; }
+        double hull = v.maxHealth() > 0 ? v.health() / v.maxHealth() : 0;
+        boolean warning = hull < 0.35 || fuel < 0.2 || battery < 0.2 || v.flooded();
+        Ui.instrument(g, font, x, y, width, height, "SYSTEMS", "");
+        String state = warning ? "CHECK" : "OK";
+        g.drawString(font, state, x + width - 7 - font.width(state), y + 4,
+                hull < 0.35 || v.flooded() || (v.tankLitres() > 0 && v.fuel() <= 0) ? Ui.RED : warning ? Ui.AMBER : Ui.GREEN, false);
+        int row = y + 21;
         if (v.tankLitres() > 0) {
-            boolean low = fuel < 0.2;
-            Ui.textRight(g, font, "FUEL  " + Math.round(v.fuel()) + " L", right, y, low ? Ui.AMBER : Ui.HUD_TEXT, low ? 1 : a);
-            y -= 10;
+            resource(g, font, x + 7, row, width - 14, "FUEL", Math.round(v.fuel()) + " L", fuel, resourceColour(fuel));
+            row += 22;
         }
         if (v.batteryFe() > 0) {
-            boolean low = battery < 0.2;
-            Ui.textRight(g, font, "BATT  " + Math.round(battery * 100) + "%", right, y, low ? Ui.AMBER : Ui.HUD_TEXT, low ? 1 : a);
-            y -= 10;
+            resource(g, font, x + 7, row, width - 14, "BATT", Math.round(battery * 100) + "%", battery, resourceColour(battery));
+            row += 22;
         }
-        boolean hurt = hp < 0.35;
-        Ui.textRight(g, font, "HULL  " + Math.round(hp * 100) + "%", right, y, hurt ? Ui.RED : hp < 0.6 ? Ui.AMBER : Ui.HUD_TEXT, hurt ? 1 : a);
-        y -= 10;
-        if (jamming) { Ui.textRight(g, font, Component.translatable("hud.steelrain.jamming_on").getString(), right, y, Ui.AMBER, Math.max(a, 0.55f)); y -= 10; }
-        if (auto) { Ui.textRight(g, font, Component.translatable("hud.steelrain.auto_chip_on").getString(), right, y, Ui.GREEN, Math.max(a, 0.55f)); y -= 10; }
-        if (warn == null && v.drivable()) {
-            Ui.textRight(g, font, Component.translatable("hud.steelrain.engine_" + engine).getString(), right, y, Ui.HUD_DIM, a);
-            y -= 10;
+        resource(g, font, x + 7, row, width - 14, "HULL", Math.round(hull * 100) + "%", hull, hull < 0.35 ? Ui.RED : hull < 0.6 ? Ui.AMBER : Ui.GREEN);
+        row += 24;
+        if (v instanceof Jammer jammer) {
+            Ui.readout(g, font, x + 7, row, width - 14, "EW SWITCH", jammer.switchedOn() ? "ON" : "OFF", jammer.switchedOn() ? Ui.AMBER : Ui.DIM);
+        } else if (v instanceof SrAirDefence ad) {
+            Ui.readout(g, font, x + 7, row, width - 14, "AUTO MODE", ad.auto() ? "ON" : "OFF", ad.auto() ? Ui.GREEN : Ui.DIM);
+            hint(g, font, x + 7, y + 110, width - 14, ClientSetup.AUTO_MODE, "AUTO");
         }
-        y -= 3;
-        String seatName = Component.translatable("hud.steelrain.seat_" + (seat == 0 && v.drivable() ? "driver" : "passenger")).getString();
-        Ui.textRight(g, font, Ui.upper(v.getName()).getString() + "  ·  " + seatName, right, y, Ui.HUD_DIM, a);
+        String warningText = v.flooded() ? "ENGINE FLOODED" : hull < 0.35 ? "HULL CRITICAL"
+                : v.tankLitres() > 0 && v.fuel() <= 0 ? "FUEL EMPTY" : v.batteryFe() > 0 && v.energy() <= 0 ? "BATTERY EMPTY"
+                : fuel < 0.2 ? "LOW FUEL" : battery < 0.2 ? "LOW BATTERY" : "";
+        if (!warningText.isEmpty() && !(v instanceof SrAirDefence)) {
+            g.drawString(font, font.plainSubstrByWidth(warningText, width - 14), x + 7, y + 110,
+                    hull < 0.35 || v.flooded() || (v.tankLitres() > 0 && v.fuel() <= 0) ? Ui.RED : Ui.AMBER, false);
+        }
+    }
+
+    private static void resource(GuiGraphics g, Font font, int x, int y, int width, String label, String value, double fraction, int colour) {
+        Ui.readout(g, font, x, y, width, label, value, colour);
+        Ui.gauge(g, x, y + 11, width, 4, fraction, colour, 16);
+    }
+
+    private static int resourceColour(double fraction) {
+        return fraction <= 0.1 ? Ui.RED : fraction < 0.25 ? Ui.AMBER : Ui.GREEN;
+    }
+
+    private static void hint(GuiGraphics g, Font font, int x, int y, int width, KeyMapping mapping, String action) {
+        String key = font.plainSubstrByWidth(Ui.keyName(mapping), Math.max(12, width - font.width(action) - 15));
+        Ui.keyHint(g, font, x, y, key, action);
     }
 
     private static String compassPoint(double deg) {
-        String[] p = {"N", "NE", "E", "SE", "S", "SW", "W", "NW"};
-        return p[(int) Math.round(deg / 45) % 8];
+        String[] points = {"N", "NE", "E", "SE", "S", "SW", "W", "NW"};
+        return points[(int) Math.round(deg / 45) % 8];
     }
 
     private VehicleHud() {}

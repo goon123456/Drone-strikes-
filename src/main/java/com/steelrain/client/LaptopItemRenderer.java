@@ -51,18 +51,53 @@ public class LaptopItemRenderer extends BlockEntityWithoutLevelRenderer {
         pose.mulPose(Axis.XP.rotationDegrees(90));
         float s = 0.0014f;
         pose.scale(s, -s, s);
-        int full = net.minecraft.client.renderer.LightTexture.FULL_BRIGHT;
-        var mode = net.minecraft.client.gui.Font.DisplayMode.POLYGON_OFFSET;
-        var level = Minecraft.getInstance().level;
-        long t = level == null ? 0 : (level.getDayTime() + 6000) % 24000;
-        String clock = String.format("%02d:%02d", t / 1000, (t % 1000) * 60 / 1000);
-        font.drawInBatch("STEEL RAIN C2", 4, 4, 0xFF8DF29A, false, pose.last().pose(), buffers, mode, 0, full);
-        font.drawInBatch(clock, 206 - font.width(clock), 4, 0xFFF5C451, false, pose.last().pose(), buffers, mode, 0, full);
-        font.drawInBatch("FIRE CONTROL", 4, 20, 0xFF8DF29A, false, pose.last().pose(), buffers, mode, 0, full);
-        font.drawInBatch("GRID " + player.getBlockX() + " " + player.getBlockZ(), 4, 34, 0xFF4F9A60, false, pose.last().pose(), buffers, mode, 0, full);
-        font.drawInBatch("LINK  OK", 4, 48, 0xFF8DF29A, false, pose.last().pose(), buffers, mode, 0, full);
-        if (Ui.blink()) font.drawInBatch("RIGHT-CLICK TO OPEN", 4, 112, 0xFFF5C451, false, pose.last().pose(), buffers, mode, 0, full);
+        var mc = Minecraft.getInstance();
+        var level = mc.level;
+        long time = level == null ? 0 : (level.getDayTime() + 6000) % 24000;
+        String clock = String.format(java.util.Locale.ROOT, "%02d:%02d", time / 1000, time % 1000 * 60 / 1000);
+        ItemStack tablet = player.getMainHandItem().is(com.steelrain.ModRegistry.FIELD_LAPTOP.get())
+                ? player.getMainHandItem() : player.getOffhandItem();
+        int links = com.steelrain.item.LaptopItem.links(tablet).size() + com.steelrain.item.LaptopItem.vehicles(tablet).size();
+
+        displayRect(pose, buffers, 0, 0, 210, 120, Ui.PANEL, -0.06f);
+        displayRect(pose, buffers, 0, 0, 210, 18, Ui.PANEL_3, -0.04f);
+        displayRect(pose, buffers, 0, 17, 210, 1, Ui.EDGE_LIGHT, -0.02f);
+        displayRect(pose, buffers, 3, 4, 2, 9, Ui.GREEN, -0.02f);
+        displayText(pose, buffers, "STEEL RAIN C2", 9, 5, Ui.TEXT, 147);
+        displayText(pose, buffers, clock, 204 - font.width(clock), 5, Ui.GREEN, 40);
+        displayText(pose, buffers, "FIRE CONTROL", 7, 25, Ui.TEXT, 196);
+        displayRect(pose, buffers, 7, 39, 196, 1, Ui.EDGE, -0.02f);
+        displayText(pose, buffers, "GRID", 7, 47, Ui.DIM, 45);
+        displayText(pose, buffers, player.getBlockX() + "  " + player.getBlockZ(), 57, 47, Ui.TEXT, 146);
+        displayText(pose, buffers, "ELEV", 7, 61, Ui.DIM, 45);
+        displayText(pose, buffers, "Y " + player.getBlockY(), 57, 61, Ui.TEXT, 70);
+        String wx = level == null ? "--" : level.isThundering() ? "STORM" : level.isRaining() ? "RAIN" : "CLEAR";
+        displayText(pose, buffers, wx, 203 - font.width(wx), 61, Ui.DIM, 70);
+        displayText(pose, buffers, "SAVED LINKS", 7, 77, Ui.DIM, 140);
+        displayText(pose, buffers, links + "/" + com.steelrain.item.LaptopItem.MAX_LINKS, 175, 77, links > 0 ? Ui.GREEN : Ui.DIM, 30);
+        for (int i = 0; i < com.steelrain.item.LaptopItem.MAX_LINKS; i++)
+            displayRect(pose, buffers, 7 + i * 25, 90, 21, 3, i < links ? Ui.GREEN : Ui.EDGE, -0.02f);
+        String prompt = links == 0 ? "NO UNITS LINKED" : "OPEN COMMAND DISPLAY";
+        displayText(pose, buffers, prompt, 7, 100, links > 0 ? Ui.GREEN : Ui.DIM, 196);
+        displayText(pose, buffers, "[" + Ui.keyName(mc.options.keyUse) + "] OPEN", 7, 112, Ui.DIM, 196);
         pose.popPose();
+    }
+
+    /** Distinct depths preserve the layer order when the world buffer sorts translucent quads. */
+    private static void displayRect(PoseStack pose, MultiBufferSource buffers, int x, int y, int w, int h, int colour, float depth) {
+        var vertices = buffers.getBuffer(RenderType.textBackground());
+        var matrix = pose.last().pose();
+        int light = net.minecraft.client.renderer.LightTexture.FULL_BRIGHT;
+        vertices.addVertex(matrix, x, y + h, depth).setColor(colour).setLight(light);
+        vertices.addVertex(matrix, x + w, y + h, depth).setColor(colour).setLight(light);
+        vertices.addVertex(matrix, x + w, y, depth).setColor(colour).setLight(light);
+        vertices.addVertex(matrix, x, y, depth).setColor(colour).setLight(light);
+    }
+
+    private static void displayText(PoseStack pose, MultiBufferSource buffers, String text, int x, int y, int colour, int width) {
+        var font = Minecraft.getInstance().font;
+        font.drawInBatch(font.plainSubstrByWidth(text, width), x, y, colour, false, pose.last().pose(), buffers,
+                net.minecraft.client.gui.Font.DisplayMode.POLYGON_OFFSET, 0, net.minecraft.client.renderer.LightTexture.FULL_BRIGHT);
     }
 
     @Override
